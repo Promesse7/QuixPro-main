@@ -52,7 +52,6 @@
     "gcp-metadata": "6.1.0",
     "geist": "1.3.0",
     "input-otp": "1.4.1",
-    "kerberos": "2.1.0",
     "lucide-react": "^0.454.0",
     "mongodb": "6.10.0",
     "mongodb-client-encryption": "6.0.0",
