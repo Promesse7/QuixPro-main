@@ -1,4 +1,9 @@
 {
-  "installCommand": "npm install --legacy-peer-deps",
-  "buildCommand": "npm run build"
+  "build": {
+    "env": {
+      "NPM_CONFIG_OPTIONAL": "false"
+    },
+    "installCommand": "npm install --omit=optional --legacy-peer-deps",
+    "buildCommand": "npm run build"
+  }
 }
