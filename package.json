@@ -11,6 +11,7 @@
     "test-db": "node scripts/test-db.js"
   },
   "dependencies": {
+     "lightningcss": "^1.7.5",
     "@aws-sdk/credential-providers": "3.699.0",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "1.2.2",
