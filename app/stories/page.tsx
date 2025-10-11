@@ -9,8 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { BookOpen, Search, Filter, Clock, Heart, Eye, Volume2, Loader2 } from "lucide-react"
 import Link from "next/link"
 
-// Fallback stories data in case API fails
-const fallbackStories = [
+// Removed fallback; rely on API only
+const fallbackStories: never[] = [
   {
     id: "1",
     title: "The Legend of King Gihanga",
@@ -272,7 +272,7 @@ export default function StoriesPage() {
             <div className="mb-8">
               <h2 className="text-2xl font-bold glow-text mb-6">Featured Stories</h2>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {mockStories
+                {stories
                   .filter((story) => story.featured)
                   .slice(0, 3)
                   .map((story) => (

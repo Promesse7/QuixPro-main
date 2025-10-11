@@ -18,7 +18,7 @@ import {
   Globe,
   Database,
 } from "lucide-react"
-import { getCurrentUser, RWANDA_LEVELS } from "@/lib/auth-db"
+import { getCurrentUser } from "@/lib/auth"
 
 interface AdminStats {
   totalUsers: number
@@ -38,6 +38,7 @@ interface DatabaseUser {
 
 export default function AdminPage() {
   const [user, setUser] = useState<any>(null)
+  const [levels, setLevels] = useState<Array<{ name: string }>>([])
   const [stats, setStats] = useState<AdminStats>({
     totalUsers: 0,
     totalQuizzes: 0,
@@ -52,6 +53,19 @@ export default function AdminPage() {
   useEffect(() => {
     const currentUser = getCurrentUser()
     setUser(currentUser)
+
+    // Load levels from DB for display
+    ;(async () => {
+      try {
+        const res = await fetch("/api/levels")
+        if (res.ok) {
+          const data = await res.json()
+          setLevels(data.levels || [])
+        }
+      } catch (e) {
+        console.error("Failed to load levels", e)
+      }
+    })()
 
     const fetchAdminData = async () => {
       try {
@@ -521,9 +535,9 @@ export default function AdminPage() {
                       <div className="text-sm">
                         <p className="text-gray-400 mb-2">Configured Levels:</p>
                         <div className="grid grid-cols-3 gap-2">
-                          {Object.keys(RWANDA_LEVELS).map((level) => (
-                            <Badge key={level} className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs">
-                              {level}
+                          {levels.map((lvl) => (
+                            <Badge key={lvl.name} className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs">
+                              {lvl.name}
                             </Badge>
                           ))}
                         </div>

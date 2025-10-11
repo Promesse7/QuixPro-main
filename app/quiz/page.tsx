@@ -1,77 +1,56 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Brain, Clock, Users, Search, Filter, Play, Star } from "lucide-react"
+import { Brain, Clock, Users, Search, Filter, Play, Star, BookOpen, GraduationCap } from "lucide-react"
 import Link from "next/link"
 
-// Mock quiz data
-const mockQuizzes = [
-  {
-    id: "1",
-    title: "Rwanda History & Culture",
-    subject: "Social Studies",
-    level: "S3",
-    description: "Test your knowledge of Rwanda's rich history and cultural heritage",
-    questions: 15,
-    duration: 20,
-    difficulty: "Medium",
-    rating: 4.8,
-    attempts: 1250,
-    tags: ["History", "Culture", "Independence"],
-  },
-  {
-    id: "2",
-    title: "Basic Mathematics",
-    subject: "Mathematics",
-    level: "P6",
-    description: "Fundamental math concepts for primary level students",
-    questions: 20,
-    duration: 25,
-    difficulty: "Easy",
-    rating: 4.6,
-    attempts: 2100,
-    tags: ["Numbers", "Operations", "Geometry"],
-  },
-  {
-    id: "3",
-    title: "English Grammar Essentials",
-    subject: "English",
-    level: "S6",
-    description: "Master advanced English grammar rules and usage",
-    questions: 25,
-    duration: 30,
-    difficulty: "Hard",
-    rating: 4.7,
-    attempts: 890,
-    tags: ["Grammar", "Syntax", "Writing"],
-  },
-  {
-    id: "4",
-    title: "Science Fundamentals",
-    subject: "Science",
-    level: "S3",
-    description: "Basic principles of physics, chemistry, and biology",
-    questions: 18,
-    duration: 22,
-    difficulty: "Medium",
-    rating: 4.5,
-    attempts: 1560,
-    tags: ["Physics", "Chemistry", "Biology"],
-  },
-]
+interface Quiz {
+  _id: string
+  id?: string
+  title: string
+  subject: string
+  level: string
+  description: string
+  difficulty: string
+  duration: number
+  questions: any[]
+  rating?: number
+  attempts?: number
+}
 
 export default function QuizListPage() {
+  const [quizzes, setQuizzes] = useState<Quiz[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedSubject, setSelectedSubject] = useState("all")
   const [selectedLevel, setSelectedLevel] = useState("all")
   const [selectedDifficulty, setSelectedDifficulty] = useState("all")
 
-  const filteredQuizzes = mockQuizzes.filter((quiz) => {
+  useEffect(() => {
+    fetchQuizzes()
+  }, [])
+
+  const fetchQuizzes = async () => {
+    try {
+      setLoading(true)
+      const res = await fetch("/api/quiz")
+      if (res.ok) {
+        const data = await res.json()
+        setQuizzes(data.quizzes || [])
+      }
+    } catch (e) {
+      console.error("Failed to load quizzes", e)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const filteredQuizzes = quizzes.filter((quiz) => {
     const matchesSearch =
       quiz.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       quiz.description.toLowerCase().includes(searchTerm.toLowerCase())
@@ -83,16 +62,27 @@ export default function QuizListPage() {
   })
 
   const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "Easy":
+    switch (difficulty.toLowerCase()) {
+      case "easy":
         return "text-green-400"
-      case "Medium":
+      case "medium":
         return "text-yellow-400"
-      case "Hard":
+      case "hard":
         return "text-red-400"
       default:
         return "text-muted-foreground"
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen gradient-bg flex items-center justify-center">
+        <div className="text-center">
+          <Brain className="h-16 w-16 text-primary animate-pulse mx-auto mb-4" />
+          <p className="text-xl text-muted-foreground">Loading quizzes...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -105,9 +95,23 @@ export default function QuizListPage() {
               <Brain className="h-8 w-8 text-primary glow-text" />
               <h1 className="text-4xl font-bold glow-text">Available Quizzes</h1>
             </div>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-4">
               Choose from our collection of CBC-aligned quizzes and test your knowledge
             </p>
+            <div className="flex justify-center gap-4">
+              <Button asChild variant="outline" className="glass-effect">
+                <Link href="/quiz-selection">
+                  <GraduationCap className="h-4 w-4 mr-2" />
+                  Structured Quiz Selection
+                </Link>
+              </Button>
+              <Button asChild className="glow-effect">
+                <Link href="/quiz-selection">
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Browse by Level & Course
+                </Link>
+              </Button>
+            </div>
           </div>
 
           {/* Filters */}
@@ -183,7 +187,7 @@ export default function QuizListPage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredQuizzes.map((quiz) => (
               <Card
-                key={quiz.id}
+                key={quiz._id}
                 className="glass-effect border-border/50 hover:glow-effect transition-all duration-300"
               >
                 <CardHeader>
@@ -195,10 +199,12 @@ export default function QuizListPage() {
                         <Badge variant="outline">{quiz.level}</Badge>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-1">
-                      <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                      <span className="text-sm font-medium">{quiz.rating}</span>
-                    </div>
+                    {quiz.rating && (
+                      <div className="flex items-center space-x-1">
+                        <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                        <span className="text-sm font-medium">{quiz.rating}</span>
+                      </div>
+                    )}
                   </div>
                   <CardDescription className="text-pretty">{quiz.description}</CardDescription>
                 </CardHeader>
@@ -207,32 +213,26 @@ export default function QuizListPage() {
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div className="flex items-center space-x-2">
                         <Brain className="h-4 w-4 text-muted-foreground" />
-                        <span>{quiz.questions} questions</span>
+                        <span>{quiz.questions?.length || 0} questions</span>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span>{quiz.duration} min</span>
+                        <span>{quiz.duration || 0} min</span>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <span>{quiz.attempts.toLocaleString()} attempts</span>
-                      </div>
+                      {quiz.attempts && (
+                        <div className="flex items-center space-x-2">
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                          <span>{quiz.attempts.toLocaleString()} attempts</span>
+                        </div>
+                      )}
                       <div className="flex items-center space-x-2">
                         <span className="text-muted-foreground">Difficulty:</span>
                         <span className={`font-medium ${getDifficultyColor(quiz.difficulty)}`}>{quiz.difficulty}</span>
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-1">
-                      {quiz.tags.map((tag) => (
-                        <Badge key={tag} variant="outline" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-
                     <Button asChild className="w-full glow-effect">
-                      <Link href={`/quiz/${quiz.id}`}>
+                      <Link href={`/quiz/${quiz._id}`}>
                         <Play className="h-4 w-4 mr-2" />
                         Start Quiz
                       </Link>

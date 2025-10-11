@@ -1,26 +1,53 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/mongodb";
-import { v4 as uuidv4 } from "uuid";
-import { Quiz } from "@/models";
+import { ObjectId } from "mongodb";
 
-// GET /api/quiz - Get all quizzes or filter by query params
+export const dynamic = "force-dynamic"
+
+// GET /api/quiz?unit=Unit1&difficulty=easy - Get quizzes for a unit with optional difficulty filter
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const subject = searchParams.get("subject");
+    const unit = searchParams.get("unit");
+    const difficulty = searchParams.get("difficulty");
     const level = searchParams.get("level");
-    const limit = searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : 10;
+    const course = searchParams.get("course");
     
     const db = await getDatabase();
     const collection = db.collection("quizzes");
+    const unitsCol = db.collection("units");
+    const coursesCol = db.collection("courses");
+    const levelsCol = db.collection("levels");
     
-    const query: any = { isPublic: true };
-    if (subject) query.subject = subject;
-    if (level) query.level = level;
+    let query: any = {};
+    
+    if (unit) {
+      const unitDoc = await unitsCol.findOne({ name: unit });
+      if (unitDoc) {
+        query.unitId = unitDoc._id;
+      }
+    }
+    
+    if (course) {
+      const courseDoc = await coursesCol.findOne({ name: course });
+      if (courseDoc) {
+        query.courseId = courseDoc._id;
+      }
+    }
+    
+    if (level) {
+      const levelDoc = await levelsCol.findOne({ name: level });
+      if (levelDoc) {
+        query.levelId = levelDoc._id;
+      }
+    }
+    
+    if (difficulty) {
+      query.difficulty = difficulty;
+    }
     
     const quizzes = await collection
       .find(query)
-      .limit(limit)
       .sort({ createdAt: -1 })
       .toArray();
     

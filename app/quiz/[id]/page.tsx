@@ -4,59 +4,11 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { Clock, ArrowRight, ArrowLeft, Home, Mic } from "lucide-react"
+import { Clock, ArrowRight, ArrowLeft, Home, Mic, CheckCircle, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { QuizQuestion } from "@/components/quiz/quiz-question"
 import { QuizResults } from "@/components/quiz/quiz-results"
-
-// Mock quiz data - in real app this would come from API
-const mockQuiz = {
-  id: "1",
-  title: "Rwanda History & Culture",
-  subject: "Social Studies",
-  level: "S3",
-  description: "Test your knowledge of Rwanda's rich history and cultural heritage",
-  questions: [
-    {
-      id: "q1",
-      text: "What year did Rwanda gain independence?",
-      options: [
-        { id: "a", text: "1960", correct: false },
-        { id: "b", text: "1962", correct: true },
-        { id: "c", text: "1964", correct: false },
-        { id: "d", text: "1966", correct: false },
-      ],
-      explanation: "Rwanda gained independence from Belgium on July 1, 1962, becoming a sovereign nation.",
-      marks: 1,
-    },
-    {
-      id: "q2",
-      text: "Which traditional dance is most famous in Rwanda?",
-      options: [
-        { id: "a", text: "Intore", correct: true },
-        { id: "b", text: "Kinyatrap", correct: false },
-        { id: "c", text: "Ubusabane", correct: false },
-        { id: "d", text: "Amaraba", correct: false },
-      ],
-      explanation:
-        "Intore is Rwanda's most famous traditional dance, performed by warriors and known for its energetic movements.",
-      marks: 1,
-    },
-    {
-      id: "q3",
-      text: "What is the capital city of Rwanda?",
-      options: [
-        { id: "a", text: "Butare", correct: false },
-        { id: "b", text: "Gisenyi", correct: false },
-        { id: "c", text: "Kigali", correct: true },
-        { id: "d", text: "Ruhengeri", correct: false },
-      ],
-      explanation:
-        "Kigali is the capital and largest city of Rwanda, known for its cleanliness and modern development.",
-      marks: 1,
-    },
-  ],
-}
+import { getCurrentUser } from "@/lib/auth"
 
 export default function QuizPage({ params }: { params: { id: string } }) {
   const [currentQuestion, setCurrentQuestion] = useState(0)
@@ -65,32 +17,125 @@ export default function QuizPage({ params }: { params: { id: string } }) {
   const [isCompleted, setIsCompleted] = useState(false)
   const [timeElapsed, setTimeElapsed] = useState(0)
   const [isVoiceMode, setIsVoiceMode] = useState(false)
+  const [quiz, setQuiz] = useState<any>(null)
+  const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [existingAttempt, setExistingAttempt] = useState<any>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeElapsed((prev) => prev + 1)
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [])
+    const currentUser = getCurrentUser()
+    setUser(currentUser)
+
+    const fetchQuizData = async () => {
+      try {
+        setLoading(true)
+        
+        // Fetch quiz details
+        const quizRes = await fetch(`/api/quiz/${params.id}`)
+        if (!quizRes.ok) throw new Error("Failed to fetch quiz")
+        const quizData = await quizRes.json()
+        setQuiz(quizData.quiz)
+
+        // Check for existing attempts
+        if (currentUser) {
+          const attemptsRes = await fetch(`/api/quiz-attempts?userId=${currentUser.id}&quizId=${params.id}`)
+          if (attemptsRes.ok) {
+            const attemptsData = await attemptsRes.json()
+            const completedAttempt = attemptsData.attempts.find((a: any) => a.status === "completed")
+            if (completedAttempt) {
+              setExistingAttempt(completedAttempt)
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load quiz data", e)
+        setError("Failed to load quiz. Please try again.")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchQuizData()
+  }, [params.id])
+
+  useEffect(() => {
+    if (!existingAttempt && !isCompleted) {
+      const timer = setInterval(() => {
+        setTimeElapsed((prev) => prev + 1)
+      }, 1000)
+      setTimerInterval(timer)
+      return () => clearInterval(timer)
+    } else if (timerInterval) {
+      clearInterval(timerInterval)
+      setTimerInterval(null)
+    }
+  }, [existingAttempt, isCompleted])
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerInterval) {
+        clearInterval(timerInterval)
+      }
+    }
+  }, [timerInterval])
 
   const handleAnswerSelect = (questionId: string, answerId: string) => {
     setAnswers((prev) => ({ ...prev, [questionId]: answerId }))
     setShowExplanation(true)
   }
 
-  const handleNext = () => {
-    if (currentQuestion < mockQuiz.questions.length - 1) {
+  const handleNext = async () => {
+    if (currentQuestion < quiz.questions.length - 1) {
       setCurrentQuestion((prev) => prev + 1)
       setShowExplanation(false)
     } else {
+      // Quiz completed - record the attempt
+      await recordQuizAttempt()
       setIsCompleted(true)
+    }
+  }
+
+  const recordQuizAttempt = async () => {
+    if (!user || !quiz) return
+
+    try {
+      const score = calculateScore()
+      const attemptData = {
+        userId: user.id,
+        quizId: quiz.id,
+        answers,
+        timeElapsed,
+        score,
+      }
+
+      const res = await fetch("/api/quiz-attempts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(attemptData),
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json()
+        if (res.status === 409) {
+          // Quiz already completed
+          setExistingAttempt(errorData.attempt)
+        } else {
+          throw new Error(errorData.error || "Failed to record attempt")
+        }
+      }
+    } catch (e) {
+      console.error("Failed to record quiz attempt", e)
     }
   }
 
   const handlePrevious = () => {
     if (currentQuestion > 0) {
       setCurrentQuestion((prev) => prev - 1)
-      setShowExplanation(!!answers[mockQuiz.questions[currentQuestion - 1].id])
+      setShowExplanation(!!answers[quiz.questions[currentQuestion - 1].id])
     }
   }
 
@@ -102,26 +147,104 @@ export default function QuizPage({ params }: { params: { id: string } }) {
 
   const calculateScore = () => {
     let correct = 0
-    mockQuiz.questions.forEach((question) => {
+    quiz.questions.forEach((question: any) => {
       const userAnswer = answers[question.id]
-      const correctOption = question.options.find((opt) => opt.correct)
+      const correctOption = question.options.find((opt: any) => opt.correct)
       if (userAnswer === correctOption?.id) {
         correct++
       }
     })
     return {
       correct,
-      total: mockQuiz.questions.length,
-      percentage: Math.round((correct / mockQuiz.questions.length) * 100),
+      total: quiz.questions.length,
+      percentage: Math.round((correct / quiz.questions.length) * 100),
     }
   }
 
-  if (isCompleted) {
-    return <QuizResults quiz={mockQuiz} answers={answers} timeElapsed={timeElapsed} />
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen gradient-bg flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading quiz...</p>
+        </div>
+      </div>
+    )
   }
 
-  const question = mockQuiz.questions[currentQuestion]
-  const progress = ((currentQuestion + 1) / mockQuiz.questions.length) * 100
+  // Error state
+  if (error || !quiz) {
+    return (
+      <div className="min-h-screen gradient-bg flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <p className="text-gray-400">{error || "Quiz not found"}</p>
+          <Link href="/dashboard">
+            <Button className="mt-4">Back to Dashboard</Button>
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  // Quiz already completed
+  if (existingAttempt) {
+    return (
+      <div className="min-h-screen gradient-bg flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto">
+          <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-white mb-2">Quiz Already Completed</h2>
+          <p className="text-gray-400 mb-4">
+            You have already completed this quiz with a score of {existingAttempt.percentage}%
+          </p>
+          <div className="space-y-2">
+            <Link href="/dashboard">
+              <Button className="w-full">Back to Dashboard</Button>
+            </Link>
+            <Link href="/certificates">
+              <Button variant="outline" className="w-full">View Certificates</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (isCompleted) {
+    // Ensure quiz data is properly structured before passing to QuizResults
+    if (!quiz || !quiz.questions || !Array.isArray(quiz.questions)) {
+      return (
+        <div className="min-h-screen gradient-bg flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-gray-400">Error: Quiz data is incomplete</p>
+            <Link href="/dashboard">
+              <Button className="mt-4">Back to Dashboard</Button>
+            </Link>
+          </div>
+        </div>
+      )
+    }
+    
+    return <QuizResults quiz={quiz} answers={answers} timeElapsed={timeElapsed} />
+  }
+
+  // Safety check for quiz data
+  if (!quiz || !quiz.questions || !Array.isArray(quiz.questions) || quiz.questions.length === 0) {
+    return (
+      <div className="min-h-screen gradient-bg flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-400">Error: Quiz has no questions</p>
+          <Link href="/dashboard">
+            <Button className="mt-4">Back to Dashboard</Button>
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  const question = quiz.questions[currentQuestion]
+  const progress = ((currentQuestion + 1) / quiz.questions.length) * 100
 
   return (
     <div className="min-h-screen gradient-bg">
@@ -134,10 +257,10 @@ export default function QuizPage({ params }: { params: { id: string } }) {
                 <Home className="h-5 w-5" />
               </Link>
               <div>
-                <h1 className="text-xl font-bold glow-text">{mockQuiz.title}</h1>
+                <h1 className="text-xl font-bold glow-text">{quiz.title}</h1>
                 <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                  <Badge variant="secondary">{mockQuiz.subject}</Badge>
-                  <Badge variant="outline">{mockQuiz.level}</Badge>
+                  <Badge variant="secondary">{quiz.subject}</Badge>
+                  <Badge variant="outline">{quiz.level}</Badge>
                 </div>
               </div>
             </div>
@@ -159,7 +282,7 @@ export default function QuizPage({ params }: { params: { id: string } }) {
           <div className="mt-4">
             <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
               <span>
-                Question {currentQuestion + 1} of {mockQuiz.questions.length}
+                Question {currentQuestion + 1} of {quiz.questions.length}
               </span>
               <span>{Math.round(progress)}% Complete</span>
             </div>
@@ -198,7 +321,7 @@ export default function QuizPage({ params }: { params: { id: string } }) {
             </div>
 
             <Button onClick={handleNext} disabled={!showExplanation} className="glow-effect">
-              {currentQuestion === mockQuiz.questions.length - 1 ? "Finish Quiz" : "Next"}
+              {currentQuestion === quiz.questions.length - 1 ? "Finish Quiz" : "Next"}
               <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           </div>

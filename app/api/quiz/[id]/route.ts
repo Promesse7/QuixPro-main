@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/mongodb";
+import { ObjectId } from "mongodb";
+
+export const dynamic = "force-dynamic"
 
 // GET /api/quiz/[id] - Get a specific quiz by ID
 export async function GET(
@@ -11,7 +14,13 @@ export async function GET(
     const db = await getDatabase();
     const collection = db.collection("quizzes");
     
-    const quiz = await collection.findOne({ id });
+    // Try to find by ObjectId first, then by string id
+    let quiz;
+    try {
+      quiz = await collection.findOne({ _id: new ObjectId(id) });
+    } catch {
+      quiz = await collection.findOne({ id });
+    }
     
     if (!quiz) {
       return NextResponse.json({ error: "Quiz not found" }, { status: 404 });

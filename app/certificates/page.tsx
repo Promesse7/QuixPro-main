@@ -4,8 +4,8 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Download, Award, Calendar, BookOpen } from "lucide-react"
-import { getCurrentUser } from "@/lib/auth-db"
+import { Download, Award, Calendar, BookOpen, RefreshCw } from "lucide-react"
+import { getCurrentUser } from "@/lib/auth"
 
 interface Certificate {
   id: string
@@ -17,55 +17,57 @@ interface Certificate {
   type: "quiz" | "course" | "achievement"
 }
 
-// Mock certificates data
-const mockCertificates: Certificate[] = [
-  {
-    id: "1",
-    title: "Mathematics Excellence",
-    course: "Mathematics",
-    score: 95,
-    completedAt: "2024-01-15",
-    level: "S2",
-    type: "quiz",
-  },
-  {
-    id: "2",
-    title: "Physics Mastery",
-    course: "Physics",
-    score: 88,
-    completedAt: "2024-01-10",
-    level: "S2",
-    type: "course",
-  },
-  {
-    id: "3",
-    title: "Perfect Attendance",
-    course: "General",
-    score: 100,
-    completedAt: "2024-01-05",
-    level: "S2",
-    type: "achievement",
-  },
-]
+// Removed mock data; fetch from API
 
 export default function CertificatesPage() {
   const [user, setUser] = useState<any | null>(null)
   const [certificates, setCertificates] = useState<Certificate[]>([])
+  const [refreshing, setRefreshing] = useState(false)
 
-  useEffect(() => {
-    const currentUser = getCurrentUser()
-    setUser(currentUser)
-
-    if (currentUser?.role === "student") {
-      setCertificates(mockCertificates)
+  const fetchCertificates = async () => {
+    try {
+      if (!user) return
+      setRefreshing(true)
+      const res = await fetch(`/api/certificates?userId=${user.id}`)
+      if (!res.ok) throw new Error("Failed to fetch certificates")
+      const data = await res.json()
+      setCertificates(
+        (data.certificates || []).map((c: any) => ({
+          id: c._id?.toString?.() || c.id,
+          title: c.title,
+          course: c.course,
+          score: c.score,
+          completedAt: c.completedAt || c.createdAt,
+          level: c.level,
+          type: c.type || "achievement",
+        }))
+      )
+    } catch (e) {
+      console.error("Failed to load certificates", e)
+      setCertificates([])
+    } finally {
+      setRefreshing(false)
     }
-  }, [])
+  }
 
   const downloadCertificate = (certificate: Certificate) => {
     // Mock download functionality
     console.log("[v0] Downloading certificate:", certificate.id)
     alert(`Downloading certificate: ${certificate.title}`)
   }
+
+  useEffect(() => {
+    const currentUser = getCurrentUser()
+    setUser(currentUser)
+
+    if (currentUser?.role === "student") {
+      fetchCertificates()
+      
+      // Refresh certificates every 30 seconds to catch new ones
+      const interval = setInterval(fetchCertificates, 30000)
+      return () => clearInterval(interval)
+    }
+  }, [])
 
   const getCertificateTypeColor = (type: Certificate["type"]) => {
     switch (type) {
@@ -97,14 +99,25 @@ export default function CertificatesPage() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl border border-blue-500/30">
-              <Award className="w-6 h-6 text-blue-400" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl border border-blue-500/30">
+                <Award className="w-6 h-6 text-blue-400" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-white">My Certificates</h1>
+                <p className="text-gray-400">Your achievements and completed courses</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-white">My Certificates</h1>
-              <p className="text-gray-400">Your achievements and completed courses</p>
-            </div>
+            <Button 
+              onClick={fetchCertificates} 
+              disabled={refreshing}
+              variant="outline"
+              className="bg-gray-900/50 border-gray-800 hover:border-blue-500/50"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
           </div>
         </div>
 

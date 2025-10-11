@@ -9,7 +9,8 @@ import Link from "next/link"
 
 interface QuizResultsProps {
   quiz: {
-    id: string
+    _id?: string
+    id?: string
     title: string
     subject: string
     level: string
@@ -26,6 +27,20 @@ interface QuizResultsProps {
 }
 
 export function QuizResults({ quiz, answers, timeElapsed }: QuizResultsProps) {
+  // Safety check for quiz data
+  if (!quiz || !quiz.questions || !Array.isArray(quiz.questions)) {
+    return (
+      <div className="min-h-screen gradient-bg flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-400">Error: Invalid quiz data</p>
+          <Link href="/dashboard">
+            <Button className="mt-4">Back to Dashboard</Button>
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
   const calculateScore = () => {
     let correct = 0
     quiz.questions.forEach((question) => {
@@ -125,6 +140,11 @@ export function QuizResults({ quiz, answers, timeElapsed }: QuizResultsProps) {
             </CardHeader>
             <CardContent className="space-y-4">
               {quiz.questions.map((question, index) => {
+                // Safety check for question data
+                if (!question || !question.id || !question.text || !question.options) {
+                  return null
+                }
+
                 const userAnswer = answers[question.id]
                 const correctOption = question.options.find((opt) => opt.correct)
                 const userOption = question.options.find((opt) => opt.id === userAnswer)
@@ -154,7 +174,7 @@ export function QuizResults({ quiz, answers, timeElapsed }: QuizResultsProps) {
                         </div>
                       )}
                       <div className="mt-3 p-3 bg-accent/20 rounded-md">
-                        <p className="text-muted-foreground text-sm">{question.explanation}</p>
+                        <p className="text-muted-foreground text-sm">{question.explanation || "No explanation available"}</p>
                       </div>
                     </div>
                   </div>
@@ -172,7 +192,7 @@ export function QuizResults({ quiz, answers, timeElapsed }: QuizResultsProps) {
               </Link>
             </Button>
             <Button asChild variant="outline" className="glass-effect bg-transparent">
-              <Link href={`/quiz/${quiz.id}`}>
+              <Link href={`/quiz/${quiz._id || quiz.id}`}>
                 <RotateCcw className="h-4 w-4 mr-2" />
                 Retake Quiz
               </Link>

@@ -11,13 +11,29 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Brain, Mail, Lock, User, GraduationCap, ArrowLeft } from "lucide-react"
 import Link from "next/link"
-import { setCurrentUser, RWANDA_LEVELS } from "@/lib/auth-db"
+import { setCurrentUser } from "@/lib/auth"
 
 export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [loginForm, setLoginForm] = useState({ email: "", password: "" })
   const [signupForm, setSignupForm] = useState({ name: "", email: "", role: "", level: "", password: "" })
   const [error, setError] = useState("")
+  const [levels, setLevels] = useState<Array<{ name: string; stage?: string }>>([])
+
+  // Load levels from DB
+  useState(() => {
+    ;(async () => {
+      try {
+        const res = await fetch("/api/levels")
+        if (!res.ok) throw new Error("Failed to load levels")
+        const data = await res.json()
+        setLevels(data.levels || [])
+      } catch (e) {
+        console.error("Failed to load levels", e)
+        setLevels([])
+      }
+    })()
+  })
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -239,9 +255,9 @@ export default function AuthPage() {
                             <SelectValue placeholder="Select your level" />
                           </SelectTrigger>
                           <SelectContent>
-                            {Object.keys(RWANDA_LEVELS).map((level) => (
-                              <SelectItem key={level} value={level}>
-                                {level} - {RWANDA_LEVELS[level].stage}
+                            {levels.map((lvl) => (
+                              <SelectItem key={lvl.name} value={lvl.name}>
+                                {lvl.name} {lvl.stage ? `- ${lvl.stage}` : ""}
                               </SelectItem>
                             ))}
                           </SelectContent>

@@ -5,6 +5,7 @@ import { useParams } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Download, Award, Calendar, BookOpen, Star } from "lucide-react"
+import { CertificateTemplateClassic, CertificateTemplateModern, CertificateTemplateMinimal } from "@/components/certificates/templates"
 import { getCurrentUser } from "@/lib/auth"
 
 interface CertificateDetails {
@@ -22,29 +23,37 @@ interface CertificateDetails {
 
 export default function CertificateViewPage() {
   const params = useParams()
-  const [user, setUser] = useState(null)
-  const [certificate, setCertificate] = useState(null)
+  const [user, setUser] = useState<any>(null)
+  const [certificate, setCertificate] = useState<any>(null)
+  const [template, setTemplate] = useState<"classic" | "modern" | "minimal">("classic")
 
   useEffect(() => {
     const currentUser = getCurrentUser()
     setUser(currentUser)
 
-    // Mock certificate data
-    const mockCertificate = {
-      id: params.id as string,
-      title: "Mathematics Excellence Certificate",
-      course: "Mathematics",
-      score: 95,
-      completedAt: "2024-01-15",
-      level: "S2",
-      type: "quiz",
-      studentName: currentUser?.name || "Student",
-      description:
-        "This certificate is awarded for demonstrating exceptional understanding and mastery of mathematical concepts at the S2 level.",
-      skills: ["Algebra", "Geometry", "Problem Solving", "Mathematical Reasoning"],
-    }
-
-    setCertificate(mockCertificate)
+    ;(async () => {
+      try {
+        const res = await fetch(`/api/certificates/${params.id}`)
+        if (!res.ok) throw new Error("Failed to fetch certificate")
+        const data = await res.json()
+        const c = data.certificate
+        setCertificate({
+          id: c._id?.toString?.() || c.id,
+          title: c.title,
+          course: c.course,
+          score: c.score,
+          completedAt: c.completedAt || c.createdAt,
+          level: c.level,
+          type: c.type || "achievement",
+          studentName: currentUser?.name || c.studentName || "Student",
+          description: c.description,
+          skills: c.skills || [],
+        })
+        if (c.template) setTemplate(c.template)
+      } catch (e) {
+        console.error("Failed to load certificate", e)
+      }
+    })()
   }, [params.id])
 
   const downloadCertificate = () => {
