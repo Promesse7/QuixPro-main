@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Trophy, Medal, Award, Crown, Star, TrendingUp, Loader2 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { getCurrentUser } from "@/lib/auth"
+import { getBaseUrl } from "@/lib/getBaseUrl"
 
 interface LeaderboardStudent {
   id: string
@@ -61,13 +62,14 @@ export function Leaderboard() {
     const fetchLeaderboardData = async () => {
       try {
         setLoading(true)
+        const baseUrl = getBaseUrl();
 
         // Fetch level-specific leaderboard
-        const levelResponse = await fetch(`/api/leaderboard?level=${selectedLevel}&limit=20`)
+        const levelResponse = await fetch(`${baseUrl}/api/leaderboard?level=${selectedLevel}&limit=20`)
         const levelData = await levelResponse.json()
 
         // Fetch overall leaderboard
-        const overallResponse = await fetch("/api/leaderboard?limit=50")
+        const overallResponse = await fetch(`${baseUrl}/api/leaderboard?limit=50`)
         const overallDataResult = await overallResponse.json()
 
         if (levelResponse.ok) {

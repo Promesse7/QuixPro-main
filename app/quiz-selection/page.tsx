@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { BookOpen, GraduationCap, Layers, Brain, Clock, Users } from "lucide-react"
 import Link from "next/link"
 import { getCurrentUser } from "@/lib/auth"
+import { getBaseUrl } from "@/lib/getBaseUrl"
 
 interface Level {
   _id: string
@@ -68,7 +69,8 @@ export default function QuizSelectionPage() {
 
   const fetchLevels = async () => {
     try {
-      const res = await fetch("/api/levels")
+      const baseUrl = getBaseUrl();
+      const res = await fetch(`${baseUrl}/api/levels`)
       if (res.ok) {
         const data = await res.json()
         setLevels(data.levels || [])
@@ -83,7 +85,8 @@ export default function QuizSelectionPage() {
   const fetchCourses = async (level: string) => {
     try {
       setLoading(prev => ({ ...prev, courses: true }))
-      const res = await fetch(`/api/courses?level=${level}`)
+      const baseUrl = getBaseUrl();
+      const res = await fetch(`${baseUrl}/api/courses?level=${level}`)
       if (res.ok) {
         const data = await res.json()
         setCourses(data.courses || [])
@@ -98,7 +101,8 @@ export default function QuizSelectionPage() {
   const fetchUnits = async (level: string, course: string) => {
     try {
       setLoading(prev => ({ ...prev, units: true }))
-      const res = await fetch(`/api/units?course=${course}&level=${level}`)
+      const baseUrl = getBaseUrl();
+      const res = await fetch(`${baseUrl}/api/units?course=${course}&level=${level}`)
       if (res.ok) {
         const data = await res.json()
         setUnits(data.units || [])
@@ -113,7 +117,8 @@ export default function QuizSelectionPage() {
   const fetchQuizzes = async (level: string, course: string, unit: string, difficulty?: string) => {
     try {
       setLoading(prev => ({ ...prev, quizzes: true }))
-      let url = `/api/quiz?level=${level}&course=${course}&unit=${unit}`
+      const baseUrl = getBaseUrl();
+      let url = `${baseUrl}/api/quiz?level=${level}&course=${course}&unit=${unit}`
       if (difficulty) url += `&difficulty=${difficulty}`
       
       const res = await fetch(url)

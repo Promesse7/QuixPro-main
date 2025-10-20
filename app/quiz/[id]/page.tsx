@@ -9,6 +9,7 @@ import Link from "next/link"
 import { QuizQuestion } from "@/components/quiz/quiz-question"
 import { QuizResults } from "@/components/quiz/quiz-results"
 import { getCurrentUser } from "@/lib/auth"
+import { getBaseUrl } from "@/lib/getBaseUrl"
 
 export default function QuizPage({ params }: { params: { id: string } }) {
   const [currentQuestion, setCurrentQuestion] = useState(0)
@@ -32,16 +33,17 @@ export default function QuizPage({ params }: { params: { id: string } }) {
     const fetchQuizData = async () => {
       try {
         setLoading(true)
+        const baseUrl = getBaseUrl();
         
         // Fetch quiz details
-        const quizRes = await fetch(`/api/quiz/${params.id}`)
+        const quizRes = await fetch(`${baseUrl}/api/quiz/${params.id}`)
         if (!quizRes.ok) throw new Error("Failed to fetch quiz")
         const quizData = await quizRes.json()
         setQuiz(quizData.quiz)
 
         // Check for existing attempts
         if (currentUser) {
-          const attemptsRes = await fetch(`/api/quiz-attempts?userId=${currentUser.id}&quizId=${params.id}`)
+          const attemptsRes = await fetch(`${baseUrl}/api/quiz-attempts?userId=${currentUser.id}&quizId=${params.id}`)
           if (attemptsRes.ok) {
             const attemptsData = await attemptsRes.json()
             const completedAttempt = attemptsData.attempts.find((a: any) => a.status === "completed")
@@ -112,7 +114,8 @@ export default function QuizPage({ params }: { params: { id: string } }) {
         score,
       }
 
-      const res = await fetch("/api/quiz-attempts", {
+      const baseUrl = getBaseUrl();
+      const res = await fetch(`${baseUrl}/api/quiz-attempts`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(attemptData),

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BookOpen, Search, Filter, Clock, Heart, Eye, Volume2, Loader2 } from "lucide-react"
 import Link from "next/link"
+import { getBaseUrl } from "@/lib/getBaseUrl"
 
 // Removed fallback; rely on API only
 const fallbackStories: never[] = [
@@ -133,7 +134,8 @@ export default function StoriesPage() {
     const fetchStories = async () => {
       try {
         setLoading(true)
-        const response = await fetch('/api/stories')
+        const baseUrl = getBaseUrl();
+        const response = await fetch(`${baseUrl}/api/stories`)
         
         if (!response.ok) {
           throw new Error('Failed to fetch stories')
