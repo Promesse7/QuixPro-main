@@ -19,6 +19,7 @@ import {
   Database,
 } from "lucide-react"
 import { getCurrentUser } from "@/lib/auth"
+import { getBaseUrl } from '@/lib/getBaseUrl';
 
 interface AdminStats {
   totalUsers: number
@@ -57,13 +58,14 @@ export default function AdminPage() {
     // Load levels from DB for display
     ;(async () => {
       try {
-        const res = await fetch("/api/levels")
+        const baseUrl = getBaseUrl();
+        const res = await fetch(`${baseUrl}/api/levels`)
         if (res.ok) {
           const data = await res.json()
           setLevels(data.levels || [])
         }
-      } catch (e) {
-        console.error("Failed to load levels", e)
+      } catch (err) {
+        console.error("Failed to load levels", err)
       }
     })()
 
@@ -72,7 +74,8 @@ export default function AdminPage() {
         setLoading(true)
 
         // Fetch leaderboard data to get user stats
-        const response = await fetch("/api/leaderboard?limit=100")
+        const baseUrlForLeaderboard = getBaseUrl();
+        const response = await fetch(`${baseUrlForLeaderboard}/api/leaderboard?limit=100`);
         const data = await response.json()
 
         if (response.ok && data.leaderboard) {

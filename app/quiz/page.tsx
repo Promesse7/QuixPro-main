@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Brain, Clock, Users, Search, Filter, Play, Star, BookOpen, GraduationCap } from "lucide-react"
 import Link from "next/link"
+import { getBaseUrl } from '@/lib/getBaseUrl';
 
 interface Quiz {
   _id: string
@@ -38,7 +39,8 @@ export default function QuizListPage() {
   const fetchQuizzes = async () => {
     try {
       setLoading(true)
-      const res = await fetch("/api/quiz")
+      const baseUrl = getBaseUrl();
+      const res = await fetch(`${baseUrl}/api/quiz`);
       if (res.ok) {
         const data = await res.json()
         setQuizzes(data.quizzes || [])
@@ -77,9 +79,7 @@ export default function QuizListPage() {
   if (loading) {
     return (
       <div className="min-h-screen gradient-bg flex items-center justify-center">
-        <div className="text-center">
-          <Brain className="h-16 w-16 text-primary animate-pulse mx-auto mb-4" />
-          <p className="text-xl text-muted-foreground">Loading quizzes...</p>
+        <div
         </div>
       </div>
     )

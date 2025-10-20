@@ -12,13 +12,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Brain, Mail, Lock, User, GraduationCap, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { setCurrentUser } from "@/lib/auth"
+import { getBaseUrl } from '@/lib/getBaseUrl';
 
-export default function AuthPage() {
+
+
   const [isLoading, setIsLoading] = useState(false)
   const [loginForm, setLoginForm] = useState({ email: "", password: "" })
   const [signupForm, setSignupForm] = useState({ name: "", email: "", role: "", level: "", password: "" })
   const [error, setError] = useState("")
-  const [levels, setLevels] = useState<Array<{ name: string; stage?: string }>>([])
+  const [levelsState, setLevels] = useState<Array<{ name: string; stage?: string }>>([])
 
   // Load levels from DB
   useState(() => {
@@ -35,6 +37,18 @@ export default function AuthPage() {
     })()
   })
 
+  export default async function AuthPage() {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/api/levels`);
+    if (!res.ok) throw new Error("Failed to load levels")
+    const data = await res.json()
+    setLevels(data.levels || [])
+  } catch (err) {
+    console.error("Failed to load levels", e)
+    setLevels([])
+  }
+  
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
@@ -255,7 +269,7 @@ export default function AuthPage() {
                             <SelectValue placeholder="Select your level" />
                           </SelectTrigger>
                           <SelectContent>
-                            {levels.map((lvl) => (
+                            {levelsState.map((lvl) => (
                               <SelectItem key={lvl.name} value={lvl.name}>
                                 {lvl.name} {lvl.stage ? `- ${lvl.stage}` : ""}
                               </SelectItem>
