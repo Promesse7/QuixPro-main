@@ -79,9 +79,7 @@ export default function QuizListPage() {
   if (loading) {
     return (
       <div className="min-h-screen gradient-bg flex items-center justify-center">
-        <div
         </div>
-      </div>
     )
   }
 
