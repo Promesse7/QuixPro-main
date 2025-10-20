@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Download, Award, Calendar, BookOpen, Star } from "lucide-react"
 import { CertificateTemplateClassic, CertificateTemplateModern, CertificateTemplateMinimal } from "@/components/certificates/templates"
 import { getCurrentUser } from "@/lib/auth"
+import { getBaseUrl } from "@/lib/getBaseUrl"
 
 interface CertificateDetails {
   id: string
@@ -33,7 +34,8 @@ export default function CertificateViewPage() {
 
     ;(async () => {
       try {
-        const res = await fetch(`/api/certificates/${params.id}`)
+        const baseUrl = getBaseUrl();
+        const res = await fetch(`${baseUrl}/api/certificates/${params.id}`)
         if (!res.ok) throw new Error("Failed to fetch certificate")
         const data = await res.json()
         const c = data.certificate

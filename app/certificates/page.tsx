@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Download, Award, Calendar, BookOpen, RefreshCw } from "lucide-react"
 import { getCurrentUser } from "@/lib/auth"
+import { getBaseUrl } from "@/lib/getBaseUrl"
 
 interface Certificate {
   id: string
@@ -28,7 +29,8 @@ export default function CertificatesPage() {
     try {
       if (!user) return
       setRefreshing(true)
-      const res = await fetch(`/api/certificates?userId=${user.id}`)
+      const baseUrl = getBaseUrl();
+      const res = await fetch(`${baseUrl}/api/certificates?userId=${user.id}`)
       if (!res.ok) throw new Error("Failed to fetch certificates")
       const data = await res.json()
       setCertificates(

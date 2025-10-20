@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -16,6 +16,7 @@ import { getBaseUrl } from '@/lib/getBaseUrl';
 
 
 
+  export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [loginForm, setLoginForm] = useState({ email: "", password: "" })
   const [signupForm, setSignupForm] = useState({ name: "", email: "", role: "", level: "", password: "" })
@@ -23,10 +24,11 @@ import { getBaseUrl } from '@/lib/getBaseUrl';
   const [levelsState, setLevels] = useState<Array<{ name: string; stage?: string }>>([])
 
   // Load levels from DB
-  useState(() => {
-    ;(async () => {
+  useEffect(() => {
+    const fetchLevels = async () => {
       try {
-        const res = await fetch("/api/levels")
+        const baseUrl = getBaseUrl();
+        const res = await fetch(`${baseUrl}/api/levels`)
         if (!res.ok) throw new Error("Failed to load levels")
         const data = await res.json()
         setLevels(data.levels || [])
@@ -34,20 +36,9 @@ import { getBaseUrl } from '@/lib/getBaseUrl';
         console.error("Failed to load levels", e)
         setLevels([])
       }
-    })()
-  })
-
-  export default async function AuthPage() {
-  try {
-    const baseUrl = getBaseUrl();
-    const res = await fetch(`${baseUrl}/api/levels`);
-    if (!res.ok) throw new Error("Failed to load levels")
-    const data = await res.json()
-    setLevels(data.levels || [])
-  } catch (err) {
-    console.error("Failed to load levels", e)
-    setLevels([])
-  }
+    }
+    fetchLevels()
+  }, [])
   
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -55,7 +46,8 @@ import { getBaseUrl } from '@/lib/getBaseUrl';
     setError("")
 
     try {
-      const response = await fetch("/api/auth/login", {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -94,7 +86,8 @@ import { getBaseUrl } from '@/lib/getBaseUrl';
     setError("")
 
     try {
-      const response = await fetch("/api/auth/register", {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}/api/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
