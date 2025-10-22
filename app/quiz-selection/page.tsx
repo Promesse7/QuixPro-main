@@ -160,11 +160,15 @@ export default function QuizSelectionPage() {
   }
 
   const handleDifficultyChange = (difficulty: string) => {
-    setSelectedDifficulty(difficulty)
+    // Interpret "any" as no filter
+    const finalDifficulty = difficulty === "any" ? "" : difficulty
+    setSelectedDifficulty(finalDifficulty)
+    
     if (selectedLevel && selectedCourse && selectedUnit) {
-      fetchQuizzes(selectedLevel, selectedCourse, selectedUnit, difficulty)
+      fetchQuizzes(selectedLevel, selectedCourse, selectedUnit, finalDifficulty || undefined)
     }
   }
+  
 
   return (
     <div className="min-h-screen gradient-bg">
@@ -261,29 +265,30 @@ export default function QuizSelectionPage() {
               </CardContent>
             </Card>
 
-            {/* Difficulty Filter */}
-            <Card className="glass-effect border-border/50">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Brain className="h-5 w-5" />
-                  <span>Difficulty</span>
-                </CardTitle>
-                <CardDescription>Filter by difficulty</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Select value={selectedDifficulty} onValueChange={handleDifficultyChange} disabled={!selectedUnit}>
-                  <SelectTrigger className="glass-effect">
-                    <SelectValue placeholder="Any difficulty" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Any difficulty</SelectItem>
-                    <SelectItem value="easy">Easy</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="hard">Hard</SelectItem>
-                  </SelectContent>
-                </Select>
-              </CardContent>
-            </Card>
+           {/* Difficulty Filter */}
+<Card className="glass-effect border-border/50">
+  <CardHeader>
+    <CardTitle className="flex items-center space-x-2">
+      <Brain className="h-5 w-5" />
+      <span>Difficulty</span>
+    </CardTitle>
+    <CardDescription>Filter by difficulty</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <Select value={selectedDifficulty} onValueChange={handleDifficultyChange} disabled={!selectedUnit}>
+      <SelectTrigger className="glass-effect">
+        <SelectValue placeholder="Any difficulty" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="any">Any difficulty</SelectItem> {/* ✅ FIXED */}
+        <SelectItem value="easy">Easy</SelectItem>
+        <SelectItem value="medium">Medium</SelectItem>
+        <SelectItem value="hard">Hard</SelectItem>
+      </SelectContent>
+    </Select>
+  </CardContent>
+</Card>
+
           </div>
 
           {/* Quizzes Grid */}
