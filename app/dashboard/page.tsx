@@ -1,18 +1,37 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Award, Target, Mic, Play, Star, Zap, Trophy, Users, FileText, Briefcase, MessageSquare } from "lucide-react"
-import Link from "next/link"
-import { DashboardHeader } from "@/components/dashboard/dashboard-header"
-import { QuickActions } from "@/components/dashboard/quick-actions"
-import { ProgressStats } from "@/components/dashboard/progress-stats"
-import { RecentActivity } from "@/components/dashboard/recent-activity"
-import { RecommendedQuizzes } from "@/components/dashboard/recommended-quizzes"
-import { Leaderboard } from "@/components/dashboard/leaderboard"
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import {
+  Mic,
+  Target,
+  Zap,
+  Play,
+  Trophy,
+  Star,
+  Award,
+  Users,
+  FileText,
+  Briefcase,
+  MessageSquare,
+} from "lucide-react";
+
+import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { QuickActions } from "@/components/dashboard/quick-actions";
+import { ProgressStats } from "@/components/dashboard/progress-stats";
+import { RecentActivity } from "@/components/dashboard/recent-activity";
+import { RecommendedQuizzes } from "@/components/dashboard/recommended-quizzes";
+import { Leaderboard } from "@/components/dashboard/leaderboard";
+
+import { CourseProgressCard } from "@/components/progress/CourseProgressCard";
+import { BadgeShowcase } from "@/components/gamification/BadgeShowcase";
+import { StreakTracker } from "@/components/gamification/StreakTracker";
+import { XPProgressBar } from "@/components/gamification/XPProgressBar";
+import  { getBaseUrl }  from "@/lib/getBaseUrl"; // optional helper for API base URL
 
 // Mock user data
 const mockUser = {
@@ -72,18 +91,47 @@ const mockUser = {
       current: 85,
     },
   ],
-}
+};
 
 export default function StudentDashboard() {
-  const [isVoiceActive, setIsVoiceActive] = useState(false)
+  const [userProgress, setUserProgress] = useState<any[]>([]);
+  const [userBadges, setUserBadges] = useState<any[]>([]);
+  const [loadingProgress, setLoadingProgress] = useState(true);
+  const [isVoiceActive, setIsVoiceActive] = useState(false);
+
+  const baseUrl = getBaseUrl ? getBaseUrl() : "";
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const progressRes = await fetch(`${baseUrl}/api/user/progress?userId=${mockUser.id}`);
+        const progressData = await progressRes.json();
+        setUserProgress(progressData.progress || []);
+
+        const badgesRes = await fetch(`${baseUrl}/api/badges?userId=${mockUser.id}`);
+        const badgesData = await badgesRes.json();
+        setUserBadges(badgesData.badges || []);
+
+        // Check for new badges
+        await fetch(`${baseUrl}/api/badges/check`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: mockUser.id }),
+        });
+      } catch (err) {
+        console.error("Failed to fetch user data:", err);
+      } finally {
+        setLoadingProgress(false);
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   const handleVoiceCommand = () => {
-    setIsVoiceActive(!isVoiceActive)
-    // Mock voice command processing
-    if (!isVoiceActive) {
-      setTimeout(() => setIsVoiceActive(false), 3000)
-    }
-  }
+    setIsVoiceActive(!isVoiceActive);
+    if (!isVoiceActive) setTimeout(() => setIsVoiceActive(false), 3000);
+  };
 
   return (
     <div className="min-h-screen gradient-bg">
@@ -95,9 +143,12 @@ export default function StudentDashboard() {
           <div className="mb-8">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold glow-text mb-2">Welcome back, {mockUser.name.split(" ")[0]}!</h1>
+                <h1 className="text-3xl font-bold glow-text mb-2">
+                  Welcome back, {mockUser.name.split(" ")[0]}!
+                </h1>
                 <p className="text-muted-foreground">
-                  Ready to continue your learning journey? You're on a {mockUser.stats.streak}-day streak!
+                  Ready to continue your learning journey? You're on a{" "}
+                  {mockUser.stats.streak}-day streak!
                 </p>
               </div>
               <Button
@@ -114,13 +165,16 @@ export default function StudentDashboard() {
           {/* Quick Actions */}
           <QuickActions />
 
-          {/* Stats Overview */}
+          {/* Progress + Gamification */}
           <ProgressStats stats={mockUser.stats} />
+          <StreakTracker streak={mockUser.stats.streak} />
+          <XPProgressBar progress={userProgress} />
+          <BadgeShowcase badges={userBadges} />
 
           <div className="grid lg:grid-cols-3 gap-8 mt-8">
-            {/* Main Content */}
+            {/* Left Column */}
             <div className="lg:col-span-2 space-y-8">
-              {/* Current Goals */}
+              {/* Goals Section */}
               <Card className="glass-effect border-border/50">
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2 glow-text">
@@ -144,54 +198,59 @@ export default function StudentDashboard() {
                 </CardContent>
               </Card>
 
+              {/* Explore Features */}
               <Card className="glass-effect border-border/50">
                 <CardHeader>
                   <CardTitle className="glow-text">Explore New Features</CardTitle>
-                  <CardDescription>Discover exciting ways to enhance your learning</CardDescription>
+                  <CardDescription>Enhance your learning experience</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid md:grid-cols-2 gap-4">
-                    <Link href="/peer-tutoring">
-                      <div className="feature-card p-4 cursor-pointer">
-                        <Users className="h-8 w-8 mb-2 text-primary" />
-                        <h4 className="font-semibold mb-1">Peer Tutoring</h4>
-                        <p className="text-sm text-muted-foreground">Connect with student tutors</p>
-                      </div>
-                    </Link>
-                    <Link href="/exam-simulation">
-                      <div className="feature-card p-4 cursor-pointer">
-                        <FileText className="h-8 w-8 mb-2 text-primary" />
-                        <h4 className="font-semibold mb-1">Exam Simulation</h4>
-                        <p className="text-sm text-muted-foreground">Practice with mock exams</p>
-                      </div>
-                    </Link>
-                    <Link href="/career-explorer">
-                      <div className="feature-card p-4 cursor-pointer">
-                        <Briefcase className="h-8 w-8 mb-2 text-primary" />
-                        <h4 className="font-semibold mb-1">Career Explorer</h4>
-                        <p className="text-sm text-muted-foreground">Discover career paths</p>
-                      </div>
-                    </Link>
-                    <Link href="/feedback">
-                      <div className="feature-card p-4 cursor-pointer">
-                        <MessageSquare className="h-8 w-8 mb-2 text-primary" />
-                        <h4 className="font-semibold mb-1">Give Feedback</h4>
-                        <p className="text-sm text-muted-foreground">Help improve content</p>
-                      </div>
-                    </Link>
+                    {[
+                      {
+                        href: "/peer-tutoring",
+                        icon: <Users className="h-8 w-8 mb-2 text-primary" />,
+                        title: "Peer Tutoring",
+                        desc: "Connect with student tutors",
+                      },
+                      {
+                        href: "/exam-simulation",
+                        icon: <FileText className="h-8 w-8 mb-2 text-primary" />,
+                        title: "Exam Simulation",
+                        desc: "Practice with mock exams",
+                      },
+                      {
+                        href: "/career-explorer",
+                        icon: <Briefcase className="h-8 w-8 mb-2 text-primary" />,
+                        title: "Career Explorer",
+                        desc: "Discover career paths",
+                      },
+                      {
+                        href: "/feedback",
+                        icon: <MessageSquare className="h-8 w-8 mb-2 text-primary" />,
+                        title: "Give Feedback",
+                        desc: "Help improve content",
+                      },
+                    ].map((feature) => (
+                      <Link key={feature.href} href={feature.href}>
+                        <div className="feature-card p-4 cursor-pointer hover:bg-accent/10 rounded-xl">
+                          {feature.icon}
+                          <h4 className="font-semibold mb-1">{feature.title}</h4>
+                          <p className="text-sm text-muted-foreground">{feature.desc}</p>
+                        </div>
+                      </Link>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Recommended Quizzes */}
+              {/* Recommended Quizzes + Leaderboard */}
               <RecommendedQuizzes />
-
               <Leaderboard />
             </div>
 
-            {/* Sidebar */}
+            {/* Right Column */}
             <div className="space-y-6">
-              {/* Recent Activity */}
               <RecentActivity activities={mockUser.recentActivity} />
 
               {/* Learning Streak */}
@@ -206,7 +265,9 @@ export default function StudentDashboard() {
                 <CardContent>
                   <div className="flex items-center justify-between">
                     <div className="text-center">
-                      <div className="text-3xl font-bold text-primary glow-text">{mockUser.stats.streak}</div>
+                      <div className="text-3xl font-bold text-primary glow-text">
+                        {mockUser.stats.streak}
+                      </div>
                       <div className="text-sm text-muted-foreground">Days</div>
                     </div>
                     <div className="flex space-x-1">
@@ -225,7 +286,9 @@ export default function StudentDashboard() {
                     </div>
                   </div>
                   <div className="mt-4 text-center">
-                    <p className="text-sm text-muted-foreground mb-2">Complete a quiz today to maintain your streak!</p>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Complete a quiz today to maintain your streak!
+                    </p>
                     <Button asChild size="sm" className="glow-effect">
                       <Link href="/quiz">
                         <Play className="h-4 w-4 mr-2" />
@@ -245,33 +308,21 @@ export default function StudentDashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="flex items-center space-x-3 p-3 bg-accent/20 rounded-lg">
-                    <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
-                      <Star className="h-5 w-5 text-white" />
+                  {[
+                    { icon: <Star className="h-5 w-5 text-white" />, title: "Quiz Master", desc: "Completed 20+ quizzes" },
+                    { icon: <Award className="h-5 w-5 text-white" />, title: "High Achiever", desc: "85%+ average score" },
+                    { icon: <Zap className="h-5 w-5 text-white" />, title: "Streak Champion", desc: "7-day learning streak" },
+                  ].map((achv, i) => (
+                    <div key={i} className="flex items-center space-x-3 p-3 bg-accent/20 rounded-lg">
+                      <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
+                        {achv.icon}
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">{achv.title}</p>
+                        <p className="text-xs text-muted-foreground">{achv.desc}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-sm">Quiz Master</p>
-                      <p className="text-xs text-muted-foreground">Completed 20+ quizzes</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3 p-3 bg-accent/20 rounded-lg">
-                    <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
-                      <Award className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">High Achiever</p>
-                      <p className="text-xs text-muted-foreground">85%+ average score</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3 p-3 bg-accent/20 rounded-lg">
-                    <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
-                      <Zap className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">Streak Champion</p>
-                      <p className="text-xs text-muted-foreground">7-day learning streak</p>
-                    </div>
-                  </div>
+                  ))}
                 </CardContent>
               </Card>
 
@@ -308,5 +359,5 @@ export default function StudentDashboard() {
         </div>
       </div>
     </div>
-  )
+  );
 }

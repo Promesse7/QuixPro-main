@@ -2,90 +2,137 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 
-export const dynamic = "force-dynamic"
+export const dynamic = "force-dynamic";
 
-// GET /api/quiz/[id] - Get a specific quiz by ID
+/**
+ * Utility function to safely parse MongoDB ObjectIds.
+ */
+function toObjectId(id: string) {
+  try {
+    return new ObjectId(id);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * ✅ GET /api/quiz/[id]
+ * Fetch a single quiz by its ID (either ObjectId or string).
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const { id } = params;
+
   try {
-    const id = params.id;
     const db = await getDatabase();
     const collection = db.collection("quizzes");
-    
-    // Try to find by ObjectId first, then by string id
-    let quiz;
-    try {
-      quiz = await collection.findOne({ _id: new ObjectId(id) });
-    } catch {
-      quiz = await collection.findOne({ id });
+
+    let quiz = null;
+    const objectId = toObjectId(id);
+
+    if (objectId) {
+      quiz = await collection.findOne({ _id: objectId });
     }
-    
+    if (!quiz) {
+      quiz = await collection.findOne({ id }); // fallback to string id
+    }
+
     if (!quiz) {
       return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
     }
-    
-    return NextResponse.json({ quiz });
-  } catch (error) {
-    console.error("Error fetching quiz:", error);
-    return NextResponse.json({ error: "Failed to fetch quiz" }, { status: 500 });
+
+    return NextResponse.json({ quiz }, { status: 200 });
+  } catch (error: any) {
+    console.error("❌ Error fetching quiz:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch quiz", details: error.message },
+      { status: 500 }
+    );
   }
 }
 
-// PUT /api/quiz/[id] - Update a quiz
+/**
+ * ✅ PUT /api/quiz/[id]
+ * Update a quiz by ID.
+ */
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const { id } = params;
+
   try {
-    const id = params.id;
     const body = await request.json();
-    
+
+    if (!body || typeof body !== "object") {
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    }
+
     const db = await getDatabase();
     const collection = db.collection("quizzes");
-    
-    const quiz = await collection.findOne({ id });
-    
-    if (!quiz) {
+
+    // Find by _id or id
+    const objectId = toObjectId(id);
+    const filter = objectId ? { $or: [{ _id: objectId }, { id }] } : { id };
+
+    const existingQuiz = await collection.findOne(filter);
+    if (!existingQuiz) {
       return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
     }
-    
+
     const updatedQuiz = {
+      ...existingQuiz,
       ...body,
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
-    
-    await collection.updateOne({ id }, { $set: updatedQuiz });
-    
-    return NextResponse.json({ quiz: { ...quiz, ...updatedQuiz } });
-  } catch (error) {
-    console.error("Error updating quiz:", error);
-    return NextResponse.json({ error: "Failed to update quiz" }, { status: 500 });
+
+    await collection.updateOne(filter, { $set: updatedQuiz });
+
+    return NextResponse.json({ quiz: updatedQuiz }, { status: 200 });
+  } catch (error: any) {
+    console.error("❌ Error updating quiz:", error);
+    return NextResponse.json(
+      { error: "Failed to update quiz", details: error.message },
+      { status: 500 }
+    );
   }
 }
 
-// DELETE /api/quiz/[id] - Delete a quiz
+/**
+ * ✅ DELETE /api/quiz/[id]
+ * Remove a quiz by ID.
+ */
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const { id } = params;
+
   try {
-    const id = params.id;
     const db = await getDatabase();
     const collection = db.collection("quizzes");
-    
-    const quiz = await collection.findOne({ id });
-    
+
+    const objectId = toObjectId(id);
+    const filter = objectId ? { $or: [{ _id: objectId }, { id }] } : { id };
+
+    const quiz = await collection.findOne(filter);
     if (!quiz) {
       return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
     }
-    
-    await collection.deleteOne({ id });
-    
-    return NextResponse.json({ message: "Quiz deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting quiz:", error);
-    return NextResponse.json({ error: "Failed to delete quiz" }, { status: 500 });
+
+    await collection.deleteOne(filter);
+
+    return NextResponse.json(
+      { message: "Quiz deleted successfully", deletedId: id },
+      { status: 200 }
+    );
+  } catch (error: any) {
+    console.error("❌ Error deleting quiz:", error);
+    return NextResponse.json(
+      { error: "Failed to delete quiz", details: error.message },
+      { status: 500 }
+    );
   }
 }

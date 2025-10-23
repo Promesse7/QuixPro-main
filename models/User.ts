@@ -18,6 +18,24 @@ export interface User {
   createdAt: Date;
   updatedAt: Date;
   isDemo?: boolean;
+
+  gamification?: {
+    totalXP: number;
+    currentLevel: number;
+    streak: number;
+    lastActivityDate?: Date;
+    badges: Array<{
+      badgeId: string;
+      name: string;
+      earnedAt: Date;
+    }>;
+  };
+  
+  preferences?: {
+    dailyGoal: number;
+    theme: "light" | "dark";
+    language: "en" | "rw";
+  };
 }
 
 export interface UserActivity {
