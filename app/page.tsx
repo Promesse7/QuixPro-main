@@ -44,6 +44,24 @@ export default function LandingPage() {
     }
   }
 
+
+  useEffect(() => {
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault()
+        const target = document.querySelector(this.getAttribute('href'))
+        if (target) {
+          target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          })
+        }
+      })
+    })
+  }, [])
+
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
       {/* Navigation */}
@@ -72,20 +90,26 @@ export default function LandingPage() {
               </a>
             </div>
 
+
+
             <div className="flex items-center gap-4">
-              
-                href="/auth"
-                className="text-white/80 hover:text-white transition-colors"
-              >
-                Login
-              </a>
-              
-                href="/auth"
-                className="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-500/50 transition-all"
-              >
-                Get Started
-              </a>
-            </div>
+  <a
+    href="/auth"
+    className="text-white/80 hover:text-white transition-colors"
+  >
+    Login
+  </a>
+  <a
+    href="/auth"
+    className="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-500/50 transition-all"
+  >
+    Get Started
+  </a>
+</div>
+
+
+
+
           </div>
         </div>
       </nav>

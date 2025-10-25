@@ -207,3 +207,46 @@ export const getUserCourses = (user: User): string[] => {
   if (user.role !== "student" || !user.level) return []
   return RWANDA_LEVELS[user.level]?.courses || []
 }
+
+
+
+// ADD these exports to your existing auth.ts
+
+export function isGuestMode(): boolean {
+  if (typeof window === 'undefined') return false
+  const user = getCurrentUser()
+  return !user
+}
+
+export function getGuestOrUser(): { isGuest: boolean; user: User | null } {
+  const user = getCurrentUser()
+  return {
+    isGuest: !user,
+    user
+  }
+}
+
+// Public routes that don't require authentication
+export const PUBLIC_ROUTES = [
+  '/',
+  '/explore',
+  '/try-quiz',
+  '/stories',
+  '/stories/[id]',
+  '/auth',
+  '/about',
+  '/contact',
+  '/terms',
+  '/privacy'
+]
+
+export function isPublicRoute(pathname: string): boolean {
+  return PUBLIC_ROUTES.some(route => {
+    if (route.includes('[')) {
+      // Handle dynamic routes
+      const pattern = route.replace(/\[.*?\]/g, '.*')
+      return new RegExp(`^${pattern}$`).test(pathname)
+    }
+    return pathname === route || pathname.startsWith(route + '/')
+  })
+}
