@@ -29,6 +29,11 @@ export default function QuizPage({ params }: { params: { id: string } }) {
   useEffect(() => {
     const currentUser = getCurrentUser()
     setUser(currentUser)
+    
+    // If no user, they're in guest mode
+    if (!currentUser) {
+      setIsGuestMode(true)
+    }
 
     const fetchQuizData = async () => {
       try {

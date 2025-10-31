@@ -63,16 +63,16 @@ export default function LandingPage() {
 
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900">
       {/* Navigation */}
       <nav className="fixed top-0 w-full z-50 bg-white/5 backdrop-blur-lg border-b border-white/10">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-br from-black to-gray-500 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-xl">Q</span>
               </div>
-              <span className="text-white text-2xl font-bold">Qouta</span>
+              <span className="text-white text-2xl font-bold">Quix</span>
             </div>
             
             <div className="hidden md:flex items-center gap-8">
@@ -101,7 +101,7 @@ export default function LandingPage() {
   </a>
   <a
     href="/auth"
-    className="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-500/50 transition-all"
+    className="px-6 py-2 bg-gradient-to-r from-black to-gray-500 text-white rounded-lg hover:shadow-lg hover:shadow-black/50 transition-all"
   >
     Get Started
   </a>

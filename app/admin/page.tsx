@@ -157,6 +157,16 @@ export default function AdminPage() {
       </div>
     )
   }
+ 
+  // Add at the top of component
+useEffect(() => {
+  const user = getCurrentUser()
+  if (!user) {
+    router.push('/auth')
+  } else if (user.role !== 'admin') {
+    router.push('/dashboard')
+  }
+}, [])
 
   return (
     <div className="min-h-screen bg-gray-950 p-6">

@@ -43,20 +43,20 @@ export default function ExplorePage() {
   })
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900">
       {/* Header */}
       <div className="bg-white/5 backdrop-blur-lg border-b border-white/10 sticky top-0 z-50">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-br from-black to-gray-500 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-xl">Q</span>
               </div>
               <span className="text-white text-2xl font-bold">Qouta</span>
             </Link>
             
             {isGuest && (
-              <Button asChild className="bg-gradient-to-r from-blue-500 to-purple-500">
+              <Button asChild className="bg-gradient-to-r from-black to-gray-500">
                 <Link href="/auth">Sign Up Free</Link>
               </Button>
             )}
@@ -119,7 +119,7 @@ export default function ExplorePage() {
         {/* Courses Grid */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-12 h-12 text-blue-400 animate-spin" />
+            <Loader2 className="w-12 h-12 text-black animate-spin" />
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -132,14 +132,14 @@ export default function ExplorePage() {
               >
                 <Card className="bg-white/5 backdrop-blur-lg border-white/10 hover:bg-white/10 transition-all group h-full">
                   <CardHeader>
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center mb-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-black to-gray-500 rounded-lg flex items-center justify-center mb-4">
                       <BookOpen className="w-6 h-6 text-white" />
                     </div>
                     <CardTitle className="text-white text-xl">
                       {course.name}
                     </CardTitle>
                     <div className="flex items-center gap-2 mt-2">
-                      <Badge variant="secondary" className="bg-blue-500/20 text-blue-300 border-0">
+                      <Badge variant="secondary" className="bg-black/20 text-black border-0">
                         {course.level || "All Levels"}
                       </Badge>
                       <Badge variant="outline" className="border-white/20 text-white/70">
@@ -169,7 +169,7 @@ export default function ExplorePage() {
 
                     <Button
                       asChild
-                      className="w-full bg-white/10 hover:bg-white/20 text-white border-0 group-hover:bg-gradient-to-r group-hover:from-blue-500 group-hover:to-purple-500"
+                      className="w-full bg-white/10 hover:bg-white/20 text-white border-0 group-hover:bg-gradient-to-r group-hover:from-black group-hover:to-gray-500"
                     >
                       <Link href={`/explore/course/${course._id}`}>
                         View Details
@@ -198,7 +198,7 @@ export default function ExplorePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
-            className="mt-16 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-2xl p-8 border border-white/20 text-center"
+            className="mt-16 bg-gradient-to-r from-black/20 to-gray-500/20 rounded-2xl p-8 border border-white/20 text-center"
           >
             <h3 className="text-2xl font-bold text-white mb-3">
               Ready to start your learning journey?
@@ -209,7 +209,7 @@ export default function ExplorePage() {
             <Button
               asChild
               size="lg"
-              className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-10 py-6 text-lg"
+              className="bg-gradient-to-r from-black to-gray-500 hover:from-black hover:to-gray-600 text-white px-10 py-6 text-lg"
             >
               <Link href="/auth">
                 Get Started Free

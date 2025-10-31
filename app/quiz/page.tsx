@@ -53,15 +53,20 @@ export default function QuizListPage() {
   }
 
   const filteredQuizzes = quizzes.filter((quiz) => {
+    const titleOrQuestion = (quiz.title || quiz.questions.map((question: any) => question.question).join(" ") || "").toLowerCase();
+    const description = (quiz.description || "").toLowerCase();
+    const search = searchTerm.toLowerCase();
+  
     const matchesSearch =
-      quiz.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      quiz.description.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesSubject = selectedSubject === "all" || quiz.subject === selectedSubject
-    const matchesLevel = selectedLevel === "all" || quiz.level === selectedLevel
-    const matchesDifficulty = selectedDifficulty === "all" || quiz.difficulty === selectedDifficulty
-
-    return matchesSearch && matchesSubject && matchesLevel && matchesDifficulty
-  })
+      titleOrQuestion.includes(search) || description.includes(search);
+  
+    const matchesSubject = selectedSubject === "all" || quiz.subject === selectedSubject;
+    const matchesLevel = selectedLevel === "all" || quiz.level === selectedLevel;
+    const matchesDifficulty = selectedDifficulty === "all" || quiz.difficulty === selectedDifficulty;
+  
+    return matchesSearch && matchesSubject && matchesLevel && matchesDifficulty;
+  });
+  
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty.toLowerCase()) {

@@ -1,4 +1,5 @@
 "use client"
+import { useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Plus, Users, Brain, TrendingUp, BookOpen, BarChart3 } from "lucide-react"
@@ -8,7 +9,7 @@ import { TeacherStats } from "@/components/teacher/teacher-stats"
 import { QuizManagement } from "@/components/teacher/quiz-management"
 import { StudentAnalytics } from "@/components/teacher/student-analytics"
 import { ClassOverview } from "@/components/teacher/class-overview"
-
+import { getCurrentUser } from "@/lib/auth"
 // Mock teacher data
 const mockTeacher = {
   id: "t1",
@@ -91,6 +92,15 @@ const mockTeacher = {
 }
 
 export default function TeacherDashboard() {
+  // Add at the top of component
+useEffect(() => {
+  const user = getCurrentUser()
+  if (!user) {
+    router.push('/auth')
+  } else if (user.role !== 'teacher') {
+    router.push('/dashboard')
+  }
+}, [])
   return (
     <div className="min-h-screen gradient-bg">
       <TeacherHeader teacher={mockTeacher} />

@@ -40,82 +40,96 @@ import { getBaseUrl } from '@/lib/getBaseUrl';
     fetchLevels()
   }, [])
   
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError("")
+// Update the handleLogin and handleSignup functions in app/auth/page.tsx
 
-    try {
-      const baseUrl = getBaseUrl();
-      const response = await fetch(`${baseUrl}/api/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: loginForm.email,
-          password: loginForm.password,
-        }),
-      })
+const handleLogin = async (e: React.FormEvent) => {
+  e.preventDefault()
+  setIsLoading(true)
+  setError("")
 
-      const data = await response.json()
+  try {
+    const baseUrl = getBaseUrl();
+    const response = await fetch(`${baseUrl}/api/auth/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: loginForm.email,
+        password: loginForm.password,
+      }),
+    })
 
-      if (response.ok && data.user) {
-        setCurrentUser(data.user)
-        // Redirect based on role
-        if (data.user.role === "admin") {
-          window.location.href = "/admin"
-        } else if (data.user.role === "teacher") {
-          window.location.href = "/teacher"
-        } else {
-          window.location.href = "/dashboard"
-        }
+    const data = await response.json()
+
+    if (response.ok && data.user) {
+      // Store in localStorage (existing)
+      setCurrentUser(data.user)
+      
+      // ALSO set cookies for middleware (new)
+      document.cookie = `qouta_token=${data.user.id}; path=/; max-age=${60 * 60 * 24 * 7}` // 7 days
+      document.cookie = `qouta_role=${data.user.role}; path=/; max-age=${60 * 60 * 24 * 7}`
+      
+      // Redirect based on role
+      if (data.user.role === "admin") {
+        window.location.href = "/admin"
+      } else if (data.user.role === "teacher") {
+        window.location.href = "/teacher"
       } else {
-        setError(data.error || "Invalid email or password")
+        window.location.href = "/dashboard"
       }
-    } catch (err) {
-      setError("Login failed. Please try again.")
-    } finally {
-      setIsLoading(false)
+    } else {
+      setError(data.error || "Invalid email or password")
     }
+  } catch (err) {
+    setError("Login failed. Please try again.")
+  } finally {
+    setIsLoading(false)
   }
+}
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError("")
+const handleSignup = async (e: React.FormEvent) => {
+  e.preventDefault()
+  setIsLoading(true)
+  setError("")
 
-    try {
-      const baseUrl = getBaseUrl();
-      const response = await fetch(`${baseUrl}/api/auth/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(signupForm),
-      })
+  try {
+    const baseUrl = getBaseUrl();
+    const response = await fetch(`${baseUrl}/api/auth/register`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(signupForm),
+    })
 
-      const data = await response.json()
+    const data = await response.json()
 
-      if (response.ok && data.user) {
-        setCurrentUser(data.user)
-        // Redirect based on role
-        if (data.user.role === "admin") {
-          window.location.href = "/admin"
-        } else if (data.user.role === "teacher") {
-          window.location.href = "/teacher"
-        } else {
-          window.location.href = "/dashboard"
-        }
+    if (response.ok && data.user) {
+      // Store in localStorage (existing)
+      setCurrentUser(data.user)
+      
+      // ALSO set cookies for middleware (new)
+      document.cookie = `qouta_token=${data.user.id}; path=/; max-age=${60 * 60 * 24 * 7}`
+      document.cookie = `qouta_role=${data.user.role}; path=/; max-age=${60 * 60 * 24 * 7}`
+      
+      // Redirect based on role
+      if (data.user.role === "admin") {
+        window.location.href = "/admin"
+      } else if (data.user.role === "teacher") {
+        window.location.href = "/teacher"
       } else {
-        setError(data.error || "Registration failed")
+        window.location.href = "/dashboard"
       }
-    } catch (err) {
-      setError("Registration failed. Please try again.")
-    } finally {
-      setIsLoading(false)
+    } else {
+      setError(data.error || "Registration failed")
     }
+  } catch (err) {
+    setError("Registration failed. Please try again.")
+  } finally {
+    setIsLoading(false)
   }
+}
 
   return (
     <div className="min-h-screen gradient-bg flex items-center justify-center p-4">

@@ -200,7 +200,15 @@ export const setCurrentUser = (user: User | null) => {
 }
 
 export const logout = () => {
+  // Clear localStorage
   setCurrentUser(null)
+  
+  // Clear cookies
+  document.cookie = 'qouta_token=; path=/; max-age=0'
+  document.cookie = 'qouta_role=; path=/; max-age=0'
+  
+  // Redirect to home
+  window.location.href = '/'
 }
 
 export const getUserCourses = (user: User): string[] => {
@@ -250,3 +258,7 @@ export function isPublicRoute(pathname: string): boolean {
     return pathname === route || pathname.startsWith(route + '/')
   })
 }
+
+
+
+

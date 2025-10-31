@@ -24,7 +24,14 @@ export default function CertificatesPage() {
   const [user, setUser] = useState<any | null>(null)
   const [certificates, setCertificates] = useState<Certificate[]>([])
   const [refreshing, setRefreshing] = useState(false)
-
+  useEffect(() => {
+    const currentUser = getCurrentUser()
+    if (!currentUser) {
+      router.push('/auth')
+    }
+    setUser(currentUser)
+  }, [])
+  
   const fetchCertificates = async () => {
     try {
       if (!user) return

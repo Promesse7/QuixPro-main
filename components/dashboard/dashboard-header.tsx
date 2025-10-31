@@ -1,6 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { logout } from "@/lib/auth"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -30,7 +31,7 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
         <div className="flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center space-x-2">
             <Brain className="h-8 w-8 text-white glow-text" />
-            <span className="text-2xl font-bold glow-text">Qouta</span>
+            <span className="text-2xl font-bold glow-text">Quix</span>
           </Link>
 
           <nav className="hidden lg:flex items-center space-x-6">
@@ -127,7 +128,7 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => logout()}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>

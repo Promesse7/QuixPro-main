@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { getCurrentUser } from "@/lib/auth"
+
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -100,6 +102,17 @@ export default function StudentDashboard() {
   const [isVoiceActive, setIsVoiceActive] = useState(false);
 
   const baseUrl = getBaseUrl ? getBaseUrl() : "";
+ // Add at the top of component
+useEffect(() => {
+  const user = getCurrentUser()
+  if (!user) {
+    router.push('/auth')
+  } else if (user.role === 'admin') {
+    router.push('/admin')
+  } else if (user.role === 'teacher') {
+    router.push('/teacher')
+  }
+}, [])
 
   useEffect(() => {
     const fetchUserData = async () => {

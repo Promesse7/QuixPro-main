@@ -11,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { logout } from "@/lib/auth"
 import { Brain, Settings, LogOut, User, Bell, GraduationCap } from "lucide-react"
 import Link from "next/link"
 
@@ -105,7 +106,7 @@ export function TeacherHeader({ teacher }: TeacherHeaderProps) {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => logout()}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>
