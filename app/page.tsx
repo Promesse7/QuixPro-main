@@ -93,19 +93,19 @@ export default function LandingPage() {
 
 
             <div className="flex items-center gap-4">
-  <a
-    href="/auth"
-    className="text-white/80 hover:text-white transition-colors"
-  >
-    Login
-  </a>
-  <a
-    href="/auth"
-    className="px-6 py-2 bg-gradient-to-r from-black to-gray-500 text-white rounded-lg hover:shadow-lg hover:shadow-black/50 transition-all"
-  >
-    Get Started
-  </a>
-</div>
+              <a
+                href="/quiz"
+                className="px-6 py-2 text-white/80 hover:text-white transition-colors font-medium"
+              >
+                Try Quiz
+              </a>
+              <a
+                href="/auth"
+                className="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:shadow-lg hover:shadow-blue-600/50 transition-all font-medium"
+              >
+                Sign Up
+              </a>
+            </div>
 
 
 
