@@ -76,22 +76,34 @@ export default function PlayQuizPage({ params }: PageProps) {
     try {
       const baseUrl = getBaseUrl()
       const score = calculateScore()
-      
+
+      // Transform answers to match format expected by API
+      const answersForAPI: Record<number, boolean> = {}
+      quiz.questions.forEach((q, index) => {
+        const userAnswer = answers[index]
+        answersForAPI[index] = userAnswer !== undefined && String(userAnswer) === String(q.correctAnswer)
+      })
+
       const res = await fetch(`${baseUrl}/api/progress/results`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           quizId: quiz._id,
-          answers,
+          answers: answersForAPI,
           score,
-          timeTaken: Math.floor((quiz.duration * 60 - 0) / 1),
+          accuracy: score,
+          timeSpent: quiz.duration * 60,
           difficulty: quiz.difficulty,
+          totalQuestions: quiz.questions.length,
         }),
       })
 
       if (res.ok) {
         const data = await res.json()
         router.push(`/quiz/results/${data.resultId}`)
+      } else {
+        const error = await res.json()
+        setError(error.error || 'Failed to submit quiz')
       }
     } catch (err) {
       console.error('Failed to submit quiz:', err)
