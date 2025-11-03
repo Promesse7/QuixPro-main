@@ -272,18 +272,20 @@ export default function PlayQuizPage({ params }: PageProps) {
           </div>
 
           {/* Question Card */}
-          <QuestionCard
-            question={quiz.questions[currentQuestion]}
-            questionNumber={currentQuestion + 1}
-            totalQuestions={quiz.questions.length}
-            selectedAnswer={answers[currentQuestion] ?? null}
-            onAnswerSelect={handleAnswerSelect}
-            onNext={handleNextQuestion}
-            onPrevious={handlePreviousQuestion}
-            showFeedback={showFeedback}
-            canGoBack={currentQuestion > 0}
-            canGoForward={true}
-          />
+          <div className="mb-6">
+            <QuestionCard
+              question={quiz.questions[currentQuestion]}
+              questionNumber={currentQuestion + 1}
+              totalQuestions={quiz.questions.length}
+              selectedAnswer={answers[currentQuestion] ?? null}
+              onAnswerSelect={handleAnswerSelect}
+              onNext={handleNextQuestion}
+              onPrevious={handlePreviousQuestion}
+              showFeedback={showFeedback}
+              canGoBack={currentQuestion > 0}
+              canGoForward={true}
+            />
+          </div>
 
           {/* Question Navigation */}
           <div className="mt-6 p-4 rounded-lg glass-effect border border-border/50">
