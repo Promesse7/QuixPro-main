@@ -112,9 +112,14 @@ export default function PlayQuizPage({ params }: PageProps) {
   }
 
   const handleNextQuestion = () => {
-    if (currentQuestion === quiz!.questions.length - 1) {
+    if (!showFeedback) {
+      // Show feedback first
+      setShowFeedback(true)
+    } else if (currentQuestion === quiz!.questions.length - 1) {
+      // Last question - submit quiz
       handleSubmitQuiz()
     } else {
+      // Move to next question
       setCurrentQuestion(currentQuestion + 1)
       setShowFeedback(false)
     }
