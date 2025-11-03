@@ -18,16 +18,18 @@ export function middleware(request: NextRequest) {
   // Allow public paths and API routes
   const isPublicPath = publicPaths.some(p => path === p || path.startsWith(p + '/'))
 
-  // Check if user is authenticated via localStorage (client-side marker)
-  // The client will set this header during hydration
-  const isAuthenticated = request.headers.get('x-has-auth') === 'true'
+  // Check auth via cookies set on login (fallback to legacy headers if present)
+  const tokenCookie = request.cookies.get('qouta_token')?.value
+  const roleCookie = request.cookies.get('qouta_role')?.value
+  const headerAuth = request.headers.get('x-has-auth') === 'true'
+  const isAuthenticated = Boolean(tokenCookie) || headerAuth
 
   // For quiz flow, allow guests to participate
   const isQuizFlow = path.startsWith('/quiz')
 
   // Redirect authenticated users from landing/auth pages to dashboard
   if (isAuthenticated && (path === '/' || path === '/auth')) {
-    const userRole = request.headers.get('x-user-role') || 'student'
+    const userRole = roleCookie || request.headers.get('x-user-role') || 'student'
 
     if (userRole === 'admin') {
       return NextResponse.redirect(new URL('/admin', request.url))
