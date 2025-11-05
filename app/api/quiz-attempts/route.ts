@@ -10,6 +10,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get("userId")
     const quizId = searchParams.get("quizId")
+    const limitParam = searchParams.get("limit")
+    const limit = limitParam ? Math.min(100, Math.max(1, parseInt(limitParam))) : 0
 
     if (!userId) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 })
@@ -23,12 +25,16 @@ export async function GET(request: NextRequest) {
       query.quizId = quizId
     }
 
-    const attempts = await attemptsCol
-      .find(query)
-      .sort({ createdAt: -1 })
-      .toArray()
+    let cursor = attemptsCol.find(query).sort({ createdAt: -1 })
+    if (limit) cursor = cursor.limit(limit)
+    const attempts = await cursor.toArray()
 
-    return NextResponse.json({ attempts })
+    // Ensure percentage is present
+    const normalized = attempts.map((a: any) => ({
+      ...a,
+      percentage: a.percentage ?? (a.score?.total ? Math.round((a.score.correct / a.score.total) * 100) : a.percentage)
+    }))
+    return NextResponse.json({ attempts: normalized })
   } catch (error) {
     console.error("Quiz attempts error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

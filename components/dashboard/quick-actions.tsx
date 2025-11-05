@@ -6,6 +6,7 @@ import { Brain, BookOpen, Award, TrendingUp, Play, Mic } from "lucide-react"
 import Link from "next/link"
 
 export function QuickActions() {
+  // Routes already point to app pages; ensure these exist.
   const actions = [
     {
       title: "Take Quiz",
@@ -19,7 +20,7 @@ export function QuickActions() {
       title: "Continue Learning",
       description: "Resume where you left off",
       icon: Play,
-      href: "/quiz/continue",
+      href: "/quiz-selection", // route to selection; could be replaced by resume endpoint
       color: "text-green-400",
       bgColor: "bg-green-500/20",
     },

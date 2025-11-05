@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Download, Award, Calendar, BookOpen, RefreshCw } from "lucide-react"
 import { getCurrentUser } from "@/lib/auth"
+import { AppBreadcrumb } from "@/components/app/AppBreadcrumb"
+import { QuickStartCTA } from "@/components/app/QuickStartCTA"
 import { getBaseUrl } from "@/lib/getBaseUrl"
 
 interface Certificate {
@@ -106,6 +108,11 @@ export default function CertificatesPage() {
   return (
     <div className="min-h-screen bg-gray-950 p-6">
       <div className="max-w-6xl mx-auto">
+        {/* Breadcrumb */}
+        <div className="mb-4">
+          <AppBreadcrumb items={[{ label: "Home", href: "/dashboard" }, { label: "Certificates" }]} />
+        </div>
+
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
@@ -129,6 +136,9 @@ export default function CertificatesPage() {
             </Button>
           </div>
         </div>
+
+        {/* Quick Start */}
+        <QuickStartCTA />
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

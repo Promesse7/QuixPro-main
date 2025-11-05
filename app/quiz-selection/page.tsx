@@ -7,8 +7,12 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BookOpen, GraduationCap, Layers, Brain, Clock, Users } from "lucide-react"
 import Link from "next/link"
+import { AppBreadcrumb } from "@/components/app/AppBreadcrumb"
+import { QuickStartCTA } from "@/components/app/QuickStartCTA"
 import { getCurrentUser } from "@/lib/auth"
 import { getBaseUrl } from "@/lib/getBaseUrl"
+import { AppBreadcrumb } from "@/components/app/AppBreadcrumb"
+import { QuickStartCTA } from "@/components/app/QuickStartCTA"
 
 interface Level {
   _id: string
@@ -65,6 +69,29 @@ export default function QuizSelectionPage() {
     const currentUser = getCurrentUser()
     setUser(currentUser)
     fetchLevels()
+    // Try preselect from resume info
+    const preload = async () => {
+      try {
+        if (!currentUser) return
+        const baseUrl = getBaseUrl();
+        const res = await fetch(`${baseUrl}/api/user/resume?userId=${encodeURIComponent(currentUser.id)}`)
+        if (!res.ok) return
+        const data = await res.json()
+        if (data.lastLevelName) {
+          setSelectedLevel(data.lastLevelName)
+          await fetchCourses(data.lastLevelName)
+        }
+        if (data.lastCourseName) {
+          setSelectedCourse(data.lastCourseName)
+          await fetchUnits(data.lastLevelName || "", data.lastCourseName)
+        }
+        if (data.lastUnitName) {
+          setSelectedUnit(data.lastUnitName)
+          await fetchQuizzes(data.lastLevelName || "", data.lastCourseName || "", data.lastUnitName)
+        }
+      } catch {}
+    }
+    preload()
   }, [])
 
   const fetchLevels = async () => {
@@ -174,6 +201,11 @@ export default function QuizSelectionPage() {
     <div className="min-h-screen gradient-bg">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
+          {/* Breadcrumb */}
+          <div className="mb-4">
+            <AppBreadcrumb items={[{ label: 'Home', href: '/dashboard' }, { label: 'Quiz Selection' }]} />
+          </div>
+
           {/* Header */}
           <div className="text-center mb-8">
             <div className="flex items-center justify-center space-x-2 mb-4">
@@ -184,6 +216,8 @@ export default function QuizSelectionPage() {
               Choose your level, course, and unit to find the perfect quiz for your learning journey
             </p>
           </div>
+
+          <QuickStartCTA />
 
           {/* Selection Flow */}
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

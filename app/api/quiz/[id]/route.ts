@@ -29,6 +29,9 @@ export async function GET(
     const db = await getDatabase();
     const collection = db.collection("quizzes");
 
+    const { searchParams } = new URL(request.url)
+    const fields = searchParams.get('fields') // 'meta' | 'all'
+
     let quiz = null;
     const objectId = toObjectId(id);
 
@@ -41,6 +44,11 @@ export async function GET(
 
     if (!quiz) {
       return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
+    }
+
+    if (fields === 'meta') {
+      const { questions, ...meta } = quiz as any
+      return NextResponse.json({ quiz: meta }, { status: 200 });
     }
 
     return NextResponse.json({ quiz }, { status: 200 });

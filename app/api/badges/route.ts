@@ -24,7 +24,15 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const user = await usersCol.findOne({ _id: new ObjectId(userId) });
+    // Only attempt ObjectId lookup if the id looks valid
+    let user: any = null
+    try {
+      if (userId && /^[a-fA-F0-9]{24}$/.test(userId)) {
+        user = await usersCol.findOne({ _id: new ObjectId(userId) });
+      }
+    } catch (_) {
+      user = null
+    }
     const earnedBadgeIds =
       user?.gamification?.badges?.map((b: any) => b.badgeId?.toString()) || [];
 
@@ -54,6 +62,10 @@ export async function POST(request: NextRequest) {
 
     if (!userId) {
       return NextResponse.json({ error: "User ID required" }, { status: 400 });
+    }
+
+    if (!/^[a-fA-F0-9]{24}$/.test(userId)) {
+      return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
     }
 
     const db = await getDatabase();
@@ -127,7 +139,7 @@ export async function POST(request: NextRequest) {
         {
           $push: { "gamification.badges": { $each: newlyEarned } },
           $inc: { "gamification.totalXP": totalXPAdded },
-        }
+        } as any
       );
     }
 

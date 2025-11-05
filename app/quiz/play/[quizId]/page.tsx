@@ -11,6 +11,8 @@ import { QuizTimer } from '@/components/quiz/QuizTimer'
 import { QuizProgressBar } from '@/components/quiz/QuizProgressBar'
 import { QuestionCard, type Question } from '@/components/quiz/QuestionCard'
 import { QuizBreadcrumb } from '@/components/quiz/QuizBreadcrumb'
+import { AppBreadcrumb } from '@/components/app/AppBreadcrumb'
+import { QuickStartCTA } from '@/components/app/QuickStartCTA'
 
 interface Quiz {
   _id: string
@@ -41,14 +43,14 @@ export default function PlayQuizPage({ params }: PageProps) {
   const quizId = decodeURIComponent(params.quizId)
 
   useEffect(() => {
-    fetchQuiz()
+    fetchQuizMeta()
   }, [quizId])
 
-  const fetchQuiz = async () => {
+  const fetchQuizMeta = async () => {
     try {
       setLoading(true)
       const baseUrl = getBaseUrl()
-      const res = await fetch(`${baseUrl}/api/quiz/${encodeURIComponent(quizId)}`)
+      const res = await fetch(`${baseUrl}/api/quiz/${encodeURIComponent(quizId)}?fields=meta`)
       if (res.ok) {
         const data = await res.json()
         setQuiz(data.quiz)
@@ -60,6 +62,19 @@ export default function PlayQuizPage({ params }: PageProps) {
       setError('Failed to load quiz')
     } finally {
       setLoading(false)
+    }
+  }
+  
+  const fetchFullQuiz = async () => {
+    try {
+      const baseUrl = getBaseUrl()
+      const res = await fetch(`${baseUrl}/api/quiz/${encodeURIComponent(quizId)}?fields=all`)
+      if (res.ok) {
+        const data = await res.json()
+        setQuiz(data.quiz)
+      }
+    } catch (err) {
+      console.error('Failed to load full quiz:', err)
     }
   }
 
@@ -227,7 +242,7 @@ export default function PlayQuizPage({ params }: PageProps) {
                 <Button
                   size="lg"
                   className="w-full glow-effect"
-                  onClick={() => setQuizStarted(true)}
+                  onClick={async () => { await fetchFullQuiz(); setQuizStarted(true) }}
                 >
                   Start Quiz
                 </Button>
@@ -245,6 +260,9 @@ export default function PlayQuizPage({ params }: PageProps) {
   return (
     <div className="min-h-screen gradient-bg">
       <div className="container mx-auto px-4 py-6">
+        <div className="mb-4">
+          <AppBreadcrumb items={[{ label: 'Quiz', href: '/quiz' }, { label: quiz.title }]} />
+        </div>
         <div className="max-w-4xl mx-auto">
           {/* Header Bar */}
           <div className="mb-6 p-4 rounded-lg glass-effect border border-border/50 flex items-center justify-between">

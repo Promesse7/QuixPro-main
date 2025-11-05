@@ -15,9 +15,11 @@ interface Activity {
 
 interface RecentActivityProps {
   activities: Activity[]
+  maxItems?: number
+  viewAllHref?: string
 }
 
-export function RecentActivity({ activities }: RecentActivityProps) {
+export function RecentActivity({ activities, maxItems = 5, viewAllHref }: RecentActivityProps) {
   const getActivityIcon = (type: string) => {
     switch (type) {
       case "quiz_completed":
@@ -54,7 +56,7 @@ export function RecentActivity({ activities }: RecentActivityProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {activities.map((activity) => {
+        {(activities || []).slice(0, maxItems).map((activity) => {
           const Icon = getActivityIcon(activity.type)
           const color = getActivityColor(activity.type)
 
@@ -76,6 +78,11 @@ export function RecentActivity({ activities }: RecentActivityProps) {
             </div>
           )
         })}
+        {viewAllHref && activities.length > maxItems && (
+          <div className="pt-2">
+            <a href={viewAllHref} className="text-xs text-primary hover:underline">View all</a>
+          </div>
+        )}
       </CardContent>
     </Card>
   )
