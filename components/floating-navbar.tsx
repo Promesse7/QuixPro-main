@@ -18,7 +18,7 @@ const navItems: NavItem[] = [
   { label: 'Home', href: '/', icon: Home },
   { label: 'Courses', href: '/explore', icon: BookOpen, badge: 'Learn' },
   { label: 'Quiz', href: '/quiz', icon: Zap, badge: 'Practice' },
-  { label: 'Stories', href: '/stories', icon: StoryIcon, badge: 'Inspire' },
+  { label: 'Stories', href: '/stories', icon: BookMarked, badge: 'Inspire' },
   { label: 'Leaderboard', href: '/leaderboard', icon: BarChart3 },
   { label: 'Peer Tutoring', href: '/peer-tutoring', icon: Users },
 ]
