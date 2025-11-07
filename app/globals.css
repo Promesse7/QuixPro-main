@@ -91,3 +91,46 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .glass-effect {
+    @apply bg-card/50 backdrop-blur-sm;
+  }
+
+  .glow-text {
+    @apply text-foreground bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent;
+  }
+
+  .glow-effect {
+    @apply shadow-lg shadow-primary/20;
+  }
+
+  .gradient-bg {
+    @apply bg-gradient-to-br from-background via-background to-muted;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+
+  .scrollbar-track-transparent {
+    scrollbar-track-color: transparent;
+  }
+
+  .scrollbar-thumb-border {
+    scrollbar-color: hsl(var(--border));
+  }
+
+  .scrollbar-thumb-border\/50 {
+    scrollbar-color: hsla(var(--border) / 0.5);
+  }
+
+  /* Smooth color transitions */
+  .dark {
+    color-scheme: dark;
+  }
+
+  .light {
+    color-scheme: light;
+  }
+}
