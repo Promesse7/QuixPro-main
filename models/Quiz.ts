@@ -17,6 +17,9 @@ export interface Quiz {
   updatedAt: Date;
   isPublic: boolean;
   questionIds: string[];
+  unitId?: ObjectId;
+  courseId?: ObjectId;
+  levelId?: ObjectId;
 }
 
 export interface QuizQuestion {
