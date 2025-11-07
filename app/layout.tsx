@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
+import { FloatingNavbar } from "@/components/floating-navbar"
 
 export const metadata: Metadata = {
   title: "Qouta - AI-Powered Learning Platform",
@@ -27,6 +28,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange={false}
         >
+          <FloatingNavbar />
           <Suspense fallback={null}>{children}</Suspense>
         </ThemeProvider>
         <Analytics />
