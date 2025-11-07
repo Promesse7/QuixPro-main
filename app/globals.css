@@ -109,20 +109,27 @@
     @apply bg-gradient-to-br from-background via-background to-muted;
   }
 
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--border) / 0.7);
+  }
+
+  /* Firefox scrollbar */
   .scrollbar-thin {
     scrollbar-width: thin;
-  }
-
-  .scrollbar-track-transparent {
-    scrollbar-track-color: transparent;
-  }
-
-  .scrollbar-thumb-border {
-    scrollbar-color: hsl(var(--border));
-  }
-
-  .scrollbar-thumb-border\/50 {
-    scrollbar-color: hsla(var(--border) / 0.5);
+    scrollbar-color: hsl(var(--border)) transparent;
   }
 
   /* Smooth color transitions */
