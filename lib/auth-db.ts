@@ -21,7 +21,6 @@ export interface User {
     averageScore: number
     totalPoints: number
     certificates: number
-    streak: number
   }
   createdAt?: Date
   updatedAt?: Date
