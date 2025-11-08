@@ -43,7 +43,7 @@ export function FloatingNavbar() {
 
   const containerVariants = {
     collapsed: {
-      width: '60px',
+      width: '72px',
       transition: { type: 'spring', damping: 25, stiffness: 200 },
     },
     expanded: {
@@ -52,29 +52,17 @@ export function FloatingNavbar() {
     },
   }
 
-  const itemVariants = {
-    hidden: { opacity: 0, x: -20 },
-    visible: (i: number) => ({
-      opacity: 1,
-      x: 0,
-      transition: {
-        delay: isExpanded ? i * 0.05 : 0,
-        duration: 0.3,
-      },
-    }),
-  }
-
   return (
     <>
       <motion.nav
         initial="collapsed"
         animate={isExpanded ? 'expanded' : 'collapsed'}
         variants={containerVariants}
-        className="fixed bottom-8 left-8 z-40 bg-card border border-border/50 rounded-2xl shadow-xl backdrop-blur-md h-auto max-h-[calc(100vh-100px)] overflow-hidden flex flex-col"
+        className="fixed bottom-8 left-8 z-40 bg-card border border-border/50 rounded-2xl shadow-xl backdrop-blur-md overflow-hidden flex flex-col"
       >
-        <div className="flex flex-col h-full p-3 justify-center">
+        <div className="flex flex-col h-screen max-h-[calc(100vh-100px)] p-3 gap-3">
           {/* Header with toggle */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between">
             <AnimatePresence mode="wait">
               {isExpanded ? (
                 <motion.div
@@ -82,100 +70,97 @@ export function FloatingNavbar() {
                   initial={{ opacity: 0, width: 0 }}
                   animate={{ opacity: 1, width: 'auto' }}
                   exit={{ opacity: 0, width: 0 }}
-                  className="flex-1 ml-2"
+                  className="flex-1"
                 >
-                  <h3 className="text-sm font-semibold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                  <h3 className="text-sm font-semibold glow-text">
                     Qouta
                   </h3>
                 </motion.div>
               ) : null}
             </AnimatePresence>
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
+            <button
+              type="button"
               onClick={() => setIsExpanded(!isExpanded)}
-              className="p-2 rounded-lg hover:bg-muted/50 transition-colors"
+              className="p-2 rounded-lg hover:bg-muted/50 transition-colors flex-shrink-0"
+              aria-label="Toggle navbar"
             >
               {isExpanded ? (
                 <X className="h-5 w-5" />
               ) : (
                 <Menu className="h-5 w-5" />
               )}
-            </motion.button>
+            </button>
           </div>
 
           {/* Navigation items */}
-          <div className="flex flex-col gap-2 flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-border/50">
+          <div className="flex flex-col gap-1 flex-1 overflow-y-auto scrollbar-thin">
             <AnimatePresence>
               {navItems.map((item, i) => {
                 const Icon = item.icon
                 const active = isActive(item.href)
 
                 return (
-                  <motion.div
-                    key={item.href}
-                    custom={i}
-                    variants={itemVariants}
-                    initial="hidden"
-                    animate={isExpanded ? 'visible' : 'hidden'}
-                  >
-                    <Link href={item.href}>
-                      <motion.div
-                        whileHover={{ x: isExpanded ? 6 : 0 }}
-                        className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
-                          active
-                            ? 'bg-primary/10 text-primary'
-                            : 'text-foreground/70 hover:bg-muted/50 hover:text-foreground'
-                        }`}
-                      >
-                        {active && (
+                  <Link key={item.href} href={item.href}>
+                    <motion.div
+                      className={`relative flex items-center justify-center ${isExpanded ? 'justify-start' : ''} gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 cursor-pointer ${
+                        active
+                          ? 'bg-primary/10 text-primary font-medium'
+                          : 'text-foreground/70 hover:bg-muted/50 hover:text-foreground'
+                      }`}
+                      whileHover={{ x: isExpanded ? 6 : 0 }}
+                    >
+                      {active && (
+                        <motion.div
+                          layoutId="activeIndicator"
+                          className="absolute left-0 w-1 h-8 bg-primary rounded-r-full"
+                        />
+                      )}
+                      <Icon className="h-5 w-5 flex-shrink-0" />
+                      <AnimatePresence mode="wait">
+                        {isExpanded && (
                           <motion.div
-                            layoutId="activeIndicator"
-                            className="absolute left-0 w-1 h-8 bg-primary rounded-r-full"
-                          />
+                            initial={{ opacity: 0, width: 0 }}
+                            animate={{ opacity: 1, width: 'auto' }}
+                            exit={{ opacity: 0, width: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="flex items-center justify-between flex-1 min-w-0"
+                          >
+                            <span className="text-sm font-medium truncate">
+                              {item.label}
+                            </span>
+                            {item.badge && (
+                              <motion.span
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.8 }}
+                                className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary whitespace-nowrap ml-2"
+                              >
+                                {item.badge}
+                              </motion.span>
+                            )}
+                          </motion.div>
                         )}
-                        <Icon className="h-5 w-5 flex-shrink-0" />
-                        <AnimatePresence mode="wait">
-                          {isExpanded && (
-                            <motion.div
-                              initial={{ opacity: 0, width: 0 }}
-                              animate={{ opacity: 1, width: 'auto' }}
-                              exit={{ opacity: 0, width: 0 }}
-                              className="flex items-center justify-between flex-1 min-w-0"
-                            >
-                              <span className="text-sm font-medium truncate">
-                                {item.label}
-                              </span>
-                              {item.badge && (
-                                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary whitespace-nowrap ml-2">
-                                  {item.badge}
-                                </span>
-                              )}
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </motion.div>
-                    </Link>
-                  </motion.div>
+                      </AnimatePresence>
+                    </motion.div>
+                  </Link>
                 )
               })}
             </AnimatePresence>
           </div>
 
           {/* Divider */}
-          {isExpanded && <div className="my-2 h-px bg-border/30" />}
+          {isExpanded && <div className="h-px bg-border/30" />}
 
           {/* Bottom actions */}
-          <div className="flex items-center gap-2 pt-2 border-t border-border/30">
+          <div className="flex items-center gap-2 justify-center py-2 border-t border-border/30">
             <SimpleThemeToggle />
 
             {isExpanded && (
               <motion.button
+                type="button"
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
                 className="p-2 rounded-lg hover:bg-muted/50 transition-colors"
               >
                 <Settings className="h-5 w-5" />
@@ -193,7 +178,7 @@ export function FloatingNavbar() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setIsExpanded(false)}
-            className="fixed inset-0 z-30 md:hidden"
+            className="fixed inset-0 z-30 md:hidden bg-black/30 backdrop-blur-sm"
           />
         )}
       </AnimatePresence>
