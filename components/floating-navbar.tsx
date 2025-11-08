@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { BookOpen, Zap, BookMarked, Home, Menu, X, BarChart3, Users, Settings } from 'lucide-react'
-import { ThemeSwitcher } from './theme-switcher'
+import { SimpleThemeToggle } from './simple-theme-toggle'
 
 interface NavItem {
   label: string
