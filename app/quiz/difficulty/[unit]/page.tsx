@@ -34,12 +34,12 @@ const DIFFICULTIES = [
     badge: 'Challenging',
   },
   {
-    id: 'expert',
-    name: 'Expert',
-    description: 'Master level. Complex scenarios and critical thinking required.',
-    icon: '⚡',
+    id: 'application',
+    name: 'Application',
+    description: 'Real-world scenarios. Requires synthesis and critical thinking.',
+    icon: '🚀',
     color: 'from-red-500/20 to-transparent',
-    badge: 'For experts',
+    badge: 'Master level',
   },
 ]
 
