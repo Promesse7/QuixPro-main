@@ -29,9 +29,8 @@ export function ThemeSwitcher() {
 
   return (
     <div className="relative">
-      <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+      <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 rounded-lg bg-background border border-border/50 hover:bg-muted/50 transition-colors"
         aria-label="Toggle theme"
@@ -47,7 +46,7 @@ export function ThemeSwitcher() {
             <CurrentIcon className="h-5 w-5" />
           </motion.div>
         </AnimatePresence>
-      </motion.button>
+      </button>
 
       <AnimatePresence>
         {isOpen && (
@@ -63,14 +62,14 @@ export function ThemeSwitcher() {
                 const Icon = t.icon
                 const isActive = theme === t.id
                 return (
-                  <motion.button
+                  <button
                     key={t.id}
-                    whileHover={{ x: 4 }}
+                    type="button"
                     onClick={() => {
                       setTheme(t.id)
                       setIsOpen(false)
                     }}
-                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${
+                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors hover:translate-x-1 ${
                       isActive
                         ? 'bg-primary/10 text-primary font-medium'
                         : 'text-foreground hover:bg-muted/50'
@@ -84,7 +83,7 @@ export function ThemeSwitcher() {
                         className="ml-auto w-2 h-2 rounded-full bg-primary"
                       />
                     )}
-                  </motion.button>
+                  </button>
                 )
               })}
             </div>
