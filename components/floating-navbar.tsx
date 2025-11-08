@@ -70,9 +70,9 @@ export function FloatingNavbar() {
         initial="collapsed"
         animate={isExpanded ? 'expanded' : 'collapsed'}
         variants={containerVariants}
-        className="fixed bottom-8 left-8 z-40 bg-card border border-border/50 rounded-2xl shadow-xl backdrop-blur-md h-auto max-h-[calc(100vh-100px)] overflow-hidden"
+        className="fixed bottom-8 left-8 z-40 bg-card border border-border/50 rounded-2xl shadow-xl backdrop-blur-md h-auto max-h-[calc(100vh-100px)] overflow-hidden flex flex-col"
       >
-        <div className="flex flex-col h-full p-3">
+        <div className="flex flex-col h-full p-3 justify-center">
           {/* Header with toggle */}
           <div className="flex items-center justify-between mb-4">
             <AnimatePresence mode="wait">
