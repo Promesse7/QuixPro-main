@@ -61,7 +61,8 @@ export async function GET(request: NextRequest) {
     }
 
     if (difficulty) {
-      query.difficulty = difficulty;
+      // Normalize difficulty to lowercase to match database format
+      query.difficulty = difficulty.toLowerCase();
     }
 
     const quizzes = await collection
