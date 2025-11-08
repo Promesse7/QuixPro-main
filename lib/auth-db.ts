@@ -247,9 +247,13 @@ export const registerUser = async (userData: {
               averageScore: 0,
               totalPoints: 0,
               certificates: 0,
-              streak: 0,
             }
           : undefined,
+      gamification: {
+        totalXP: 0,
+        currentLevel: 1,
+        badges: [],
+      },
       createdAt: new Date(),
       updatedAt: new Date(),
     }
