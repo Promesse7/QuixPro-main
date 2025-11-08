@@ -10,7 +10,7 @@ import { QuizBreadcrumb } from '@/components/quiz/QuizBreadcrumb'
 
 const DIFFICULTIES = [
   {
-    id: 'Easy',
+    id: 'easy',
     name: 'Easy',
     description: 'Perfect for beginners. Basic concepts and straightforward questions.',
     icon: '😊',
@@ -18,7 +18,7 @@ const DIFFICULTIES = [
     badge: 'Recommended for starters',
   },
   {
-    id: 'Moderate',
+    id: 'moderate',
     name: 'Moderate',
     description: 'Intermediate level. Requires understanding of core concepts.',
     icon: '💪',
@@ -26,7 +26,7 @@ const DIFFICULTIES = [
     badge: 'Standard difficulty',
   },
   {
-    id: 'Hard',
+    id: 'hard',
     name: 'Hard',
     description: 'Advanced questions. Tests deep understanding and application.',
     icon: '🔥',
@@ -34,7 +34,7 @@ const DIFFICULTIES = [
     badge: 'Challenging',
   },
   {
-    id: 'Expert',
+    id: 'expert',
     name: 'Expert',
     description: 'Master level. Complex scenarios and critical thinking required.',
     icon: '⚡',
