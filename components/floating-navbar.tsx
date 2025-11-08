@@ -167,7 +167,7 @@ export function FloatingNavbar() {
 
           {/* Bottom actions */}
           <div className="flex items-center gap-2 pt-2 border-t border-border/30">
-            <ThemeSwitcher />
+            <SimpleThemeToggle />
 
             {isExpanded && (
               <motion.button
