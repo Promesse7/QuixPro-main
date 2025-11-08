@@ -140,7 +140,7 @@ export default function SelectDifficultyPage({ params }: PageProps) {
                 <li>✓ <span className="font-medium text-foreground">Easy</span> - Start here if you're new to this topic</li>
                 <li>✓ <span className="font-medium text-foreground">Moderate</span> - Choose this after mastering the basics</li>
                 <li>✓ <span className="font-medium text-foreground">Hard</span> - Challenge yourself with advanced questions</li>
-                <li>✓ <span className="font-medium text-foreground">Expert</span> - For complete mastery and competitive prep</li>
+                <li>✓ <span className="font-medium text-foreground">Application</span> - Apply concepts to real-world scenarios</li>
               </ul>
             </CardContent>
           </Card>
