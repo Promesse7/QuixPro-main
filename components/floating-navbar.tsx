@@ -167,12 +167,7 @@ export function FloatingNavbar() {
 
           {/* Bottom actions */}
           <div className="flex items-center gap-2 pt-2 border-t border-border/30">
-            <motion.div
-              initial={false}
-              animate={isExpanded ? { flex: 1 } : { flex: 0 }}
-            >
-              <ThemeSwitcher />
-            </motion.div>
+            <ThemeSwitcher />
 
             {isExpanded && (
               <motion.button
