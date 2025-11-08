@@ -22,12 +22,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange={false}
-        >
+        <ThemeProvider>
           <FloatingNavbar />
           <Suspense fallback={null}>{children}</Suspense>
         </ThemeProvider>
