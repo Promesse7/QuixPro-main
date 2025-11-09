@@ -18,7 +18,6 @@ interface LeaderboardStudent {
   averageScore: number
   completedQuizzes: number
   certificates: number
-  streak: number
   rank: number
   avatar?: string
 }
