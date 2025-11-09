@@ -97,7 +97,6 @@ export function Leaderboard() {
             averageScore: user.progress?.averageScore || 0,
             completedQuizzes: user.progress?.quizzesTaken || 0,
             certificates: 0,
-            streak: 0,
             rank: index + 1,
             avatar: user.image
           }));
