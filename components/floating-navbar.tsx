@@ -60,7 +60,7 @@ export function FloatingNavbar() {
         variants={containerVariants}
         className="fixed bottom-8 left-8 z-40 bg-card border border-border/50 rounded-2xl shadow-xl backdrop-blur-md overflow-hidden flex flex-col"
       >
-        <div className="flex flex-col h-screen max-h-[calc(100vh-100px)] p-3 gap-3">
+        <div className="flex flex-col h-auto max-h-96 p-3 gap-3">
           {/* Header with toggle */}
           <div className="flex items-center justify-between">
             <AnimatePresence mode="wait">
