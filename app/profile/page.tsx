@@ -108,10 +108,6 @@ export default function ProfilePage() {
                   <div className="text-sm text-muted-foreground">Certificates</div>
                   <div className="text-2xl font-bold">—</div>
                 </div>
-                <div className="p-4 rounded-lg bg-accent/20">
-                  <div className="text-sm text-muted-foreground">Streak</div>
-                  <div className="text-2xl font-bold">—</div>
-                </div>
               </CardContent>
             </Card>
 
@@ -148,5 +144,3 @@ export default function ProfilePage() {
     </div>
   )
 }
-
-
