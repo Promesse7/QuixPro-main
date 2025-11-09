@@ -35,7 +35,6 @@ import { Leaderboard } from "@/components/dashboard/leaderboard";
 import { CourseProgressCard } from "@/components/progress/CourseProgressCard";
 import { PageTransition } from "@/components/ui/page-transition";
 import { BadgeShowcase } from "@/components/gamification/BadgeShowcase";
-import { StreakTracker } from "@/components/gamification/StreakTracker";
 import { XPProgressBar } from "@/components/gamification/XPProgressBar";
 import  { getBaseUrl }  from "@/lib/getBaseUrl"; // optional helper for API base URL
 
@@ -44,7 +43,7 @@ type DashboardUser = { id: string; name: string; email: string; role: string; le
 export default function StudentDashboard() {
   const router = useRouter()
   const [user, setUser] = useState<DashboardUser | null>(null)
-  const [stats, setStats] = useState({ totalQuizzes: 0, completedQuizzes: 0, averageScore: 0, totalPoints: 0, certificates: 0, streak: 0 })
+  const [stats, setStats] = useState({ totalQuizzes: 0, completedQuizzes: 0, averageScore: 0, totalPoints: 0, certificates: 0 })
   const [userBadges, setUserBadges] = useState<any[]>([])
   const [earnedCount, setEarnedCount] = useState(0)
   const [loadingProgress, setLoadingProgress] = useState(true)
@@ -270,52 +269,6 @@ export default function StudentDashboard() {
             {/* Right Column */}
             <div className="space-y-6">
               <RecentActivity activities={activities} maxItems={5} viewAllHref="/progress" />
-
-              {/* Learning Streak */}
-              <Card className="glass-effect border-border/50">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-1 glow-text">
-                    <Zap className="h-3 w-3" />
-                    <span>Learning Streak</span>
-                  </CardTitle>
-                  <CardDescription>Keep your momentum going!</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-primary glow-text">
-                        {stats.streak}
-                      </div>
-                      <div className="text-sm text-muted-foreground">Days</div>
-                    </div>
-                    <div className="flex space-x-1">
-                      {[...Array(7)].map((_, i) => (
-                        <div
-                          key={i}
-                          className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                            i < stats.streak
-                              ? "bg-primary text-primary-foreground glow-effect"
-                              : "bg-muted text-muted-foreground"
-                          }`}
-                        >
-                          {i + 1}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="mt-4 text-center">
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Complete a quiz today to maintain your streak!
-                    </p>
-                    <Button asChild size="sm" className="glow-effect">
-                      <Link href="/quiz">
-                        <Play className="h-4 w-4 mr-2" />
-                        Take Quiz
-                      </Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
 
               {/* Achievements */}
               <Card className="glass-effect border-border/50">
