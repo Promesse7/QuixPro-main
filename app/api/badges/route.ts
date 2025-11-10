@@ -118,6 +118,11 @@ export async function POST(request: NextRequest) {
         case "streak":
           isEligible = (user.gamification?.streak || 0) >= threshold;
           break;
+
+        case "account_created":
+          // Always eligible for account creation badge if not already earned
+          isEligible = true;
+          break;
       }
 
       if (isEligible) {

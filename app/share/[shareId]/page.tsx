@@ -1,3 +1,97 @@
+import { NextResponse } from "next/server"
+
+async function fetchSharedContent(shareId: string) {
+	const base =
+		process.env.NEXT_PUBLIC_BASE_URL ||
+		(process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
+	const res = await fetch(`${base}/api/share?shareId=${encodeURIComponent(shareId)}`, {
+		cache: "no-store",
+	})
+	return res
+}
+
+export default async function SharePage({ params }: { params: { shareId: string } }) {
+	const { shareId } = params
+	const response = await fetchSharedContent(shareId)
+
+	if (!response.ok) {
+		return (
+			<div className="min-h-screen bg-gradient-to-br from-slate-900 to-blue-900 flex items-center justify-center p-4">
+				<div className="text-center text-white">
+					<h1 className="text-3xl font-bold mb-4">Share Not Found</h1>
+					<p className="text-white/70 mb-6">This share link may have expired or been removed.</p>
+					<a href="/" className="text-blue-400 hover:underline">
+						Go to Homepage
+					</a>
+				</div>
+			</div>
+		)
+	}
+
+	const { content } = await response.json()
+
+	return (
+		<div className="min-h-screen bg-gradient-to-br from-slate-900 to-blue-900 flex items-center justify-center p-4">
+			<div className="max-w-2xl w-full">
+				<div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 shadow-2xl">
+					<div className="text-center mb-6">
+						<div className="text-6xl mb-4">{content?.data?.badgeIcon || "🏆"}</div>
+						<h1 className="text-3xl font-bold text-white mb-2">
+							{content?.data?.userName ? `${content.data.userName} achieved something amazing!` : "Achievement"}
+                        </h1>
+						<p className="text-white/80">{content?.data?.customMessage}</p>
+					</div>
+
+					<div className="bg-white/5 rounded-xl p-6 mb-6">
+						{content?.type === "quiz" && (
+							<div className="space-y-2 text-white">
+								<p>
+									<strong>Course:</strong> {content.data.courseName}
+								</p>
+								<p>
+									<strong>Quiz:</strong> {content.data.quizTitle}
+								</p>
+								<p>
+									<strong>Score:</strong> {content.data.score}%
+								</p>
+								<p>
+									<strong>Difficulty:</strong> {content.data.difficulty}
+								</p>
+							</div>
+						)}
+						{content?.type === "badge" && (
+							<div className="space-y-2 text-white">
+								<p>
+									<strong>Badge:</strong> {content.data.badgeName}
+								</p>
+								<p className="text-sm text-white/70">{content.data.badgeDescription}</p>
+							</div>
+						)}
+					</div>
+
+					<div className="text-center">
+						<a
+							href="/auth"
+							className="inline-block bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-all transform hover:scale-105"
+							onClick={() => {
+								fetch("/api/share/track", {
+									method: "POST",
+									headers: { "Content-Type": "application/json" },
+									body: JSON.stringify({ shareId }),
+								})
+							}}
+						>
+							Join and Start Learning
+						</a>
+					</div>
+				</div>
+
+				<div className="text-center mt-6 text-white/60 text-sm">Powered by Quix Learning Platform</div>
+			</div>
+		</div>
+	)
+}
+
 'use client'
 
 import { useEffect, useState } from 'react'
