@@ -178,7 +178,6 @@ export default function StudentDashboard() {
           ) : (
             <>
               <ProgressStats stats={stats} />
-              <StreakTracker streak={stats.streak} />
               <XPProgressBar currentXP={stats.totalPoints} currentLevel={Math.max(1, Math.floor(stats.totalPoints / 1000))} />
               <BadgeShowcase badges={userBadges} earnedCount={earnedCount} />
             </>
