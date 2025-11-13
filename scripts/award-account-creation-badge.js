@@ -1,7 +1,7 @@
 const { MongoClient } = require("mongodb");
 require("dotenv").config();
 
-const MONGODB_URI = process.env.MONGODB_URI;
+const MONGODB_URI =  "mongodb+srv://promesserukundo:prom123mongodb@hb-cluster.t9u7h.mongodb.net/QuixDB?retryWrites=true&w=majority&appName=hb-cluster";
 
 if (!MONGODB_URI) {
   console.error("❌ MONGODB_URI is not defined");

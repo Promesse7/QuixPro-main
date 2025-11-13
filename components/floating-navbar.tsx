@@ -54,11 +54,12 @@ export function FloatingNavbar() {
 
   return (
     <>
+      {/* Desktop/Tablet floating rail */}
       <motion.nav
         initial="collapsed"
         animate={isExpanded ? 'expanded' : 'collapsed'}
         variants={containerVariants}
-        className="fixed bottom-16 left-8 z-40 bg-card border border-border/50 rounded-2xl shadow-xl backdrop-blur-md overflow-hidden flex flex-col"
+        className="hidden md:flex fixed bottom-16 left-8 z-40 bg-card border border-border/50 rounded-2xl shadow-xl backdrop-blur-md overflow-hidden flex-col"
       >
         <div className="flex flex-col h-auto max-h-100 p-3 gap-3">
           {/* Header with toggle */}
@@ -170,7 +171,7 @@ export function FloatingNavbar() {
         </div>
       </motion.nav>
 
-      {/* Overlay when expanded on mobile */}
+      {/* Overlay when expanded on mobile (not used now because rail is hidden on mobile) */}
       <AnimatePresence>
         {isExpanded && (
           <motion.div
@@ -178,10 +179,33 @@ export function FloatingNavbar() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setIsExpanded(false)}
-            className="fixed inset-0 z-30 md:hidden bg-black/30 backdrop-blur-sm"
+            className="fixed inset-0 z-30 md:hidden bg-black/30 backdrop-blur-sm pointer-events-none"
           />
         )}
       </AnimatePresence>
+
+      {/* Mobile bottom bar */}
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border/50 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+        <div className="mx-auto max-w-3xl">
+          <ul className="grid grid-cols-5">
+            {navItems.slice(0, 5).map((item) => {
+              const Icon = item.icon
+              const active = isActive(item.href)
+              return (
+                <li key={item.href} className="flex">
+                  <Link
+                    href={item.href}
+                    className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 text-xs ${active ? 'text-primary' : 'text-foreground/70'}`}
+                  >
+                    <Icon className="h-5 w-5" />
+                    <span>{item.label}</span>
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      </nav>
     </>
   )
 }
