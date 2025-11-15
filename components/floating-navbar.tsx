@@ -21,6 +21,7 @@ const navItems: NavItem[] = [
   { label: 'Stories', href: '/stories', icon: BookMarked, badge: 'Inspire' },
   { label: 'Leaderboard', href: '/leaderboard', icon: BarChart3 },
   { label: 'Peer Tutoring', href: '/peer-tutoring', icon: Users },
+  { label: 'Quix Editor', href: '/quix-editor', icon: Settings, badge: 'Create' },
 ]
 
 export function FloatingNavbar() {

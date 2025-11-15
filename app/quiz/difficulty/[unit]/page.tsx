@@ -18,7 +18,7 @@ const DIFFICULTIES = [
     badge: 'Recommended for starters',
   },
   {
-    id: 'moderate',
+    id: 'medium',
     name: 'Moderate',
     description: 'Intermediate level. Requires understanding of core concepts.',
     icon: '💪',

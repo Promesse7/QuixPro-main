@@ -71,7 +71,28 @@ export default function PlayQuizPage({ params }: PageProps) {
       const res = await fetch(`${baseUrl}/api/quiz/${encodeURIComponent(quizId)}?fields=all`)
       if (res.ok) {
         const data = await res.json()
-        setQuiz(data.quiz)
+        const rawQuiz = data.quiz
+        const transformedQuestions: Question[] = (rawQuiz.questions || []).map((q: any) => {
+          const optionsText = (q.options || []).map((o: any) => o.text)
+          const correctIndex = (q.options || []).findIndex((o: any) => o.correct)
+          return {
+            _id: q.id,
+            question: q.text,
+            options: optionsText,
+            correctAnswer: correctIndex >= 0 ? correctIndex : 0,
+            explanation: q.explanation,
+          }
+        })
+        setQuiz({
+          _id: rawQuiz._id || rawQuiz.id,
+          title: rawQuiz.title,
+          description: rawQuiz.description,
+          duration: rawQuiz.duration,
+          difficulty: rawQuiz.difficulty,
+          questions: transformedQuestions,
+          subject: rawQuiz.subject,
+          level: rawQuiz.level,
+        })
       }
     } catch (err) {
       console.error('Failed to load full quiz:', err)
