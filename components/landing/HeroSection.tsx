@@ -77,7 +77,7 @@ export default function HeroSection() {
                 asChild
                 size="lg"
                 variant="outline"
-                className="border-2 border-white/30 text-black hover:bg-gray-800/50 hover:text-white px-8 py-6 text-lg rounded-xl backdrop-blur-lg"
+                className="border-2 border-white hover:border-black text-white hover:bg-white hover:text-black  px-8 py-6 text-lg rounded-xl backdrop-blur-lg"
               >
                 <Link href="/auth">
                   Sign Up for More
