@@ -1,12 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card } from '@/components/ui/card'
 import { FileText, Image as ImageIcon, Video, Calculator, Eye, Save, Send, Wand2, Plus, Loader2 } from 'lucide-react'
+import { getCurrentUser } from '@/lib/auth'
 
 type BlockType = 'text' | 'image' | 'video' | 'quiz'
 
@@ -26,6 +28,27 @@ interface CourseDraft {
 }
 
 export default function QuixEditorPage() {
+  const router = useRouter()
+
+  // Restrict access to teachers only
+  useEffect(() => {
+    const user = getCurrentUser()
+    if (!user) {
+      router.push('/auth')
+      return
+    }
+    if (user.role !== 'teacher') {
+      // Non-teachers are redirected to their main dashboard
+      if (user.role === 'student') {
+        router.push('/dashboard')
+      } else if (user.role === 'admin') {
+        router.push('/admin')
+      } else {
+        router.push('/')
+      }
+    }
+  }, [router])
+
   const [course, setCourse] = useState<CourseDraft>({
     title: '',
     description: '',

@@ -77,7 +77,7 @@ export default function HeroSection() {
                 asChild
                 size="lg"
                 variant="outline"
-                className="border-2 border-white/30 text-white hover:bg-white/10 px-8 py-6 text-lg rounded-xl backdrop-blur-lg"
+                className="border-2 border-white/30 text-black hover:bg-gray-800/50 hover:text-white px-8 py-6 text-lg rounded-xl backdrop-blur-lg"
               >
                 <Link href="/auth">
                   Sign Up for More
@@ -113,7 +113,7 @@ export default function HeroSection() {
 
       {/* Scroll Indicator */}
       <motion.div
-        className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
+        className="absolute  bottom-2 left-1/2 transform -translate-x-1/2"
         animate={{ y: [0, 10, 0] }}
         transition={{ duration: 2, repeat: Infinity }}
       >

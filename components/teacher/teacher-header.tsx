@@ -45,6 +45,9 @@ export function TeacherHeader({ teacher }: TeacherHeaderProps) {
             <Link href="/teacher/quiz" className="text-muted-foreground hover:text-primary transition-colors">
               My Quizzes
             </Link>
+            <Link href="/quix-editor" className="text-muted-foreground hover:text-primary transition-colors">
+              Quix Editor
+            </Link>
             <Link href="/teacher/classes" className="text-muted-foreground hover:text-primary transition-colors">
               Classes
             </Link>

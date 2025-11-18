@@ -1,5 +1,6 @@
 "use client"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Plus, Users, Brain, TrendingUp, BookOpen, BarChart3 } from "lucide-react"
@@ -10,100 +11,226 @@ import { QuizManagement } from "@/components/teacher/quiz-management"
 import { StudentAnalytics } from "@/components/teacher/student-analytics"
 import { ClassOverview } from "@/components/teacher/class-overview"
 import { getCurrentUser } from "@/lib/auth"
-// Mock teacher data
-const mockTeacher = {
-  id: "t1",
-  name: "Jean Baptiste Nzeyimana",
-  email: "jean.nzeyimana@teacher.rw",
-  role: "teacher",
-  subject: "Mathematics",
-  school: "Kigali Secondary School",
-  avatar: "/teacher-avatar.png",
-  joinedDate: "2023-08-15",
-  stats: {
-    totalQuizzes: 15,
-    totalStudents: 120,
-    activeClasses: 4,
-    averageScore: 78,
-    totalAttempts: 450,
-    thisWeekAttempts: 32,
-  },
-  recentQuizzes: [
-    {
-      id: "q1",
-      title: "Algebra Fundamentals",
-      subject: "Mathematics",
-      level: "S3",
-      students: 28,
-      avgScore: 82,
-      created: "2024-01-10",
-      status: "active",
-    },
-    {
-      id: "q2",
-      title: "Geometry Basics",
-      subject: "Mathematics",
-      level: "S3",
-      students: 25,
-      avgScore: 75,
-      created: "2024-01-08",
-      status: "active",
-    },
-    {
-      id: "q3",
-      title: "Number Theory",
-      subject: "Mathematics",
-      level: "S6",
-      students: 22,
-      avgScore: 88,
-      created: "2024-01-05",
-      status: "draft",
-    },
-  ],
-  classes: [
-    {
-      id: "c1",
-      name: "S3 Mathematics A",
-      students: 30,
-      level: "S3",
-      subject: "Mathematics",
-      avgScore: 79,
-      activeQuizzes: 3,
-    },
-    {
-      id: "c2",
-      name: "S3 Mathematics B",
-      students: 28,
-      level: "S3",
-      subject: "Mathematics",
-      avgScore: 81,
-      activeQuizzes: 2,
-    },
-    {
-      id: "c3",
-      name: "S6 Advanced Math",
-      students: 24,
-      level: "S6",
-      subject: "Mathematics",
-      avgScore: 85,
-      activeQuizzes: 4,
-    },
-  ],
+import { getBaseUrl } from "@/lib/getBaseUrl"
+
+type TeacherStatsState = {
+  totalQuizzes: number
+  totalStudents: number
+  activeClasses: number
+  averageScore: number
+  totalAttempts: number
+  thisWeekAttempts: number
+}
+
+type TeacherUser = {
+  id: string
+  name: string
+  email: string
+  role: "teacher" | "student" | "admin"
+  subject?: string
+  school?: string
+  avatar?: string
+}
+
+type StudentSummary = {
+  id: string
+  name: string
+  email: string
+  level?: string
+  averageScore: number
+}
+
+type ClassData = {
+  id: string
+  name: string
+  students: number
+  level: string
+  subject: string
+  avgScore: number
+  activeQuizzes: number
+}
+
+type QuizSummary = {
+  id: string
+  title: string
+  subject: string
+  level: string
+  students: number
+  avgScore: number
+  created: string
+  status: "active" | "draft" | "archived"
 }
 
 export default function TeacherDashboard() {
-  // Add at the top of component
-useEffect(() => {
-  const user = getCurrentUser()
-  if (!user) {
-    router.push('/auth')
-  } else if (user.role !== 'teacher') {
-    router.push('/dashboard')
-  }
-}, [])
+  const router = useRouter()
+  const baseUrl = getBaseUrl ? getBaseUrl() : ""
+
+  const [teacher, setTeacher] = useState<TeacherUser | null>(null)
+  const [stats, setStats] = useState<TeacherStatsState | null>(null)
+  const [classes, setClasses] = useState<ClassData[]>([])
+  const [quizzes, setQuizzes] = useState<QuizSummary[]>([])
+  const [students, setStudents] = useState<StudentSummary[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Auth guard and basic teacher info from client auth
+  useEffect(() => {
+    const user = getCurrentUser()
+    if (!user) {
+      router.push('/auth')
+      return
+    }
+
+    if (user.role === 'student') {
+      router.push('/dashboard')
+      return
+    }
+
+    if (user.role === 'admin') {
+      router.push('/admin')
+      return
+    }
+
+    // We only get here if the user is a teacher
+    setTeacher({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: 'teacher',
+      subject: user.level || 'Teacher',
+      school: '',
+      avatar: user.avatar || '/teacher-avatar.png',
+    })
+  }, [router])
+
+  // Fetch real data for teacher dashboard & students on board
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!teacher) return
+      setLoading(true)
+      try {
+        // 1) Fetch full teacher record (for school, etc.)
+        const [teacherRes, studentsRes, quizzesRes] = await Promise.all([
+          fetch(`${baseUrl}/api/user?userId=${encodeURIComponent(teacher.id)}`),
+          fetch(`${baseUrl}/api/teacher/students?teacherId=${encodeURIComponent(teacher.id)}`),
+          fetch(`${baseUrl}/api/teacher/quizzes?teacherId=${encodeURIComponent(teacher.id)}`),
+        ])
+
+        if (teacherRes.ok) {
+          const data = await teacherRes.json()
+          const t = data.user as any
+          setTeacher((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  school: t?.school || prev.school,
+                  subject: prev.subject || t?.level || 'Teacher',
+                }
+              : prev,
+          )
+        }
+
+        let studentSummaries: StudentSummary[] = []
+        if (studentsRes.ok) {
+          const data = await studentsRes.json()
+          const allStudents = (data.students || []) as any[]
+          studentSummaries = allStudents.map((u) => ({
+            id: u.id,
+            name: u.name,
+            email: u.email,
+            level: u.level,
+            averageScore: u.averageScore ?? 0,
+          }))
+          setStudents(studentSummaries)
+        }
+
+        if (quizzesRes.ok) {
+          const data = await quizzesRes.json()
+          const items = (data.quizzes || []) as any[]
+          const teacherQuizzes: QuizSummary[] = items.map((q) => ({
+            id: q.id,
+            title: q.title,
+            subject: q.subject,
+            level: q.level,
+            students: q.students,
+            avgScore: q.avgScore,
+            created: q.created,
+            status: q.status,
+          }))
+          setQuizzes(teacherQuizzes)
+        }
+
+        // Aggregate basic stats for the teacher view
+        const totalStudents = studentSummaries.length
+        const activeClassesSet = new Set(studentSummaries.map((s) => s.level).filter(Boolean) as string[])
+        const activeClasses = activeClassesSet.size
+        const averageScore =
+          studentSummaries.length > 0
+            ? Math.round(
+                studentSummaries.reduce((sum, s) => sum + (s.averageScore || 0), 0) /
+                  studentSummaries.length,
+              )
+            : 0
+
+        const teacherStats: TeacherStatsState = {
+          totalQuizzes: 0, // TODO: wire to teacher-specific quizzes endpoint
+          totalStudents,
+          activeClasses,
+          averageScore,
+          totalAttempts: 0,
+          thisWeekAttempts: 0,
+        }
+        setStats(teacherStats)
+
+        // Derive pseudo class/group overview from student levels
+        const classMap = new Map<string, ClassData>()
+        for (const s of studentSummaries) {
+          const lvl = s.level || 'Unknown'
+          if (!classMap.has(lvl)) {
+            classMap.set(lvl, {
+              id: lvl,
+              name: `${lvl} Class`,
+              students: 0,
+              level: lvl,
+              subject: teacher.subject || 'General',
+              avgScore: 0,
+              activeQuizzes: 0,
+            })
+          }
+          const entry = classMap.get(lvl)!
+          entry.students += 1
+          entry.avgScore += s.averageScore || 0
+        }
+        const classList: ClassData[] = Array.from(classMap.values()).map((c) => ({
+          ...c,
+          avgScore: c.students > 0 ? Math.round(c.avgScore / c.students) : 0,
+        }))
+        setClasses(classList)
+
+        // Placeholder: quizzes can be wired to a teacher-specific quizzes API later
+        setQuizzes([])
+      } catch (err) {
+        console.error('Failed to load teacher dashboard data', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [teacher, baseUrl])
+
   return (
     <div className="min-h-screen gradient-bg">
-      <TeacherHeader teacher={mockTeacher} />
+      {teacher && (
+        <TeacherHeader
+          teacher={{
+            name: teacher.name,
+            email: teacher.email,
+            subject: teacher.subject || 'Teacher',
+            school: teacher.school || 'My School',
+            avatar: teacher.avatar || '/teacher-avatar.png',
+          }}
+        />
+      )}
 
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
@@ -111,15 +238,25 @@ useEffect(() => {
           <div className="mb-8">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold glow-text mb-2">Welcome back, {mockTeacher.name.split(" ")[0]}!</h1>
+                <h1 className="text-3xl font-bold glow-text mb-2">
+                  {teacher ? `Welcome back, ${teacher.name.split(" ")[0]}!` : 'Welcome, Teacher!'}
+                </h1>
                 <p className="text-muted-foreground">Manage your classes and track student progress on Qouta</p>
               </div>
-              <Button asChild className="glow-effect" size="lg">
-                <Link href="/teacher/quiz/create">
-                  <Plus className="h-5 w-5 mr-2" />
-                  Create Quiz
-                </Link>
-              </Button>
+              <div className="flex gap-2">
+                <Button asChild variant="outline" className="glow-effect" size="lg">
+                  <Link href="/quix-editor">
+                    <Brain className="h-5 w-5 mr-2" />
+                    Quix Editor
+                  </Link>
+                </Button>
+                <Button asChild className="glow-effect" size="lg">
+                  <Link href="/teacher/quiz/create">
+                    <Plus className="h-5 w-5 mr-2" />
+                    Create Quiz
+                  </Link>
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -191,22 +328,22 @@ useEffect(() => {
           </div>
 
           {/* Stats Overview */}
-          <TeacherStats stats={mockTeacher.stats} />
+          {stats && <TeacherStats stats={stats} />}
 
           <div className="grid lg:grid-cols-3 gap-8 mt-8">
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-8">
               {/* Quiz Management */}
-              <QuizManagement quizzes={mockTeacher.recentQuizzes} />
+              <QuizManagement quizzes={quizzes} />
 
               {/* Student Analytics */}
-              <StudentAnalytics />
+              <StudentAnalytics students={students} />
             </div>
 
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Class Overview */}
-              <ClassOverview classes={mockTeacher.classes} />
+              <ClassOverview classes={classes} />
 
               {/* Recent Activity */}
               <Card className="glass-effect border-border/50">

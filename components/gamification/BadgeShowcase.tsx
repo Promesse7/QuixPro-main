@@ -21,7 +21,7 @@ export function BadgeShowcase({ badges, earnedCount }: BadgeShowcaseProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-5 gap-3">
           {displayBadges.map((badge, index) => (
             <div
               key={index}
