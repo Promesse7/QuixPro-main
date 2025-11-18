@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { BookOpen, Zap, BookMarked, Home, Menu, X, BarChart3, Users, Settings } from 'lucide-react'
 import { SimpleThemeToggle } from './simple-theme-toggle'
+import { getCurrentUser } from '@/lib/auth'
 
 interface NavItem {
   label: string
@@ -28,12 +29,34 @@ export function FloatingNavbar() {
   const pathname = usePathname()
   const [isExpanded, setIsExpanded] = React.useState(false)
   const [mounted, setMounted] = React.useState(false)
+  const [user, setUser] = React.useState<any>(null)
 
   React.useEffect(() => {
     setMounted(true)
+
+    let mountedFlag = true
+    // Try to resolve the current user client-side (the auth helper used elsewhere)
+    ;(async () => {
+      try {
+        const u = await getCurrentUser()
+        if (mountedFlag) setUser(u)
+      } catch (err) {
+        // ignore — user remains null if not logged in
+      }
+    })()
+
+    return () => {
+      mountedFlag = false
+    }
   }, [])
 
   if (!mounted) {
+    return null
+  }
+
+  // Hide navbar entirely on landing and auth pages when no user is present
+  const onPublicLandingOrAuth = pathname === '/' || pathname?.startsWith('/auth')
+  if (onPublicLandingOrAuth && !user) {
     return null
   }
 
@@ -55,20 +78,35 @@ export function FloatingNavbar() {
 
   return (
     <>
-      {/* Desktop/Tablet floating rail */}
-      <motion.nav
-        initial="collapsed"
-        animate={isExpanded ? 'expanded' : 'collapsed'}
-        variants={containerVariants}
-        className="hidden md:flex fixed bottom-16 left-8 z-40 bg-card border border-border/50 rounded-2xl shadow-xl backdrop-blur-md overflow-hidden flex-col"
-      >
-        <div className="flex flex-col h-auto max-h-100 p-3 gap-3">
-          {/* Header with toggle */}
-          <div className="flex items-center justify-between">
-            <AnimatePresence mode="wait">
-              {isExpanded ? (
+      {/* Desktop/Tablet: when collapsed show a single circular toggle button */}
+      {!isExpanded && (
+        <div className="hidden md:flex fixed bottom-16 left-8 z-40">
+          <button
+            type="button"
+            onClick={() => setIsExpanded(true)}
+            className="h-14 w-14 rounded-full bg-card border border-border/50 shadow-xl backdrop-blur-md flex items-center justify-center p-2 hover:scale-105 transition-transform"
+            aria-label="Open navbar"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+        </div>
+      )}
+
+      {/* Desktop/Tablet floating rail (expanded view) */}
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.nav
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            className="hidden md:flex fixed bottom-16 left-8 z-40 bg-card border border-border/50 rounded-2xl shadow-xl backdrop-blur-md overflow-hidden flex-col"
+            aria-hidden={!isExpanded}
+          >
+            <div className="flex flex-col h-auto max-h-100 p-3 gap-3">
+              {/* Header with toggle */}
+              <div className="flex items-center justify-between">
                 <motion.div
-                  key="expanded"
+                  key="expanded-header"
                   initial={{ opacity: 0, width: 0 }}
                   animate={{ opacity: 1, width: 'auto' }}
                   exit={{ opacity: 0, width: 0 }}
@@ -78,55 +116,42 @@ export function FloatingNavbar() {
                     Qouta
                   </h3>
                 </motion.div>
-              ) : null}
-            </AnimatePresence>
-            <button
-              type="button"
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="p-2 rounded-lg hover:bg-muted/50 transition-colors flex-shrink-0"
-              aria-label="Toggle navbar"
-            >
-              {isExpanded ? (
-                <X className="h-5 w-5" />
-              ) : (
-                <Menu className="h-5 w-5" />
-              )}
-            </button>
-          </div>
 
-          {/* Navigation items */}
-          <div className="flex flex-col gap-1 flex-1 overflow-y-auto scrollbar-thin">
-            <AnimatePresence>
-              {navItems.map((item, i) => {
-                const Icon = item.icon
-                const active = isActive(item.href)
+                <button
+                  type="button"
+                  onClick={() => setIsExpanded(false)}
+                  className="p-2 rounded-lg hover:bg-muted/50 transition-colors flex-shrink-0"
+                  aria-label="Close navbar"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
 
-                return (
-                  <Link key={item.href} href={item.href}>
-                    <motion.div
-                      className={`relative flex items-center justify-center ${isExpanded ? 'justify-start' : ''} gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 cursor-pointer ${
-                        active
-                          ? 'bg-primary/10 text-primary font-medium'
-                          : 'text-foreground/70 hover:bg-muted/50 hover:text-foreground'
-                      }`}
-                      whileHover={{ x: isExpanded ? 6 : 0 }}
-                    >
-                      {active && (
+              {/* Navigation items */}
+              <div className="flex flex-col gap-1 flex-1 overflow-y-auto scrollbar-thin">
+                <AnimatePresence>
+                  {navItems.map((item) => {
+                    const Icon = item.icon
+                    const active = isActive(item.href)
+
+                    return (
+                      <Link key={item.href} href={item.href}>
                         <motion.div
-                          layoutId="activeIndicator"
-                          className="absolute left-0 w-1 h-8 bg-primary rounded-r-full"
-                        />
-                      )}
-                      <Icon className="h-5 w-5 flex-shrink-0" />
-                      <AnimatePresence mode="wait">
-                        {isExpanded && (
-                          <motion.div
-                            initial={{ opacity: 0, width: 0 }}
-                            animate={{ opacity: 1, width: 'auto' }}
-                            exit={{ opacity: 0, width: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="flex items-center justify-between flex-1 min-w-0"
-                          >
+                          className={`relative flex items-center justify-start gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 cursor-pointer ${
+                            active
+                              ? 'bg-primary/10 text-primary font-medium'
+                              : 'text-foreground/70 hover:bg-muted/50 hover:text-foreground'
+                          }`}
+                          whileHover={{ x: 6 }}
+                        >
+                          {active && (
+                            <motion.div
+                              layoutId="activeIndicator"
+                              className="absolute left-0 w-1 h-8 bg-primary rounded-r-full"
+                            />
+                          )}
+                          <Icon className="h-5 w-5 flex-shrink-0" />
+                          <div className="flex items-center justify-between flex-1 min-w-0">
                             <span className="text-sm font-medium truncate">
                               {item.label}
                             </span>
@@ -140,37 +165,35 @@ export function FloatingNavbar() {
                                 {item.badge}
                               </motion.span>
                             )}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </motion.div>
-                  </Link>
-                )
-              })}
-            </AnimatePresence>
-          </div>
+                          </div>
+                        </motion.div>
+                      </Link>
+                    )
+                  })}
+                </AnimatePresence>
+              </div>
 
-          {/* Divider */}
-          {isExpanded && <div className="h-px bg-border/30" />}
+              {/* Divider */}
+              <div className="h-px bg-border/30" />
 
-          {/* Bottom actions */}
-          <div className="flex items-center gap-2 justify-center py-2 border-t border-border/30">
-            <SimpleThemeToggle />
+              {/* Bottom actions */}
+              <div className="flex items-center gap-2 justify-center py-2 border-t border-border/30">
+                <SimpleThemeToggle />
 
-            {isExpanded && (
-              <motion.button
-                type="button"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                className="p-2 rounded-lg hover:bg-muted/50 transition-colors"
-              >
-                <Settings className="h-5 w-5" />
-              </motion.button>
-            )}
-          </div>
-        </div>
-      </motion.nav>
+                <motion.button
+                  type="button"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                >
+                  <Settings className="h-5 w-5" />
+                </motion.button>
+              </div>
+            </div>
+          </motion.nav>
+        )}
+      </AnimatePresence>
 
       {/* Overlay when expanded on mobile (not used now because rail is hidden on mobile) */}
       <AnimatePresence>
@@ -185,7 +208,7 @@ export function FloatingNavbar() {
         )}
       </AnimatePresence>
 
-      {/* Mobile bottom bar */}
+      {/* Mobile bottom bar (unchanged) */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border/50 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
         <div className="mx-auto max-w-3xl">
           <ul className="grid grid-cols-5">
