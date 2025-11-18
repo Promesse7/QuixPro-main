@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import HeroSection from "@/components/landing/HeroSection"
+import HeroEnhancer from '@/components/landing/HeroEnhancer'
 import ExploreCourses from "@/components/landing/ExploreCourses"
 import TryQuizSection from "@/components/landing/TryQuizSection"
 import DiscoverStories from "@/components/landing/DiscoverStories"
@@ -65,7 +66,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900">
       {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 bg-white/5 backdrop-blur-lg border-b border-white/10">
+      <nav className="fixed top-0 w-full z-50 bg-white/20 backdrop-blur-3xl border-b border-white/20">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -116,7 +117,9 @@ export default function LandingPage() {
 
       {/* Main Content */}
       <main className="pt-20">
-        <HeroSection />
+       <HeroEnhancer>
+            <HeroSection />
+       </HeroEnhancer>
         
         <div id="courses">
           <ExploreCourses courses={courses} loading={loading} />

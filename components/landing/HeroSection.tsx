@@ -67,7 +67,7 @@ export default function HeroSection() {
                 size="lg"
                 className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-8 py-6 text-lg rounded-xl shadow-xl hover:shadow-2xl hover:shadow-blue-500/50 transition-all"
               >
-                <Link href="/quiz">
+                <Link href="/quiz" data-magnetic>
                   Start a Quiz
                   <Brain className="ml-2 w-5 h-5" />
                 </Link>

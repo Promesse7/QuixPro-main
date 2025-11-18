@@ -123,3 +123,9 @@
     @apply bg-background text-foreground;
   }
 }
+
+
+[data-magnetic] {
+  transition: transform 220ms cubic-bezier(.2,.9,.2,1), box-shadow 160ms;
+  transform: translate(var(--mx, 0), var(--my, 0));
+}
