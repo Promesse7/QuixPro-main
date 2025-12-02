@@ -1,33 +1,28 @@
-import type React from "react"
-import type { Metadata } from "next"
-import { GeistSans } from "geist/font/sans"
-import { GeistMono } from "geist/font/mono"
-import { Analytics } from "@vercel/analytics/next"
-import { Suspense } from "react"
-import "./globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
-import { FloatingNavbar } from "@/components/floating-navbar"
+// app/layout.tsx
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
+import { WebSocketProvider } from '@/context/WebSocketContext';
+
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: "Qouta - AI-Powered Learning Platform",
-  description: "Futuristic student quiz and storytelling platform for Rwanda CBC levels",
-  generator: "v0.app",
-}
+  title: 'Quix Chat',
+  description: 'Real-time chat for Quix learning platform',
+};
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode
-}>) {
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased`}>
-        <ThemeProvider>
-          <FloatingNavbar />
-          <Suspense fallback={null}>{children}</Suspense>
-        </ThemeProvider>
-        <Analytics />
+    <html lang="en">
+      <body className={inter.className}>
+        <WebSocketProvider>
+          {children}
+        </WebSocketProvider>
       </body>
     </html>
-  )
+  );
 }
