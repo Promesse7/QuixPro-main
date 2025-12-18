@@ -6,6 +6,7 @@ import { useChat } from '@/hooks/useChat';
 import { useSession } from 'next-auth/react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
+import MathInput from '@/components/math/MathInput';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
 
@@ -17,8 +18,10 @@ interface ChatWindowProps {
 export const ChatWindow: React.FC<ChatWindowProps> = ({ groupId, className = '' }) => {
   const [message, setMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isMathMode, setIsMathMode] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { data: session } = useSession();
+  const _sessionHook = useSession();
+  const session = _sessionHook?.data;
   const userId = session?.user?.email;
   
   const {
@@ -32,7 +35,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ groupId, className = '' 
     e.preventDefault();
     if (!message.trim()) return;
     
-    sendMessage(message);
+    // If math mode is enabled, send as text with math metadata
+    if (isMathMode) {
+      sendMessage(message, 'math', { latex: message });
+    } else {
+      sendMessage(message);
+    }
     setMessage('');
     setTyping(false);
   };
@@ -71,6 +79,29 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ groupId, className = '' 
     return 'Several people are typing...';
   };
 
+  // Small helper to render LaTeX using KaTeX if available
+  const MathPreview: React.FC<{ latex: string }> = ({ latex }) => {
+    const [html, setHtml] = useState<string | null>(null);
+
+    useEffect(() => {
+      let mounted = true;
+      (async () => {
+        try {
+          const katex = await import('katex');
+          if (!mounted) return;
+          const rendered = katex.renderToString(latex || '', { throwOnError: false });
+          setHtml(rendered);
+        } catch (err) {
+          setHtml(null);
+        }
+      })();
+      return () => { mounted = false };
+    }, [latex]);
+
+    if (html) return <div dangerouslySetInnerHTML={{ __html: html }} />;
+    return <pre className="whitespace-pre-wrap text-sm text-muted-foreground">{latex}</pre>;
+  };
+
   return (
     <div className={`flex flex-col h-full ${className}`}>
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -103,7 +134,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ groupId, className = '' 
                         : 'bg-muted'
                     }`}
                   >
-                    <p className="text-sm">{msg.content}</p>
+                    {msg?.type === 'math' ? (
+                      <MathPreview latex={msg.content} />
+                    ) : (
+                      <p className="text-sm">{msg.content}</p>
+                    )}
                     <p
                       className={`text-xs mt-1 ${
                         msg.senderId === userId ? 'text-primary-foreground/70' : 'text-muted-foreground'
@@ -127,20 +162,34 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ groupId, className = '' 
         <div className="text-xs text-muted-foreground mb-2 h-4">
           {getTypingText()}
         </div>
-        <form onSubmit={handleSubmit} className="flex space-x-2">
-          <Input
-            type="text"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={handleKeyDown}
-            onKeyUp={handleKeyUp}
-            placeholder="Type a message..."
-            className="flex-1"
-          />
-          <Button type="submit" size="icon">
-            <Icons.send className="h-4 w-4" />
-          </Button>
-        </form>
+          <form onSubmit={handleSubmit} className="flex space-x-2">
+            <div className="flex-1">
+              {isMathMode ? (
+                <MathInput
+                  value={message}
+                  onChange={(val) => setMessage(val || '')}
+                />
+              ) : (
+                <Input
+                  type="text"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  onKeyUp={handleKeyUp}
+                  placeholder="Type a message..."
+                  className="flex-1"
+                />
+              )}
+            </div>
+            <div className="flex flex-col items-center justify-center space-y-2">
+              <Button type="submit" size="icon">
+                <Icons.send className="h-4 w-4" />
+              </Button>
+              <Button type="button" size="icon" onClick={() => setIsMathMode((s) => !s)} title={isMathMode ? 'Switch to text' : 'Switch to math'}>
+                <span className="text-sm">Σ</span>
+              </Button>
+            </div>
+          </form>
       </div>
     </div>
   );

@@ -16,18 +16,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Extract text from content blocks
-    const textContent = Array.isArray(content)
-      ? content
-          .map((block: any) => {
-            if (block.type === 'text') return block.content?.text || '';
-            if (block.type === 'heading') return block.content?.heading || '';
-            return '';
-          })
-          .filter(Boolean)
-          .join('\n\n')
-      : typeof content === 'string'
-      ? content
-      : '';
+      // Treat math blocks like text for quiz generation (use latex if present)
+      const textContent = Array.isArray(content)
+        ? content
+            .map((block: any) => {
+              if (block.type === 'text' || block.type === 'math') return block.content?.text || block.content?.latex || '';
+              if (block.type === 'heading') return block.content?.heading || '';
+              return '';
+            })
+            .filter(Boolean)
+            .join('\n\n')
+        : typeof content === 'string'
+        ? content
+        : '';
 
     const openaiApiKey = process.env.OPENAI_API_KEY;
 

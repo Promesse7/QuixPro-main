@@ -259,6 +259,21 @@ export function isPublicRoute(pathname: string): boolean {
   })
 }
 
+// Minimal NextAuth options export to satisfy server-side calls to `getServerSession`
+// If your project uses NextAuth, replace/extend this with your real providers and callbacks.
+import type { NextAuthOptions } from 'next-auth'
+
+export const authOptions: NextAuthOptions = {
+  // No providers defined by default — add providers in your environment if needed.
+  providers: [],
+  session: {
+    strategy: 'jwt',
+  },
+  jwt: {},
+  // Secret should be provided via environment variables in production
+  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
+}
+
 
 
 

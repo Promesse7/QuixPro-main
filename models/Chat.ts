@@ -8,7 +8,7 @@ export interface Message {
   createdAt: Date;
   updatedAt: Date;
   readBy: string[]; // Array of user IDs who have read the message
-  type: 'text' | 'image' | 'file';
+  type: 'text' | 'image' | 'file' | 'math';
   metadata?: {
     fileUrl?: string;
     fileName?: string;

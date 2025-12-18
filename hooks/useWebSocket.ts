@@ -1,10 +1,12 @@
+"use client"
 // hooks/useWebSocket.ts
 import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useSession } from 'next-auth/react';
 
 export const useWebSocket = () => {
-  const { data: session } = useSession();
+  const _sessionHook = useSession();
+  const session = _sessionHook?.data;
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 

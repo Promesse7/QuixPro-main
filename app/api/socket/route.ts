@@ -4,9 +4,13 @@ import { WebSocketServer } from 'ws';
 import { Server } from 'socket.io';
 import { webSocketService } from '@/lib/services/websocket';
 
+// This route must be dynamic because it accepts WebSocket upgrades and request-specific params
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
+    // Use NextRequest.nextUrl to avoid relying on request.url (prevents dynamic-server error)
+    const { searchParams } = req.nextUrl;
     const token = searchParams.get('token');
     
     if (!token) {
@@ -37,8 +41,4 @@ export async function GET(req: NextRequest) {
 
 // This is a workaround for Next.js 13+ server components
 // We'll use this to initialize the WebSocket server
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+export const runtime = 'nodejs';

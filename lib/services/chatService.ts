@@ -1,16 +1,29 @@
 import { ObjectId } from 'mongodb';
 import { getDatabase } from '../mongodb';
 import { Message, Group, UserGroup, TypingIndicator } from '@/models/Chat';
+import { firebaseAdmin } from './firebase';
 
 export class ChatService {
   private static instance: ChatService;
   private db: any;
 
+  private async retryOperation<T>(op: () => Promise<T>, attempts = 3, backoffMs = 200): Promise<T> {
+    let lastErr: any;
+    for (let i = 0; i < attempts; i++) {
+      try {
+        return await op();
+      } catch (err) {
+        lastErr = err;
+        const wait = backoffMs * Math.pow(2, i);
+        // small delay before retrying
+        await new Promise((res) => setTimeout(res, wait));
+      }
+    }
+    throw lastErr;
+  }
+
   private constructor() {
-    // Initialize database connection
-    getDatabase().then(db => {
-      this.db = db;
-    });
+    // Delayed DB initialization: `ensureDbConnection` will initialize when needed.
   }
 
   public static getInstance(): ChatService {
@@ -106,7 +119,28 @@ export class ChatService {
     };
 
     const result = await this.db.collection('messages').insertOne(newMessage);
-    return { ...newMessage, _id: result.insertedId };
+    const stored = { ...newMessage, _id: result.insertedId };
+
+    // Publish message to Firebase for real-time subscribers with retries.
+    try {
+      await this.retryOperation(() =>
+        firebaseAdmin.publishMessage({
+          content: newMessage.content,
+          senderId: newMessage.senderId,
+          groupId: newMessage.groupId,
+          type: newMessage.type,
+          metadata: newMessage.metadata,
+          createdAt: newMessage.createdAt,
+          updatedAt: newMessage.updatedAt,
+        }),
+        3,
+        200
+      );
+    } catch (err) {
+      console.warn('Firebase publishMessage failed after retries:', err?.message || err);
+    }
+
+    return stored;
   }
 
   async getMessages(groupId: string, limit = 50, before?: Date) {
@@ -177,6 +211,13 @@ export class ChatService {
           { $set: { isTyping: false, lastUpdated: new Date() } }
         );
       }, 3000);
+    }
+
+    // Also set typing indicator in Firebase for low-latency updates (with retries)
+    try {
+      await this.retryOperation(() => firebaseAdmin.setUserTyping(userId, groupId, isTyping), 3, 150);
+    } catch (err) {
+      console.warn('Firebase setUserTyping failed after retries:', err?.message || err);
     }
 
     return { success: true };

@@ -10,7 +10,7 @@ import { Card } from '@/components/ui/card'
 import { FileText, Image as ImageIcon, Video, Calculator, Eye, Save, Send, Wand2, Plus, Loader2 } from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth'
 
-type BlockType = 'text' | 'image' | 'video' | 'quiz'
+type BlockType = 'text' | 'image' | 'video' | 'quiz' | 'math'
 
 interface ContentBlock {
   id: string
@@ -67,9 +67,11 @@ export default function QuixEditorPage() {
       type,
       order: course.blocks.length,
       content:
-        type === 'text'
-          ? { text: 'Enter your text here...' }
-          : type === 'image'
+          type === 'text'
+            ? { text: 'Enter your text here...' }
+            : type === 'math'
+            ? { latex: '\\frac{a}{b}' }
+            : type === 'image'
           ? { url: '', caption: 'Image caption' }
           : type === 'video'
           ? { url: '', title: 'Video title' }
@@ -206,6 +208,9 @@ export default function QuixEditorPage() {
               <Button variant="outline" onClick={() => addBlock('image')} className="gap-2">
                 <ImageIcon className="h-4 w-4" /> Image
               </Button>
+              <Button variant="outline" onClick={() => addBlock('math')} className="gap-2">
+                <Calculator className="h-4 w-4" /> Math
+              </Button>
               <Button variant="outline" onClick={() => addBlock('video')} className="gap-2">
                 <Video className="h-4 w-4" /> Video
               </Button>
@@ -243,6 +248,7 @@ export default function QuixEditorPage() {
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       {b.type === 'text' && <FileText className="h-4 w-4" />}
+                      {b.type === 'math' && <Calculator className="h-4 w-4" />}
                       {b.type === 'image' && <ImageIcon className="h-4 w-4" />}
                       {b.type === 'video' && <Video className="h-4 w-4" />}
                       {b.type === 'quiz' && <Calculator className="h-4 w-4" />}
@@ -261,6 +267,18 @@ export default function QuixEditorPage() {
                         value={b.content.text}
                         onChange={(e) => updateBlock(b.id, { ...b.content, text: e.target.value })}
                         className="w-full h-32 rounded-md border px-3 py-2"
+                      />
+                    )
+                  )}
+
+                  {b.type === 'math' && (
+                    preview ? (
+                      <div className="prose max-w-none" style={{ whiteSpace: 'pre-wrap' }}>{b.content.latex}</div>
+                    ) : (
+                      <textarea
+                        value={b.content.latex}
+                        onChange={(e) => updateBlock(b.id, { ...b.content, latex: e.target.value })}
+                        className="w-full h-24 rounded-md border px-3 py-2"
                       />
                     )
                   )}
