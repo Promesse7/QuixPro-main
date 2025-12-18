@@ -230,4 +230,39 @@
   .dark input:focus-visible {
     @apply ring-offset-background;
   }
+
+  /* Skip link and screen-reader utilities */
+  .skip-link {
+    position: absolute;
+    left: -999px;
+    top: auto;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    z-index: 100;
+  }
+
+  .skip-link:focus,
+  .skip-link:active {
+    position: static;
+    width: auto;
+    height: auto;
+    margin: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: hsl(var(--primary) / 0.1);
+    color: var(--foreground);
+    border-radius: 0.25rem;
+    left: 1rem;
+    top: 1rem;
+    z-index: 60;
+  }
+
+  .sr-only {
+    position: absolute !important;
+    height: 1px;
+    width: 1px;
+    overflow: hidden;
+    clip: rect(1px, 1px, 1px, 1px);
+    white-space: nowrap;
+  }
 }

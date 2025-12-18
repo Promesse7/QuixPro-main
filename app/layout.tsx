@@ -20,7 +20,8 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <WebSocketProvider>
-          {children}
+          <a href="#main-content" className="skip-link">Skip to main content</a>
+          <main id="main-content">{children}</main>
         </WebSocketProvider>
       </body>
     </html>

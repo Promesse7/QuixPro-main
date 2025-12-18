@@ -1,6 +1,6 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Brain, Clock, Star, Play, ChevronRight } from "lucide-react"
@@ -107,8 +107,7 @@ export function RecommendedQuizzes() {
 					</div>
 					<Button variant="ghost" size="sm">
 						<Link href="/quiz">
-							View All{" "}
-							<ChevronRight className="h-4 w-4 ml-1" />
+							View All <ChevronRight className="h-4 w-4 ml-1" />
 						</Link>
 					</Button>
 				</div>
@@ -121,47 +120,31 @@ export function RecommendedQuizzes() {
 				) : error ? (
 					<div className="text-center py-4 text-red-500">{error}</div>
 				) : (
-					<div className="space-y-4">
+					<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 						{(quizzes.length > 0 ? quizzes : fallbackQuizzes).map((quiz) => (
-							<div
-								key={quiz._id || quiz.id}
-								className="flex items-center space-x-4 p-4 bg-accent/20 rounded-lg"
-							>
-								<div className="flex-1">
-									<div className="flex items-center space-x-2 mb-2">
-										<h4 className="font-semibold">{quiz.title}</h4>
-										<div className="flex items-center space-x-1">
-											<Star className="h-3 w-3 text-yellow-400 fill-current" />
-											<span className="text-xs">{quiz.rating}</span>
+							<Card key={quiz._id || quiz.id} className="p-0">
+								<div className="flex flex-col h-full">
+									<div className="p-4 flex-1">
+										<div className="flex items-start gap-3">
+											<div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
+												<Brain className="h-6 w-6 text-white" />
+											</div>
+											<div className="flex-1">
+												<h4 className="font-semibold">{quiz.title}</h4>
+												<p className="text-sm text-muted-foreground mt-1">{quiz.description}</p>
+												<div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
+													<div className="flex items-center gap-1"><Brain className="h-3 w-3" /> <span>{Array.isArray(quiz.questions) ? quiz.questions.length : quiz.questions || 0} questions</span></div>
+													<div className="flex items-center gap-1"><Clock className="h-3 w-3" /> <span>{quiz.duration || 0} min</span></div>
+													<Badge variant="outline" className="text-xs">{quiz.subject}</Badge>
+												</div>
+											</div>
 										</div>
 									</div>
-									<p className="text-sm text-muted-foreground mb-2">
-										{quiz.description}
-									</p>
-									<div className="flex items-center space-x-4 text-xs text-muted-foreground">
-										<div className="flex items-center space-x-1">
-											<Brain className="h-3 w-3" />
-											<span>{Array.isArray(quiz.questions) ? quiz.questions.length : quiz.questions || 0} questions</span>
-										</div>
-										<div className="flex items-center space-x-1">
-											<Clock className="h-3 w-3" />
-											<span>{quiz.duration || 0} min</span>
-										</div>
-										<Badge variant="outline" className="text-xs">
-											{quiz.subject}
-										</Badge>
+									<div className="p-4 border-t">
+										<Button size="sm" className="w-full">Start <Play className="ml-2 h-4 w-4" /></Button>
 									</div>
-									<p className="text-xs text-primary mt-2">
-										{quiz.reason || "Recommended for your level"}
-									</p>
 								</div>
-								<Button size="sm" className="glow-effect">
-									<Link href={`/quiz/${quiz._id || quiz.id}`}>
-										<Play className="h-4 w-4 mr-1" />
-										Start
-									</Link>
-								</Button>
-							</div>
+							</Card>
 						))}
 					</div>
 				)}

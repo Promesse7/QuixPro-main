@@ -1,6 +1,6 @@
 "use client"
 
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Brain, BookOpen, Award, TrendingUp, Play, Mic } from "lucide-react"
 import Link from "next/link"
@@ -65,16 +65,18 @@ export function QuickActions() {
           key={action.title}
           className="glass-effect border-border/50 hover:glow-effect transition-all duration-300"
         >
+          <CardHeader className="px-4 pt-4">
+            <div className="flex items-center justify-between w-full">
+              <div className={`w-12 h-12 rounded-full ${action.bgColor} flex items-center justify-center`}>
+                <action.icon className={`h-6 w-6 ${action.color}`} />
+              </div>
+            </div>
+          </CardHeader>
           <CardContent className="p-4">
-            <Button asChild variant="ghost" className="h-auto p-0 w-full">
-              <Link href={action.href} className="flex flex-col items-center space-y-3">
-                <div className={`w-12 h-12 rounded-full ${action.bgColor} flex items-center justify-center`}>
-                  <action.icon className={`h-6 w-6 ${action.color}`} />
-                </div>
-                <div className="text-center">
-                  <p className="font-medium text-sm">{action.title}</p>
-                  <p className="text-xs text-muted-foreground">{action.description}</p>
-                </div>
+            <Button asChild variant="ghost" className="h-auto p-0 w-full text-left">
+              <Link href={action.href} className="flex flex-col items-start space-y-2">
+                <div className="text-sm font-medium">{action.title}</div>
+                <div className="text-xs text-muted-foreground">{action.description}</div>
               </Link>
             </Button>
           </CardContent>

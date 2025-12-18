@@ -10,9 +10,10 @@ import Link from "next/link"
 interface ExploreCoursesProps {
   courses: any[]
   loading: boolean
+  compact?: boolean
 }
 
-export default function ExploreCourses({ courses, loading }: ExploreCoursesProps) {
+export default function ExploreCourses({ courses, loading, compact = false }: ExploreCoursesProps) {
   return (
     <section className="py-24 relative">
       <div className="container mx-auto px-6">
@@ -36,7 +37,7 @@ export default function ExploreCourses({ courses, loading }: ExploreCoursesProps
             <Loader2 className="w-12 h-12 text-blue-400 animate-spin" />
           </div>
         ) : (
-          <div className="grid md:grid-cols-3 gap-8 mb-12">
+          <div className={compact ? "grid grid-cols-1 gap-4 mb-6" : "grid md:grid-cols-3 gap-8 mb-12"}>
             {courses.map((course, index) => (
               <motion.div
                 key={course._id}
@@ -45,7 +46,7 @@ export default function ExploreCourses({ courses, loading }: ExploreCoursesProps
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 viewport={{ once: true }}
               >
-                <Card className="bg-white/5 backdrop-blur-lg border-white/10 hover:bg-white/10 transition-all group h-full">
+                <Card className={compact ? "bg-white/3 backdrop-blur-sm transition-all group" : "bg-white/5 backdrop-blur-lg border-white/10 hover:bg-white/10 transition-all group h-full"}>
                   <CardHeader>
                     <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center mb-4">
                       <BookOpen className="w-6 h-6 text-white" />

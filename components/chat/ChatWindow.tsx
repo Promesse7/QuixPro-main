@@ -8,14 +8,14 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import MathInput from '@/components/math/MathInput';
 import { Button } from '@/components/ui/button';
-import { Icons } from '@/components/icons';
+import { Send } from 'lucide-react';
 
 interface ChatWindowProps {
   groupId: string;
   className?: string;
 }
 
-export const ChatWindow: React.FC<ChatWindowProps> = ({ groupId, className = '' }) => {
+const ChatWindow: React.FC<ChatWindowProps> = ({ groupId, className = '' }) => {
   const [message, setMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isMathMode, setIsMathMode] = useState(false);
@@ -31,6 +31,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ groupId, className = '' 
     setTyping,
   } = useChat(groupId);
 
+  const [deliveryStatus, setDeliveryStatus] = useState<string | null>(null)
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim()) return;
@@ -43,6 +45,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ groupId, className = '' 
     }
     setMessage('');
     setTyping(false);
+    // Announce to assistive tech that message was dispatched
+    setDeliveryStatus('Message sent');
+    window.setTimeout(() => setDeliveryStatus(null), 3000);
   };
 
   const handleKeyDown = () => {
@@ -104,7 +109,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ groupId, className = '' 
 
   return (
     <div className={`flex flex-col h-full ${className}`}>
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4" role="log" aria-live="polite" aria-atomic="false">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full text-muted-foreground">
             No messages yet. Say hello!
@@ -115,7 +120,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ groupId, className = '' 
               <div
                 key={msg._id}
                 className={`flex ${msg.senderId === userId ? 'justify-end' : 'justify-start'}`}
-              >
+                role="article"
+                aria-label={`${msg.sender?.name || 'User'} message at ${new Date(msg.createdAt).toLocaleTimeString()}`}>
                 <div
                   className={`flex max-w-[80%] space-x-2 ${
                     msg.senderId === userId ? 'flex-row-reverse' : ''
@@ -159,9 +165,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ groupId, className = '' 
       </div>
 
       <div className="border-t p-4">
-        <div className="text-xs text-muted-foreground mb-2 h-4">
-          {getTypingText()}
-        </div>
+        <div className="text-xs text-muted-foreground mb-2 h-4" aria-hidden>{getTypingText()}</div>
+        <div className="sr-only" aria-live="polite" id="chat-status">{getTypingText() || ''}</div>
+        <div className="sr-only" aria-live="polite" id="chat-delivery-status">{deliveryStatus || ''}</div>
           <form onSubmit={handleSubmit} className="flex space-x-2">
             <div className="flex-1">
               {isMathMode ? (
@@ -182,15 +188,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ groupId, className = '' 
               )}
             </div>
             <div className="flex flex-col items-center justify-center space-y-2">
-              <Button type="submit" size="icon">
-                <Icons.send className="h-4 w-4" />
+              <Button type="submit" size="icon" aria-label="Send message" title="Send message" className="p-2.5">
+                <Send className="h-4 w-4" />
               </Button>
-              <Button type="button" size="icon" onClick={() => setIsMathMode((s) => !s)} title={isMathMode ? 'Switch to text' : 'Switch to math'}>
-                <span className="text-sm">Σ</span>
+              <Button type="button" size="icon" onClick={() => setIsMathMode((s) => !s)} title={isMathMode ? 'Switch to text' : 'Switch to math'} aria-pressed={isMathMode} aria-label={isMathMode ? 'Switch to text mode' : 'Switch to math mode'} className="p-2.5">
+                <span aria-hidden className="text-sm">Σ</span>
               </Button>
             </div>
           </form>
       </div>
     </div>
   );
-};
+}
+
+export default ChatWindow;

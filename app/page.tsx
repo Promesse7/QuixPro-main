@@ -96,61 +96,82 @@ export default function LandingPage() {
             <div className="flex items-center gap-4">
               <a
                 href="/quiz"
-                className="px-6 py-2 text-white/80 hover:text-white transition-colors font-medium"
+                className="px-4 py-2 rounded-md bg-white/10 hover:bg-white/20 transition-colors text-sm font-medium"
               >
                 Try Quiz
               </a>
               <a
                 href="/auth"
-                className="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:shadow-lg hover:shadow-blue-600/50 transition-all font-medium"
+                className="px-4 py-2 rounded-md bg-gradient-to-br from-primary to-accent text-white text-sm font-semibold"
               >
-                Sign Up
+                Get Started
               </a>
             </div>
-
-
-
-
           </div>
         </div>
       </nav>
 
-      {/* Main Content */}
-      <main className="pt-20">
-       <HeroEnhancer>
-            <HeroSection />
-       </HeroEnhancer>
-        
-        <div id="courses">
-          <ExploreCourses courses={courses} loading={loading} />
-        </div>
-        
-        <div id="quiz">
-          <TryQuizSection quizzes={quizzes} loading={loading} />
-        </div>
-        
-        <div id="stories">
-          <DiscoverStories stories={stories} loading={loading} />
-        </div>
-        
-        <div id="join">
-          <JoinCTA />
+      <main className="pt-8 pb-16">
+        <div className="container mx-auto px-6">
+          <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <div className="lg:col-span-7">
+              <HeroEnhancer>
+                <HeroSection />
+              </HeroEnhancer>
+            </div>
+
+            <aside className="lg:col-span-5 space-y-6">
+              <div className="rounded-2xl bg-white/5 p-4">
+                <h3 className="text-sm font-medium mb-2">Quick Actions</h3>
+                <p className="text-xs text-muted-foreground mb-3">Jump into learning</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <a href="/quiz" className="px-3 py-2 rounded-md bg-white/10 text-sm text-center">Take Quiz</a>
+                  <a href="/explore" className="px-3 py-2 rounded-md bg-white/10 text-sm text-center">Explore Courses</a>
+                  <a href="/stories" className="px-3 py-2 rounded-md bg-white/10 text-sm text-center">Read Stories</a>
+                  <a href="/certificates" className="px-3 py-2 rounded-md bg-white/10 text-sm text-center">Achievements</a>
+                </div>
+              </div>
+
+              <div className="rounded-2xl bg-white/5 p-4">
+                <h3 className="text-sm font-medium mb-2">Featured Courses</h3>
+                <p className="text-xs text-muted-foreground mb-3">Handpicked for you</p>
+                <ExploreCourses courses={courses} loading={loading} compact />
+              </div>
+            </aside>
+          </section>
+
+          <section id="quiz" className="mt-10">
+            <div className="rounded-2xl bg-white/5 p-4">
+              <h3 className="text-sm font-medium mb-2">Try a sample quiz</h3>
+              <p className="text-xs text-muted-foreground mb-3">Practice under timed conditions</p>
+              <TryQuizSection quizzes={quizzes} loading={loading} />
+            </div>
+          </section>
+
+          <section id="stories" className="mt-8">
+            <div className="rounded-2xl bg-white/5 p-4">
+              <h3 className="text-sm font-medium mb-2">Stories</h3>
+              <p className="text-xs text-muted-foreground mb-3">Learn from others' journeys</p>
+              <DiscoverStories stories={stories} loading={loading} />
+            </div>
+          </section>
+
+          <section id="join" className="mt-8">
+            <JoinCTA />
+          </section>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-black/30 backdrop-blur-lg border-t border-white/10 py-12">
-        <div className="container mx-auto px-6">
+      <footer className="bg-black/5 border-t border-white/6 py-12">
+        <div className="container mx-auto px-6 text-sm text-muted-foreground">
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
-              <h3 className="text-white font-bold text-lg mb-4">Qouta</h3>
-              <p className="text-white/60 text-sm">
-                Empowering African students through personalized, gamified learning experiences.
-              </p>
+              <h3 className="text-base font-semibold mb-2">Quix</h3>
+              <p className="text-xs text-muted-foreground">Personalized, gamified learning for African students.</p>
             </div>
             <div>
-              <h4 className="text-white font-semibold mb-4">Platform</h4>
-              <ul className="space-y-2 text-white/60 text-sm">
+              <h4 className="font-medium mb-2">Platform</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><a href="#courses">Courses</a></li>
                 <li><a href="#quiz">Quizzes</a></li>
                 <li><a href="#stories">Stories</a></li>
@@ -158,8 +179,8 @@ export default function LandingPage() {
               </ul>
             </div>
             <div>
-              <h4 className="text-white font-semibold mb-4">Company</h4>
-              <ul className="space-y-2 text-white/60 text-sm">
+              <h4 className="font-medium mb-2">Company</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><a href="/about">About</a></li>
                 <li><a href="/contact">Contact</a></li>
                 <li><a href="/careers">Careers</a></li>
@@ -167,16 +188,16 @@ export default function LandingPage() {
               </ul>
             </div>
             <div>
-              <h4 className="text-white font-semibold mb-4">Support</h4>
-              <ul className="space-y-2 text-white/60 text-sm">
+              <h4 className="font-medium mb-2">Support</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><a href="/help">Help Center</a></li>
                 <li><a href="/terms">Terms</a></li>
                 <li><a href="/privacy">Privacy</a></li>
               </ul>
             </div>
           </div>
-          <div className="border-t border-white/10 pt-8 text-center text-white/60 text-sm">
-            <p>&copy; 2025 Qouta Learning Platform. All rights reserved.</p>
+          <div className="border-t border-white/6 pt-6 text-center text-xs text-muted-foreground">
+            <p>&copy; 2025 Quix Learning Platform. All rights reserved.</p>
           </div>
         </div>
       </footer>

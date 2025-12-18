@@ -4,7 +4,7 @@ import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { BookOpen, Zap, BookMarked, Home, Menu, X, BarChart3, Users, Settings } from 'lucide-react'
+import { BookOpen, Zap, BookMarked, Home, Menu, X, BarChart3, Users, Settings, MessageCircle, Video } from 'lucide-react'
 import { SimpleThemeToggle } from './simple-theme-toggle'
 import { getCurrentUser } from '@/lib/auth'
 
@@ -21,6 +21,10 @@ const navItems: NavItem[] = [
   { label: 'Quiz', href: '/quiz', icon: Zap, badge: 'Practice' },
   { label: 'Stories', href: '/stories', icon: BookMarked, badge: 'Inspire' },
   { label: 'Leaderboard', href: '/leaderboard', icon: BarChart3 },
+  { label: 'Groups', href: '/groups', icon: Users },
+  { label: 'Quix Sites', href: '/quix-sites', icon: BookOpen },
+  { label: 'Chat', href: '/chat', icon: MessageCircle },
+  { label: 'Video', href: '/video', icon: Video },
   { label: 'Peer Tutoring', href: '/peer-tutoring', icon: Users },
   { label: 'Quix Editor', href: '/quix-editor', icon: Settings, badge: 'Create' },
 ]
