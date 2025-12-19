@@ -11,7 +11,7 @@ export default function VideoRoom({ roomId }: { roomId: string }) {
         if (localRef.current) localRef.current.srcObject = stream
       } catch (err) {
         console.error('Video access denied', err)
-      }
+      } 
     }
     if (mounted) init()
     return () => { mounted = false }

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { WebSocketProvider } from '@/context/WebSocketContext';
+import NavigationPane from '@/components/NavigationPane';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -21,6 +22,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <WebSocketProvider>
           <a href="#main-content" className="skip-link">Skip to main content</a>
+          <NavigationPane />
           <main id="main-content">{children}</main>
         </WebSocketProvider>
       </body>
