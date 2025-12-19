@@ -1,91 +1,100 @@
 "use client"
 // hooks/useWebSocket.ts
-import { useEffect, useRef, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
-import { useSession } from 'next-auth/react';
+import { useEffect, useRef, useState } from "react"
+import { io, type Socket } from "socket.io-client"
+import { useSession } from "next-auth/react"
 
-export const useWebSocket = () => {
-  const _sessionHook = useSession();
-  const session = _sessionHook?.data;
-  const socketRef = useRef<Socket | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
+export interface WebSocketContextType {
+  isConnected: boolean
+  joinGroups: (groupIds: string[]) => void
+  sendMessage: (groupId: string, content: string, type?: string, metadata?: any) => void
+  setTyping: (groupId: string, isTyping: boolean) => void
+  markAsRead: (messageId: string) => void
+  onEvent: (event: string, callback: (data: any) => void) => (() => void) | undefined
+}
+
+export const useWebSocket = (): WebSocketContextType => {
+  const _sessionHook = useSession()
+  const session = _sessionHook?.data
+  const socketRef = useRef<Socket | null>(null)
+  const [isConnected, setIsConnected] = useState(false)
 
   useEffect(() => {
-    if (!session?.user?.email) return;
+    if (!session?.user?.email) return
 
     // Initialize socket connection
-    const socket = io(process.env.NEXT_PUBLIC_APP_URL || '', {
-      path: '/api/socket/io',
+    const socket = io(process.env.NEXT_PUBLIC_APP_URL || "", {
+      path: "/api/socket/io",
       auth: {
         token: session.user.email, // Using email as token for now
       },
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
-    });
+    })
 
-    socket.on('connect', () => {
-      console.log('Connected to WebSocket server');
-      setIsConnected(true);
-    });
+    socket.on("connect", () => {
+      console.log("Connected to WebSocket server")
+      setIsConnected(true)
+    })
 
-    socket.on('disconnect', () => {
-      console.log('Disconnected from WebSocket server');
-      setIsConnected(false);
-    });
+    socket.on("disconnect", () => {
+      console.log("Disconnected from WebSocket server")
+      setIsConnected(false)
+    })
 
-    socketRef.current = socket;
+    socketRef.current = socket
 
     // Cleanup on unmount
     return () => {
-      socket.disconnect();
-    };
-  }, [session]);
+      socket.disconnect()
+    }
+  }, [session])
 
   // Join group rooms
   const joinGroups = (groupIds: string[]) => {
     if (socketRef.current && isConnected) {
-      socketRef.current.emit('joinGroups', groupIds);
+      socketRef.current.emit("joinGroups", groupIds)
     }
-  };
+  }
 
   // Send a message
-  const sendMessage = (groupId: string, content: string, type = 'text', metadata = {}) => {
+  const sendMessage = (groupId: string, content: string, type = "text", metadata = {}) => {
     if (socketRef.current && isConnected) {
-      socketRef.current.emit('sendMessage', {
+      socketRef.current.emit("sendMessage", {
         groupId,
         content,
         type,
         metadata,
-      });
+      })
     }
-  };
+  }
 
   // Set typing indicator
   const setTyping = (groupId: string, isTyping: boolean) => {
     if (socketRef.current && isConnected) {
-      socketRef.current.emit('typing', { groupId, isTyping });
+      socketRef.current.emit("typing", { groupId, isTyping })
     }
-  };
+  }
 
   // Mark message as read
   const markAsRead = (messageId: string) => {
     if (socketRef.current && isConnected) {
-      socketRef.current.emit('markAsRead', { messageId });
+      socketRef.current.emit("markAsRead", { messageId })
     }
-  };
+  }
 
   // Subscribe to events
   const onEvent = (event: string, callback: (data: any) => void) => {
-    if (!socketRef.current) return;
+    if (!socketRef.current) return
 
-    socketRef.current.on(event, callback);
+    socketRef.current.on(event, callback)
 
     // Return cleanup function
     return () => {
-      socketRef.current?.off(event, callback);
-    };
-  };
+      socketRef.current?.off(event, callback)
+    }
+  }
 
   return {
     isConnected,
@@ -94,5 +103,5 @@ export const useWebSocket = () => {
     setTyping,
     markAsRead,
     onEvent,
-  };
-};
+  }
+}

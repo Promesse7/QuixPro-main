@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server'
-import { groupService } from '@/backend/src/modules/groups/group.service'
+import { NextResponse } from "next/server"
+import { groupService } from "@/backend/src/modules/groups"
 
 export async function GET() {
   const groups = await groupService.listGroups()

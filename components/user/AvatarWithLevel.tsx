@@ -45,6 +45,3 @@ export default function AvatarWithLevel({ size = 56, src, alt = 'User avatar', t
 		</div>
 	)
 }
-
-
-

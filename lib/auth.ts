@@ -273,7 +273,3 @@ export const authOptions: NextAuthOptions = {
   // Secret should be provided via environment variables in production
   secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
 }
-
-
-
-

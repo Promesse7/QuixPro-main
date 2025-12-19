@@ -29,5 +29,3 @@ export interface Unit {
   createdAt?: Date;
   updatedAt?: Date;
 }
-
-

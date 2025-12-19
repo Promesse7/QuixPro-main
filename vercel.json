@@ -6,4 +6,3 @@
   "installCommand": "npm ci --omit=optional --legacy-peer-deps",
   "buildCommand": "npm run build"
 }
-

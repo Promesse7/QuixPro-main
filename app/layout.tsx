@@ -1,4 +1,3 @@
-// app/layout.tsx
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
@@ -9,6 +8,7 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'Quix Chat',
   description: 'Real-time chat for Quix learning platform',
+    generator: 'v0.app'
 };
 
 export default function RootLayout({
