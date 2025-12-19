@@ -51,14 +51,16 @@ export default function GuestQuizModal({ quiz, isOpen, onClose }: GuestQuizModal
 
   const handleNext = () => {
     if (!selectedAnswer) return
+    if (!fullQuiz || !Array.isArray(fullQuiz.questions)) return
 
-    const newAnswers = { 
-      ...answers, 
-      [fullQuiz.questions[currentQuestion].id]: selectedAnswer 
-    }
+    const qId = fullQuiz.questions[currentQuestion]?.id
+    const newAnswers = qId
+      ? { ...answers, [qId]: selectedAnswer }
+      : { ...answers }
     setAnswers(newAnswers)
 
-    if (currentQuestion < fullQuiz.questions.length - 1) {
+    const questionsLength = Array.isArray(fullQuiz.questions) ? fullQuiz.questions.length : 0
+    if (currentQuestion < questionsLength - 1) {
       setCurrentQuestion(currentQuestion + 1)
       setSelectedAnswer(null)
     } else {
@@ -68,16 +70,19 @@ export default function GuestQuizModal({ quiz, isOpen, onClose }: GuestQuizModal
   }
 
   const finishQuiz = (finalAnswers: Record<string, string>) => {
+    if (!fullQuiz || !Array.isArray(fullQuiz.questions)) return
+
     let correctCount = 0
     fullQuiz.questions.forEach((question: any) => {
       const userAnswer = finalAnswers[question.id]
-      const correctOption = question.options.find((opt: any) => opt.correct || opt.isCorrect)
+      const correctOption = (question.options || []).find((opt: any) => opt.correct || opt.isCorrect)
       if (userAnswer === correctOption?.id) {
         correctCount++
       }
     })
 
-    const finalScore = Math.round((correctCount / fullQuiz.questions.length) * 100)
+    const questionsLength = Array.isArray(fullQuiz.questions) ? fullQuiz.questions.length : 0
+    const finalScore = questionsLength ? Math.round((correctCount / questionsLength) * 100) : 0
     setScore(finalScore)
     setShowResult(true)
 
@@ -104,8 +109,9 @@ export default function GuestQuizModal({ quiz, isOpen, onClose }: GuestQuizModal
 
   if (!isOpen) return null
 
-  const progress = fullQuiz ? ((currentQuestion + 1) / fullQuiz.questions.length) * 100 : 0
-  const currentQ = fullQuiz?.questions[currentQuestion]
+  const questionsLength = Array.isArray(fullQuiz?.questions) ? fullQuiz!.questions.length : 0
+  const progress = questionsLength ? ((currentQuestion + 1) / questionsLength) * 100 : 0
+  const currentQ = Array.isArray(fullQuiz?.questions) ? fullQuiz!.questions[currentQuestion] : undefined
 
   return (
     <>
@@ -142,7 +148,7 @@ export default function GuestQuizModal({ quiz, isOpen, onClose }: GuestQuizModal
                 {!showResult && fullQuiz && (
                   <div>
                     <div className="flex items-center justify-between text-sm text-white/70 mb-2">
-                      <span>Question {currentQuestion + 1} of {fullQuiz.questions.length}</span>
+                      <span>Question {currentQuestion + 1} of {questionsLength}</span>
                       <span>{Math.round(progress)}% Complete</span>
                     </div>
                     <Progress value={progress} className="h-2" />
@@ -235,7 +241,7 @@ export default function GuestQuizModal({ quiz, isOpen, onClose }: GuestQuizModal
                     </h3>
 
                     <div className="space-y-3">
-                      {currentQ.options.map((option: any) => {
+                      {(currentQ.options || []).map((option: any) => {
                         const isSelected = selectedAnswer === option.id
                         return (
                           <button
@@ -274,7 +280,7 @@ export default function GuestQuizModal({ quiz, isOpen, onClose }: GuestQuizModal
                     disabled={!selectedAnswer}
                     className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {currentQuestion < (fullQuiz?.questions.length || 0) - 1 ? 'Next Question' : 'Finish Quiz'}
+                    {currentQuestion < (questionsLength || 0) - 1 ? 'Next Question' : 'Finish Quiz'}
                     <ArrowRight className="ml-2 w-5 h-5" />
                   </Button>
                 </div>

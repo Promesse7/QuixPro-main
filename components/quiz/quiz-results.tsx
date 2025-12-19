@@ -50,10 +50,11 @@ export function QuizResults({ quiz, answers, timeElapsed }: QuizResultsProps) {
         correct++
       }
     })
+    const questionsLength = quiz.questions.length
     return {
       correct,
-      total: quiz.questions.length,
-      percentage: Math.round((correct / quiz.questions.length) * 100),
+      total: questionsLength,
+      percentage: questionsLength ? Math.round((correct / questionsLength) * 100) : 0,
     }
   }
 

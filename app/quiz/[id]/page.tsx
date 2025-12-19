@@ -19,6 +19,7 @@ export default function QuizPage({ params }: { params: { id: string } }) {
   const [timeElapsed, setTimeElapsed] = useState(0)
   const [isVoiceMode, setIsVoiceMode] = useState(false)
   const [quiz, setQuiz] = useState<any>(null)
+  const [isGuestMode, setIsGuestMode] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [existingAttempt, setExistingAttempt] = useState<any>(null)
@@ -96,7 +97,9 @@ export default function QuizPage({ params }: { params: { id: string } }) {
   }
 
   const handleNext = async () => {
-    if (currentQuestion < quiz.questions.length - 1) {
+    if (!quiz || !quiz.questions) return
+    const questionsLengthLocal = Array.isArray(quiz.questions) ? quiz.questions.length : 0
+    if (currentQuestion < questionsLengthLocal - 1) {
       setCurrentQuestion((prev) => prev + 1)
       setShowExplanation(false)
     } else {
@@ -141,9 +144,11 @@ export default function QuizPage({ params }: { params: { id: string } }) {
   }
 
   const handlePrevious = () => {
+    if (!quiz || !quiz.questions) return
     if (currentQuestion > 0) {
       setCurrentQuestion((prev) => prev - 1)
-      setShowExplanation(!!answers[quiz.questions[currentQuestion - 1].id])
+      const prevQuestion = Array.isArray(quiz.questions) ? quiz.questions[currentQuestion - 1] : null
+      setShowExplanation(!!(prevQuestion && answers[prevQuestion.id]))
     }
   }
 
@@ -154,6 +159,9 @@ export default function QuizPage({ params }: { params: { id: string } }) {
   }
 
   const calculateScore = () => {
+    if (!quiz || !quiz.questions || !Array.isArray(quiz.questions)) {
+      return { correct: 0, total: 0, percentage: 0 }
+    }
     let correct = 0
     quiz.questions.forEach((question: any) => {
       const userAnswer = answers[question.id]
@@ -162,10 +170,11 @@ export default function QuizPage({ params }: { params: { id: string } }) {
         correct++
       }
     })
+    const questionsLength = quiz.questions.length
     return {
       correct,
-      total: quiz.questions.length,
-      percentage: Math.round((correct / quiz.questions.length) * 100),
+      total: questionsLength,
+      percentage: questionsLength ? Math.round((correct / questionsLength) * 100) : 0,
     }
   }
 
@@ -252,7 +261,8 @@ export default function QuizPage({ params }: { params: { id: string } }) {
   }
 
   const question = quiz.questions[currentQuestion]
-  const progress = ((currentQuestion + 1) / quiz.questions.length) * 100
+  const questionsLength = Array.isArray(quiz.questions) ? quiz.questions.length : 0
+  const progress = questionsLength ? ((currentQuestion + 1) / questionsLength) * 100 : 0
 
   return (
     <div className="min-h-screen gradient-bg">
@@ -290,7 +300,7 @@ export default function QuizPage({ params }: { params: { id: string } }) {
           <div className="mt-4">
             <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
               <span>
-                Question {currentQuestion + 1} of {quiz.questions.length}
+                Question {currentQuestion + 1} of {questionsLength}
               </span>
               <span>{Math.round(progress)}% Complete</span>
             </div>
@@ -329,7 +339,7 @@ export default function QuizPage({ params }: { params: { id: string } }) {
             </div>
 
             <Button onClick={handleNext} disabled={!showExplanation} className="glow-effect">
-              {currentQuestion === quiz.questions.length - 1 ? "Finish Quiz" : "Next"}
+              {currentQuestion === questionsLength - 1 ? "Finish Quiz" : "Next"}
               <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           </div>

@@ -20,9 +20,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Not an adaptive quiz" }, { status: 400 });
     }
 
-    // Get user's performance on answered questions
-    const correctCount = answeredQuestions.filter((q: any) => q.isCorrect).length;
-    const totalAnswered = answeredQuestions.length;
+    // Get user's performance on answered questions (guard inputs)
+    const answeredArr = Array.isArray(answeredQuestions) ? answeredQuestions : [];
+    const correctCount = answeredArr.filter((q: any) => q.isCorrect).length;
+    const totalAnswered = answeredArr.length;
     const accuracy = totalAnswered > 0 ? correctCount / totalAnswered : 0.5;
 
     // Calculate next difficulty level
@@ -37,17 +38,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Find unanswered questions at the target difficulty
-    const answeredIds = answeredQuestions.map((q: any) => q.questionId);
-    const availableQuestions = quiz.questions.filter((q: any) => 
-      !answeredIds.includes(q.id) &&
-      Math.abs(q.difficultyLevel - nextDifficulty) <= 1
-    );
+      const answeredIds = Array.isArray(answeredQuestions) ? answeredQuestions.map((q: any) => q.questionId) : [];
+      const questions = Array.isArray(quiz.questions) ? quiz.questions : [];
+      const availableQuestions = questions.filter((q: any) => 
+        !answeredIds.includes(q.id) &&
+        Math.abs(q.difficultyLevel - nextDifficulty) <= 1
+      );
 
     if (availableQuestions.length === 0) {
       // No more questions at this difficulty, get any unanswered
-      const fallbackQuestions = quiz.questions.filter((q: any) => 
-        !answeredIds.includes(q.id)
-      );
+        const fallbackQuestions = questions.filter((q: any) => 
+          !answeredIds.includes(q.id)
+        );
       
       if (fallbackQuestions.length === 0) {
         return NextResponse.json({ 
@@ -62,7 +64,7 @@ export async function POST(request: NextRequest) {
         currentDifficulty: fallbackQuestions[0].difficultyLevel,
         progress: {
           answered: totalAnswered,
-          total: quiz.questions.length,
+            total: questions.length,
           accuracy: accuracy * 100
         }
       });
@@ -78,7 +80,7 @@ export async function POST(request: NextRequest) {
       currentDifficulty: nextDifficulty,
       progress: {
         answered: totalAnswered,
-        total: quiz.questions.length,
+          total: questions.length,
         accuracy: accuracy * 100
       },
       hint: accuracy < 0.5 && nextQuestion.hints ? nextQuestion.hints[0] : null
