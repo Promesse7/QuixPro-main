@@ -12,8 +12,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Brain, Settings, LogOut, User, Bell, Users, FileText, Briefcase, MessageSquare } from "lucide-react"
+import { Brain, Settings, LogOut, User, Bell, Users, FileText, Briefcase, MessageSquare, Newspaper, Video, ChevronLeft, ChevronRight } from "lucide-react"
 import Link from "next/link"
+import { usePathname, useRouter } from "next/navigation"
 
 interface DashboardHeaderProps {
   user: {
@@ -25,14 +26,51 @@ interface DashboardHeaderProps {
 }
 
 export function DashboardHeader({ user }: DashboardHeaderProps) {
+  const router = useRouter()
+  const pathname = usePathname()
+
+  const goBack = () => {
+    try {
+      router.back()
+    } catch (e) {
+      // fallback
+      if (typeof window !== 'undefined') window.history.back()
+    }
+  }
+
+  const goForward = () => {
+    if (typeof window !== 'undefined') window.history.forward()
+  }
+
   return (
     <header className="glass-effect border-b border-white/30 sticky top-0 z-50 shadow-md">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
-          <Link href="/dashboard" className="flex items-center space-x-2">
-            <Brain className="h-8 w-8 text-white glow-text" />
-            <span className="text-2xl font-bold glow-text">Quix</span>
-          </Link>
+          <div className="flex items-center space-x-2">
+            <Link href="/dashboard" className="flex items-center space-x-2">
+              <Brain className="h-8 w-8 text-white glow-text" />
+              <span className="text-2xl font-bold glow-text">Quix</span>
+            </Link>
+            {pathname !== '/dashboard' && (
+              <div className="flex items-center gap-1 bg-card/80 backdrop-blur rounded-full border border-border/30 shadow-sm p-1">
+                <button
+                  aria-label={`Go back from ${pathname}`}
+                  onClick={goBack}
+                  className="p-2 rounded-full hover:bg-muted/40 transition-colors"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+
+                <button
+                  aria-label={`Go forward from ${pathname}`}
+                  onClick={goForward}
+                  className="p-2 rounded-full hover:bg-muted/40 transition-colors"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              </div>
+            )}
+          </div>
 
           <nav className="hidden lg:flex items-center space-x-6">
             <Link href="/dashboard" className="text-foreground hover:text-primary transition-colors">
@@ -43,6 +81,9 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
             </Link>
             <Link href="/stories" className="text-muted-foreground hover:text-primary transition-colors">
               Stories
+            </Link>
+            <Link href="/quix-sites" className="text-muted-foreground hover:text-primary transition-colors">
+              Quix Sites
             </Link>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -73,6 +114,18 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
                   <Link href="/feedback">
                     <MessageSquare className="mr-2 h-4 w-4" />
                     Give Feedback
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/chat">
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    Chat
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/video">
+                    <Video className="mr-2 h-4 w-4" />
+                    Video
                   </Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
