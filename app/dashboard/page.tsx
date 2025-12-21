@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
@@ -13,6 +13,7 @@ import { Target, Trophy, Star, Award, Users, FileText, Briefcase, MessageSquare,
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { getBaseUrl } from "@/lib/getBaseUrl"
 import { PageTransition, StaggerContainer, fadeInUp } from "@/components/ui/page-transition"
+import { FloatingNavbar } from '@/components/floating-navbar'
 
 type DashboardUser = { id: string; name: string; email: string; role: string; level?: string; avatar?: string }
 
@@ -97,6 +98,7 @@ export default function StudentDashboard() {
 
   return (
     <PageTransition className="min-h-screen bg-background">
+      <FloatingNavbar />
       <DashboardHeader
         user={{
           name: user?.name || "Student",

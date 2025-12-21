@@ -109,6 +109,8 @@
     "@types/react": "^18.3.7",
     "@types/react-dom": "^18.3.2",
     "autoprefixer": "^10.4.21",
+    "eslint": "8.57.1",
+    "eslint-config-next": "16.1.0",
     "jsdom": "^22.1.0",
     "lightningcss": "^1.30.2",
     "postcss": "^8.5.6",
