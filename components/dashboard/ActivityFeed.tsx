@@ -1,29 +1,58 @@
 // components/dashboard/ActivityFeed.tsx
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'; // Assuming shadcn/ui-like Card
+import { Card, CardContent } from '@/components/ui/card';
 import {
   CheckCircleIcon, ChatBubbleOvalLeftEllipsisIcon, UsersIcon, BookOpenIcon,
-  MegaphoneIcon, QuestionMarkCircleIcon // Added QuestionMarkCircleIcon for answer_received
+  MegaphoneIcon, QuestionMarkCircleIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 
 // Component for a single activity item
 interface ActivityItemProps {
-  type: 'quiz_completed' | 'new_message' | 'group_joined' | 'answer_received' | 'post_updated' | 'general';
+  type: 'quiz_completed' | 'new_message' | 'group_joined' | 'answer_received' | 'post_updated' | 'general' | 'certificate_earned';
   description: string;
   time: string;
   link?: string; // Optional link to the activity details
 }
 
+const timeSince = (date: string | Date): string => {
+  const aDate = new Date(date);
+  const seconds = Math.floor((new Date().getTime() - aDate.getTime()) / 1000);
+
+  let interval = seconds / 31536000;
+  if (interval > 1) {
+    return Math.floor(interval) + " years ago";
+  }
+  interval = seconds / 2592000;
+  if (interval > 1) {
+    return Math.floor(interval) + " months ago";
+  }
+  interval = seconds / 86400;
+  if (interval > 1) {
+    return Math.floor(interval) + " days ago";
+  }
+  interval = seconds / 3600;
+  if (interval > 1) {
+    return Math.floor(interval) + " hours ago";
+  }
+  interval = seconds / 60;
+  if (interval > 1) {
+    return Math.floor(interval) + " minutes ago";
+  }
+  return Math.floor(seconds) + " seconds ago";
+};
+
 const getActivityIcon = (type: ActivityItemProps['type']) => {
   switch (type) {
     case 'quiz_completed':
       return <CheckCircleIcon className="h-5 w-5 text-green-500" />;
+    case 'certificate_earned':
+      return <BookOpenIcon className="h-5 w-5 text-yellow-500" />;
     case 'new_message':
       return <ChatBubbleOvalLeftEllipsisIcon className="h-5 w-5 text-blue-500" />;
     case 'group_joined':
       return <UsersIcon className="h-5 w-5 text-purple-500" />;
     case 'answer_received':
-      return <QuestionMarkCircleIcon className="h-5 w-5 text-orange-500" />; // Changed icon for answer_received
+      return <QuestionMarkCircleIcon className="h-5 w-5 text-orange-500" />;
     case 'post_updated':
       return <MegaphoneIcon className="h-5 w-5 text-indigo-500" />;
     case 'general':
@@ -40,7 +69,7 @@ const ActivityItem = ({ type, description, time, link }: ActivityItemProps) => {
       </div>
       <div className="flex-1">
         <p className="text-sm text-foreground leading-snug">{description}</p>
-        <p className="text-xs text-muted-foreground mt-1">{time}</p>
+        <p className="text-xs text-muted-foreground mt-1">{timeSince(time)}</p>
       </div>
     </div>
   );
@@ -56,52 +85,8 @@ const ActivityItem = ({ type, description, time, link }: ActivityItemProps) => {
   );
 };
 
-export function ActivityFeed() {
-  // Example data - replace with actual data fetched from GET /activity/feed
-  const activities: ActivityItemProps[] = [
-    {
-      type: 'quiz_completed',
-      description: 'You completed Quiz: "Trigonometry Basics"',
-      time: '2 hours ago',
-      link: '/quizzes/123',
-    },
-    {
-      type: 'new_message',
-      description: 'New message from Group X: "Project Deadline Approaching!"',
-      time: '5 hours ago',
-      link: '/quix-chat/group-x',
-    },
-    {
-      type: 'answer_received',
-      description: 'New answer on your question: "What is the capital of France?"',
-      time: '1 day ago',
-      link: '/quix-sites/post/456',
-    },
-    {
-      type: 'group_joined',
-      description: 'You joined Group: "A-Level Physics Enthusiasts"',
-      time: '2 days ago',
-      link: '/groups/789',
-    },
-    {
-      type: 'post_updated',
-      description: 'Admin updated "Welcome to Quix Studio" announcement',
-      time: '3 days ago',
-      link: '/quix-sites/announcements',
-    },
-    {
-      type: 'quiz_completed',
-      description: 'You completed Quiz: "Introduction to React Hooks"',
-      time: '4 days ago',
-      link: '/quizzes/101',
-    },
-    {
-      type: 'new_message',
-      description: 'Direct message from John Doe: "Can you help me with this problem?"',
-      time: '5 days ago',
-      link: '/quix-chat/john-doe',
-    },
-  ];
+export function ActivityFeed({ activities }: { activities: ActivityItemProps[] }) {
+  if (!activities) return null;
 
   return (
     <section className="space-y-4">

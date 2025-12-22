@@ -1,15 +1,28 @@
-// components/dashboard/StatsGrid.tsx
-import { ArrowUpRightIcon, ChatBubbleBottomCenterTextIcon, RocketLaunchIcon, UserGroupIcon, ShareIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'; // Assuming you have a shadcn/ui-like Card component
+'use client'
 
-// Reusing your suggested card structure but adapting for a dashboard overview
-interface StatCardProps {
+import { ArrowUpRightIcon, RocketLaunchIcon, CheckCircleIcon, UserGroupIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+interface Stat {
+  id: string;
   title: string;
   value: string;
-  description: string; // e.g., "vs. last month"
-  icon: React.ElementType;
-  changeType?: 'positive' | 'negative' | 'neutral'; // For styling the description/arrow
+  description: string;
+  changeType?: 'positive' | 'negative' | 'neutral';
 }
+
+interface StatCardProps extends Stat {
+  icon: React.ElementType;
+}
+
+const iconMap: { [key: string]: React.ElementType } = {
+  xp: RocketLaunchIcon,
+  streak: ArrowUpRightIcon,
+  level: UserGroupIcon,
+  quizzes: CheckCircleIcon,
+  certs: CheckCircleIcon,
+  default: QuestionMarkCircleIcon,
+};
 
 const StatCard = ({ title, value, description, icon: Icon, changeType = 'neutral' }: StatCardProps) => {
   const changeColorClass = changeType === 'positive' ? 'text-green-500' : changeType === 'negative' ? 'text-red-500' : 'text-muted-foreground';
@@ -31,50 +44,17 @@ const StatCard = ({ title, value, description, icon: Icon, changeType = 'neutral
   );
 };
 
-export function StatsGrid() {
-  // Explicitly type the 'stats' array to ensure type checking
-  const stats: StatCardProps[] = [
-    {
-      title: 'Total XP Earned',
-      value: '12,450 XP',
-      description: '+18.5% vs. last month',
-      icon: RocketLaunchIcon,
-      changeType: 'positive',
-    },
-    {
-      title: 'Unread Messages',
-      value: '12',
-      description: 'from 3 chats',
-      icon: ChatBubbleBottomCenterTextIcon,
-      changeType: 'neutral',
-    },
-    {
-      title: 'Quizzes Completed',
-      value: '23',
-      description: '+5 since last week',
-      icon: CheckCircleIcon,
-      changeType: 'positive',
-    },
-    {
-      title: 'Quix Sites Interactions',
-      value: '2,100',
-      description: 'Comments & reactions',
-      icon: UserGroupIcon,
-      changeType: 'positive',
-    },
-    {
-      title: 'Resources Shared',
-      value: '58',
-      description: 'via Quix Links',
-      icon: ShareIcon,
-      changeType: 'positive',
-    },
-  ];
+export function StatsGrid({ stats }: { stats: Stat[] }) {
+  if (!stats) return null;
 
   return (
     <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-      {stats.map((stat, index) => (
-        <StatCard key={index} {...stat} />
+      {stats.map((stat) => (
+        <StatCard
+          key={stat.id}
+          {...stat}
+          icon={iconMap[stat.id] || iconMap.default}
+        />
       ))}
     </section>
   );

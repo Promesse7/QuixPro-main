@@ -1,87 +1,59 @@
 // components/dashboard/AnalyticsSection.tsx
-import * as React from 'react';
-import {
-  ChartBarSquareIcon,
-  ChartPieIcon,
-  PresentationChartLineIcon,
-  ChatBubbleOvalLeftEllipsisIcon,
-} from '@heroicons/react/24/outline';
+'use client'
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
-// Reusable placeholder card for analytics charts
-type ChartPlaceholderProps = {
-  title: string;
-  description: string;
-  icon: React.ElementType;
-};
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF'];
 
-function ChartPlaceholder({
-  title,
-  description,
-  icon: Icon,
-}: ChartPlaceholderProps) {
-  return (
-    <Card className="bg-card/60 backdrop-blur-sm border border-border/50 shadow-lg flex flex-col transition-transform duration-200 hover:scale-[1.01]">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          {title}
-        </CardTitle>
-        <Icon className="h-5 w-5 text-muted-foreground" />
-      </CardHeader>
+export function AnalyticsSection({ analytics }: { analytics: any }) {
+    const { weeklyActivity, subjectDistribution, difficultyBreakdown, chatActivity } = analytics;
 
-      <CardContent className="flex flex-grow items-center justify-center p-4">
-        <div className="text-center text-muted-foreground text-sm">
-          <p className="text-xl font-semibold text-foreground mb-2">
-            {description}
-          </p>
-          <p>[Chart will be rendered here]</p>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
+    const renderChart = (data: any[], dataKey: string, name: string) => (
+        <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={data}>
+                <XAxis dataKey="day" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis fontSize={12} tickLine={false} axisLine={false} />
+                <Tooltip />
+                <Bar dataKey={dataKey} name={name} fill="#8884d8" radius={[4, 4, 0, 0]} />
+            </BarChart>
+        </ResponsiveContainer>
+    );
 
-export function AnalyticsSection() {
-  const charts: ChartPlaceholderProps[] = [
-    {
-      title: 'Weekly Quiz Activity',
-      description: 'Quizzes attempted per day',
-      icon: ChartBarSquareIcon,
-    },
-    {
-      title: 'Subject Distribution',
-      description: 'Breakdown by subject',
-      icon: ChartPieIcon,
-    },
-    {
-      title: 'Difficulty Breakdown',
-      description: 'From Easy to Expert',
-      icon: PresentationChartLineIcon,
-    },
-    {
-      title: 'Chat Activity',
-      description: 'Messages sent per day',
-      icon: ChatBubbleOvalLeftEllipsisIcon,
-    },
-  ];
+    const renderPieChart = (data: any[], dataKey: string, nameKey: string) => (
+        <ResponsiveContainer width="100%" height={200}>
+            <PieChart>
+                <Pie data={data} dataKey={dataKey} nameKey={nameKey} cx="50%" cy="50%" outerRadius={80} fill="#8884d8" label>
+                    {data.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                </Pie>
+                <Tooltip />
+            </PieChart>
+        </ResponsiveContainer>
+    );
 
-  return (
-    <section className="space-y-4">
-      <h2 className="text-xl font-semibold text-foreground">
-        Progress & Activity Analytics
-      </h2>
+    const renderAnalyticsCard = (title: string, description: string, data: any[], chart: React.ReactNode) => (
+        <Card className="bg-card/60 backdrop-blur-sm border-border/50 shadow-lg">
+            <CardHeader>
+                <CardTitle>{title}</CardTitle>
+                <p className="text-sm text-muted-foreground">{description}</p>
+            </CardHeader>
+            <CardContent>
+                {data && data.length > 0 ? chart : <p className="text-center text-muted-foreground">No data available.</p>}
+            </CardContent>
+        </Card>
+    );
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {charts.map((chart, index) => (
-          <ChartPlaceholder key={index} {...chart} />
-        ))}
-      </div>
-    </section>
-  );
+    return (
+        <section className="space-y-4">
+            <h2 className="text-xl font-semibold text-foreground">Your Analytics</h2>
+            <div className="grid gap-4 md:grid-cols-2">
+                {renderAnalyticsCard('Weekly Quiz Activity', 'Quizzes attempted per day', weeklyActivity, renderChart(weeklyActivity, 'attempts', 'Attempts'))}
+                {renderAnalyticsCard('Subject Distribution', 'Breakdown by subject', subjectDistribution, renderPieChart(subjectDistribution, 'count', 'subject'))}
+                {renderAnalyticsCard('Difficulty Breakdown', 'From Easy to Expert', difficultyBreakdown, renderPieChart(difficultyBreakdown, 'count', 'difficulty'))}
+                {renderAnalyticsCard('Chat Activity', 'Messages sent per day', chatActivity, renderChart(chatActivity, 'messages', 'Messages'))}
+            </div>
+        </section>
+    );
 }
