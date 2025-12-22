@@ -114,6 +114,46 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 }
+/* styles/globals.css */
+
+/* Add this to your globals.css */
+/* Base scrollbar styles for WebKit browsers */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px; /* For vertical scrollbars */
+  height: 8px; /* For horizontal scrollbars */
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--background); /* Use your background color variable */
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--muted); /* Use a muted color for the thumb */
+  border-radius: 10px;
+  border: 2px solid var(--background); /* Border color matching background */
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--foreground); /* Brighter on hover */
+}
+
+/* For Firefox (using tailwind-scrollbar-hide or direct css if needed) */
+/* If you use tailwind-scrollbar, you can use classes like scrollbar-thin scrollbar-thumb-muted scrollbar-track-background */
+/* For example, for a thin scrollbar that automatically hides if not needed */
+.custom-scrollbar {
+  scrollbar-width: thin; /* "auto" or "thin" */
+  scrollbar-color: var(--muted) var(--background); /* thumb color track color */
+}
+
+/* You might want to hide it completely on small screens or specific elements */
+/* .no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+} */
 
 @layer base {
   * {
