@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getDashboardData } from '@/lib/getDashboardData';
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth"
+// import { getDashboardData } from '@/lib/getDashboardData';
+// import { getServerSession } from "next-auth/next"
+// import { authOptions } from "@/lib/auth"
 
 export async function GET() {
   // const session = await getServerSession(authOptions)
@@ -10,14 +10,12 @@ export async function GET() {
   // }
   // const userId = session.user.id;
 
-  // Using a hardcoded user ID for now, as per the mock auth system
-  const userId = "1";
-
   try {
-    const dashboardData = await getDashboardData(userId);
-    return NextResponse.json(dashboardData);
+    // For now, let's return a simple JSON object to test the route.
+    console.log("API route /api/dashboard-data was hit successfully.");
+    return NextResponse.json({ message: "API route is working!" });
   } catch (error) {
-    console.error('Error fetching dashboard data:', error);
+    console.error('Error in dashboard-data API route:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
