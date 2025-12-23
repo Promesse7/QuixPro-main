@@ -1,0 +1,38 @@
+
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "groups": {
+      "$groupId": {
+        ".read": "data.child('members').hasChild(auth.uid)",
+        "members": {
+            }
+      }
+    },
+
+    "messages": {
+      "$groupId": {
+        ".read": "root.child('groups').child($groupId).child('members').hasChild(auth.uid)",
+
+        ".write": "root.child('groups').child($groupId).child('members').hasChild(auth.uid)",
+
+        "$messageId": {
+          ".validate": "newData.hasChildren(['senderId', 'content', 'createdAt', 'type']) && newData.child('senderId').val() === auth.uid && newData.child('content').isString() && newData.child('content').val().length > 0"
+        }
+      }
+    },
+
+    "typingIndicators": {
+      "$groupId": {
+        ".read": "root.child('groups').child($groupId).child('members').hasChild(auth.uid)",
+
+        "$userId": {
+          ".write": "$userId === auth.uid && root.child('groups').child($groupId).child('members').hasChild(auth.uid)",
+          ".validate": "newData.hasChildren(['isTyping', 'lastUpdated'])"
+        }
+      }
+    }
+  }
+}
