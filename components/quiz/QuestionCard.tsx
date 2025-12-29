@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
-import { CheckCircle2, XCircle } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { CheckCircle2, XCircle, Calculator } from 'lucide-react'
 import { useState } from 'react'
+import { MathInput } from '@/components/math/MathInput'
 
 export interface Question {
   _id?: string
@@ -13,6 +15,7 @@ export interface Question {
   options: string[]
   correctAnswer: number | string
   explanation?: string
+  type?: 'multiple-choice' | 'math' // Add question type
 }
 
 interface QuestionCardProps {
@@ -41,7 +44,11 @@ export function QuestionCard({
   canGoForward = true,
 }: QuestionCardProps) {
   const [submitted, setSubmitted] = useState(false)
+  const [showMathKeyboard, setShowMathKeyboard] = useState(false)
   const isAnswered = selectedAnswer !== null && selectedAnswer !== undefined
+  
+  // Determine if this is a math question (no options provided)
+  const isMathQuestion = question && (!question.options || question.options.length === 0)
 
   // Return loading state if question is null
   if (!question) {
@@ -53,12 +60,22 @@ export function QuestionCard({
       </Card>
     )
   }
-  const isCorrect = showFeedback && isAnswered && String(selectedAnswer) === String(question.correctAnswer)
+  const isCorrect = showFeedback && isAnswered && (
+    isMathQuestion 
+      ? String(selectedAnswer) === String(question.correctAnswer)
+      : String(selectedAnswer) === String(question.correctAnswer)
+  )
 
   const handleAnswerSelect = (value: string) => {
     if (!submitted || !showFeedback) {
-      const answerIndex = parseInt(value)
-      onAnswerSelect(answerIndex)
+      if (isMathQuestion) {
+        // For math questions, pass the value directly
+        onAnswerSelect(value)
+      } else {
+        // For multiple choice, convert to index
+        const answerIndex = parseInt(value)
+        onAnswerSelect(answerIndex)
+      }
     }
   }
 
@@ -92,50 +109,84 @@ export function QuestionCard({
       </CardHeader>
 
       <CardContent className="flex-grow pt-6 space-y-4">
-        <RadioGroup
-          value={selectedAnswer !== null && selectedAnswer !== undefined ? String(selectedAnswer) : ''}
-          onValueChange={handleAnswerSelect}
-        >
-          <div className="space-y-3">
-            {question.options.map((option, index) => {
-              const isSelected = String(selectedAnswer) === String(index)
-              const optionIsCorrect = String(question.correctAnswer) === String(index)
-              const shouldShowCorrect = submitted && showFeedback && optionIsCorrect
-              const shouldShowIncorrect = submitted && showFeedback && isSelected && !isCorrect
-
-              return (
-                <div
-                  key={index}
-                  className={`flex items-center space-x-3 p-4 rounded-lg border-2 transition-all cursor-pointer ${
-                    submitted && showFeedback
-                      ? shouldShowCorrect
-                        ? 'border-green-500 bg-green-500/10'
-                        : shouldShowIncorrect
-                        ? 'border-red-500 bg-red-500/10'
-                        : 'border-border/50 bg-background'
-                      : isSelected
-                      ? 'border-primary bg-primary/10'
-                      : 'border-border/50 hover:border-border'
-                  }`}
-                >
-                  <RadioGroupItem value={String(index)} id={`option-${index}`} />
-                  <Label
-                    htmlFor={`option-${index}`}
-                    className="flex-grow cursor-pointer font-medium"
-                  >
-                    {option}
-                  </Label>
-                  {submitted && showFeedback && shouldShowCorrect && (
-                    <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
-                  )}
-                  {submitted && showFeedback && shouldShowIncorrect && (
-                    <XCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
-                  )}
-                </div>
-              )
-            })}
+        {isMathQuestion ? (
+          // Math Question Mode
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm font-medium text-blue-600">Math Question</p>
+              <Button
+                onClick={() => setShowMathKeyboard(!showMathKeyboard)}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <Calculator className="w-4 h-4" />
+                {showMathKeyboard ? 'Hide Keyboard' : 'Show Keyboard'}
+              </Button>
+            </div>
+            
+            {showMathKeyboard ? (
+              <MathInput
+                value={selectedAnswer as string || ''}
+                onChange={onAnswerSelect}
+                placeholder="Enter your mathematical answer..."
+              />
+            ) : (
+              <Input
+                value={selectedAnswer as string || ''}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => onAnswerSelect(e.target.value)}
+                placeholder="Type your answer..."
+                className="w-full"
+              />
+            )}
           </div>
-        </RadioGroup>
+        ) : (
+          // Multiple Choice Mode
+          <RadioGroup
+            value={selectedAnswer !== null && selectedAnswer !== undefined ? String(selectedAnswer) : ''}
+            onValueChange={handleAnswerSelect}
+          >
+            <div className="space-y-3">
+              {question.options.map((option, index) => {
+                const isSelected = String(selectedAnswer) === String(index)
+                const optionIsCorrect = String(question.correctAnswer) === String(index)
+                const shouldShowCorrect = submitted && showFeedback && optionIsCorrect
+                const shouldShowIncorrect = submitted && showFeedback && isSelected && !isCorrect
+
+                return (
+                  <div
+                    key={index}
+                    className={`flex items-center space-x-3 p-4 rounded-lg border-2 transition-all cursor-pointer ${
+                      submitted && showFeedback
+                        ? shouldShowCorrect
+                          ? 'border-green-500 bg-green-500/10'
+                          : shouldShowIncorrect
+                          ? 'border-red-500 bg-red-500/10'
+                          : 'border-border/50 bg-background'
+                        : isSelected
+                          ? 'border-primary bg-primary/10'
+                          : 'border-border/50 hover:border-border'
+                    }`}
+                  >
+                    <RadioGroupItem value={String(index)} id={`option-${index}`} />
+                    <Label
+                      htmlFor={`option-${index}`}
+                      className="flex-grow cursor-pointer font-medium"
+                    >
+                      {option}
+                    </Label>
+                    {submitted && showFeedback && shouldShowCorrect && (
+                      <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
+                    )}
+                    {submitted && showFeedback && shouldShowIncorrect && (
+                      <XCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </RadioGroup>
+        )}
 
         {submitted && showFeedback && question.explanation && (
           <div className={`p-4 rounded-lg border-l-4 ${

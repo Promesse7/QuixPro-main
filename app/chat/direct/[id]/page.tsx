@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Send, Phone, Video, MoreVertical, MessageCircle, Filter } from 'lucide-react'
+import { Send, ArrowLeft, Phone, Video, MoreVertical, MessageCircle, Calculator } from 'lucide-react';
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { AppBreadcrumb } from '@/components/app/AppBreadcrumb'
@@ -13,6 +13,7 @@ import { useRealtimeMessages } from '@/hooks/useRealtimeMessages'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { getCurrentUserWithId, emailToId } from '@/lib/userUtils'
 import { database } from '@/lib/firebaseClient'
+import { MathInput } from '@/components/math/MathInput'
 
 interface Message {
   _id: string
@@ -43,6 +44,7 @@ export default function DirectChatPage() {
   const [sending, setSending] = useState(false)
   const [otherUser, setOtherUser] = useState<User | null>(null)
   const [userLoading, setUserLoading] = useState(true)
+  const [showMathKeyboard, setShowMathKeyboard] = useState(false)
 
   // Mobile sidebar toggle
   const [showSidebar, setShowSidebar] = useState(false)
@@ -281,23 +283,50 @@ export default function DirectChatPage() {
 
         {/* Input */}
         <div className="p-4 border-t border-border bg-background/50 backdrop-blur-sm">
-          <div className="flex gap-2 items-center max-w-4xl mx-auto w-full">
-            <Input
-              placeholder="Type a message..."
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-              className="flex-1 rounded-full px-4"
-            />
-            <Button
-              onClick={sendMessage}
-              disabled={sending || !newMessage.trim()}
-              size="icon"
-              className="rounded-full w-10 h-10 shrink-0"
-            >
-              <Send className="w-4 h-4" />
-            </Button>
-          </div>
+          {showMathKeyboard ? (
+            <div className="mb-3">
+              <MathInput
+                value={newMessage}
+                onChange={setNewMessage}
+                placeholder="Enter math expression..."
+              />
+              <div className="flex gap-2 mt-2">
+                <Button onClick={() => setShowMathKeyboard(false)} variant="outline" size="sm">
+                  Close
+                </Button>
+                <Button onClick={sendMessage} disabled={sending || !newMessage.trim()} size="sm">
+                  Send Math
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex gap-2 items-center max-w-4xl mx-auto w-full">
+              <Input
+                placeholder="Type a message..."
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+                className="flex-1 rounded-full px-4"
+              />
+              <Button
+                onClick={sendMessage}
+                disabled={sending || !newMessage.trim()}
+                size="icon"
+                className="rounded-full w-10 h-10 shrink-0"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+              <Button
+                onClick={() => setShowMathKeyboard(true)}
+                variant="outline"
+                size="icon"
+                className="rounded-full w-10 h-10 shrink-0"
+                title="Open Math Keyboard"
+              >
+                <Calculator className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>
