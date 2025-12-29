@@ -1,131 +1,166 @@
-'use client';
+"use client"
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { Message } from '@/models/Chat';
-import { database, authenticateWithFirebase } from '@/lib/firebaseClient';
-import { getCurrentUserId } from '@/lib/userUtils';
-import { ref, onChildAdded, off } from 'firebase/database';
+import { useState, useEffect, useCallback, useRef } from "react"
+import type { Message } from "@/models/Chat"
+import { database, authenticateWithFirebase } from "@/lib/firebaseClient"
+import { getCurrentUserId } from "@/lib/userUtils"
+import { ref, onValue, onChildAdded, off } from "firebase/database"
 
-// Enriched message type that includes the full sender object
-interface EnrichedMessage extends Omit<Message, 'senderId'> {
-  sender: { _id: string; name: string; avatar?: string };
+interface EnrichedMessage extends Omit<Message, "senderId"> {
+  sender: { _id: string; name: string; avatar?: string; image?: string }
 }
 
-// A simple cache for user data
-const userCache = new Map<string, any>();
+const userCache = new Map<string, any>()
 
-// Function to fetch user data for a set of IDs
 async function fetchUsers(ids: string[]) {
-  const uniqueIds = [...new Set(ids.filter(id => !userCache.has(id)))];
-  if (uniqueIds.length === 0) return;
+  const uniqueIds = [...new Set(ids.filter((id) => !userCache.has(id)))]
+  if (uniqueIds.length === 0) return
 
   try {
-    const response = await fetch(`/api/users?ids=${uniqueIds.join(',')}`);
-    if (!response.ok) throw new Error('Failed to fetch user data');
-    const users = await response.json();
-    users.forEach((user: any) => userCache.set(user._id, user));
+    const response = await fetch(`/api/users?ids=${uniqueIds.join(",")}`)
+    if (!response.ok) throw new Error("Failed to fetch user data")
+    const users = await response.json()
+    users.forEach((user: any) => userCache.set(user._id, user))
   } catch (error) {
-    console.error("Error fetching user data:", error);
+    console.error("[v0] Error fetching user data:", error)
   }
 }
 
 export function useChat(groupId: string) {
-  const [messages, setMessages] = useState<EnrichedMessage[]>([]);
-  const [typingUsers, setTypingUsers] = useState<string[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const isFetching = useRef(false);
+  const [messages, setMessages] = useState<EnrichedMessage[]>([])
+  const [typingUsers, setTypingUsers] = useState<Record<string, boolean>>({})
+  const [error, setError] = useState<string | null>(null)
+  const isFetching = useRef(false)
 
   const enrichMessages = async (messages: Message[]): Promise<EnrichedMessage[]> => {
-    const senderIds = messages.map(m => m.senderId);
-    await fetchUsers(senderIds);
-    return messages.map(msg => ({
+    const senderIds = messages.map((m) => m.senderId)
+    await fetchUsers(senderIds)
+    return messages.map((msg) => ({
       ...msg,
-      sender: userCache.get(msg.senderId) || { _id: msg.senderId, name: 'Unknown User' },
-    }));
-  };
+      sender: userCache.get(msg.senderId) || { _id: msg.senderId, name: "Unknown User" },
+    }))
+  }
 
-  // Initialize Firebase and fetch initial messages
   useEffect(() => {
     async function setup() {
-      if (isFetching.current) return;
-      isFetching.current = true;
+      if (isFetching.current) return
+      isFetching.current = true
       try {
-        const userId = getCurrentUserId();
+        const userId = getCurrentUserId()
         if (userId) {
-          await authenticateWithFirebase(userId);
+          await authenticateWithFirebase(userId)
         }
 
-        const response = await fetch(`/api/groups/${groupId}/messages`);
-        if (!response.ok) throw new Error('Failed to fetch initial messages');
-        const data = await response.json();
+        // Fetch initial messages from MongoDB
+        const response = await fetch(`/api/groups/${groupId}/messages`)
+        if (!response.ok) throw new Error("Failed to fetch initial messages")
+        const data = await response.json()
 
-        const enriched = await enrichMessages(data.messages);
-        setMessages(enriched);
+        const enriched = await enrichMessages(data.messages || [])
+        setMessages(enriched)
+        console.log("[v0] Initial messages loaded:", enriched.length)
       } catch (err: any) {
-        setError(err.message);
+        console.error("[v0] Error fetching initial messages:", err)
+        setError(err.message)
       } finally {
-        isFetching.current = false;
+        isFetching.current = false
       }
     }
 
-    if (groupId) setup();
-  }, [groupId]);
+    if (groupId) setup()
+  }, [groupId])
 
-  // Listen for real-time updates
   useEffect(() => {
-    if (!groupId || !database) return;
+    if (!groupId || !database) return
 
-    const messagesRef = ref(database, `messages/${groupId}`);
-    const unsubscribeFromMessages = onChildAdded(messagesRef, async (snapshot) => {
-      const newMessage = snapshot.val();
-      const [enrichedNewMessage] = await enrichMessages([newMessage]);
-      setMessages((prevMessages) => [...prevMessages, enrichedNewMessage]);
-    });
+    // Listen for NEW messages from Firebase (using onChildAdded)
+    const messagesRef = ref(database, `messages/${groupId}`)
+    const unsubscribeFromMessages = onChildAdded(
+      messagesRef,
+      async (snapshot) => {
+        const newMessage = snapshot.val()
+        console.log("[v0] New message received:", newMessage)
 
-    const typingRef = ref(database, `typingIndicators/${groupId}`);
-    const unsubscribeFromTyping = onChildAdded(typingRef, (snapshot) => {
-      const typingData = { [snapshot.key as string]: snapshot.val() };
-      const newTypingUsers = Object.keys(typingData).filter(userId => typingData[userId].isTyping);
-      setTypingUsers(newTypingUsers);
-    });
+        if (newMessage && newMessage._id) {
+          // Check if message already exists to avoid duplicates
+          setMessages((prevMessages) => {
+            const exists = prevMessages.some((m) => m._id === newMessage._id)
+            if (exists) return prevMessages
+
+            // Enrich new message with user data
+            enrichMessages([newMessage]).then((enriched) => {
+              setMessages((prev) => [...prev, enriched[0]])
+            })
+
+            return prevMessages
+          })
+        }
+      },
+      (error) => {
+        console.error("[v0] Firebase messages listener error:", error)
+      },
+    )
+
+    const typingRef = ref(database, `typingIndicators/${groupId}`)
+    const unsubscribeFromTyping = onValue(
+      typingRef,
+      (snapshot) => {
+        const typingData = snapshot.val() || {}
+        const newTypingUsers = Object.entries(typingData)
+          .filter(([_, data]: [string, any]) => data?.isTyping === true)
+          .reduce((acc, [userId]) => ({ ...acc, [userId]: true }), {} as Record<string, boolean>)
+
+        setTypingUsers(newTypingUsers)
+      },
+      (error) => {
+        console.warn("[v0] Firebase typing listener error:", error)
+      },
+    )
 
     return () => {
-      off(messagesRef);
-      off(typingRef);
-    };
-  }, [groupId, database]);
+      off(messagesRef, "child_added", unsubscribeFromMessages as any)
+      off(typingRef, "value", unsubscribeFromTyping as any)
+    }
+  }, [groupId, database])
 
   const sendMessage = useCallback(
-    async (content: string) => {
-      if (!groupId) return;
+    async (content: string, type = "text", metadata?: any) => {
+      if (!groupId) return
       try {
-        await fetch(`/api/groups/${groupId}/messages`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content }),
-        });
+        const response = await fetch(`/api/groups/${groupId}/messages`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content, type, metadata }),
+        })
+
+        if (!response.ok) {
+          throw new Error("Failed to send message")
+        }
+
+        console.log("[v0] Message sent successfully")
       } catch (err: any) {
-        setError(err.message);
+        console.error("[v0] Error sending message:", err)
+        setError(err.message)
       }
     },
-    [groupId]
-  );
+    [groupId],
+  )
 
-  const sendTypingNotification = useCallback(
+  const setTyping = useCallback(
     async (isTyping: boolean) => {
-      if (!groupId) return;
+      if (!groupId) return
       try {
         await fetch(`/api/groups/${groupId}/typing`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ isTyping }),
-        });
+        })
       } catch (err: any) {
-        setError(err.message);
+        console.warn("[v0] Error setting typing indicator:", err)
       }
     },
-    [groupId]
-  );
+    [groupId],
+  )
 
-  return { messages, typingUsers, sendMessage, sendTypingNotification, error };
+  return { messages, typingUsers, sendMessage, setTyping, error }
 }

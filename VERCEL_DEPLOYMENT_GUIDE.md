@@ -2,9 +2,9 @@
 
 ## Problem Fixed
 This update resolves the Vercel deployment error:
-```
+\`\`\`
 Failed to parse URL from /api/levels
-```
+\`\`\`
 
 The issue was caused by relative fetch URLs (`/api/levels`) being used during the build process, where there's no running server to resolve them.
 
@@ -24,7 +24,7 @@ All fetch calls have been updated to use absolute URLs via the `getBaseUrl()` ut
 ### 2. How It Works
 The `getBaseUrl()` function (in `lib/getBaseUrl.ts`) automatically determines the correct base URL:
 
-```typescript
+\`\`\`typescript
 export function getBaseUrl(): string {
   // 1. Use explicit public base URL if set
   if (process?.env?.NEXT_PUBLIC_BASE_URL) return process.env.NEXT_PUBLIC_BASE_URL;
@@ -35,19 +35,19 @@ export function getBaseUrl(): string {
   // 3. Fallback to localhost for local development
   return 'http://localhost:3000';
 }
-```
+\`\`\`
 
 ## Deployment Instructions
 
 ### Step 1: Local Testing
 1. The `.env.local` file has been created with:
-   ```
+   \`\`\`
    NEXT_PUBLIC_BASE_URL=http://localhost:3000
-   ```
+   \`\`\`
 2. Test locally to ensure everything works:
-   ```bash
+   \`\`\`bash
    npm run dev
-   ```
+   \`\`\`
 
 ### Step 2: Configure Vercel Environment Variables
 1. Go to your Vercel Dashboard

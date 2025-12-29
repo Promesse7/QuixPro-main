@@ -1,342 +1,367 @@
-'use client';
+"use client"
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Search, MessageCircle, Users, Lock, Globe, Eye, Plus, Settings, LogOut, Menu, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useConversations } from '@/hooks/useConversations';
-import { getCurrentUser } from '@/lib/auth';
-import { OnlineStatusIndicator } from '@/components/chat/OnlineStatusIndicator';
-import { emailToId, getCurrentUserId } from '@/lib/userUtils';
-import { cn } from '@/lib/utils';
+import { useState, useEffect } from "react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { Search, MessageCircle, Users, Lock, Settings, X } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useConversations } from "@/hooks/useConversations"
+import { getCurrentUser } from "@/lib/auth"
+import { getCurrentUserId } from "@/lib/userUtils"
+import { cn } from "@/lib/utils"
 
 interface ConversationListPanelProps {
-    className?: string;
-    activeId?: string; // ID of the currently active chat (user email or group ID)
-    isMobile?: boolean;
-    onCloseMobile?: () => void;
+  className?: string
+  activeId?: string
+  isMobile?: boolean
+  onCloseMobile?: () => void
 }
 
-export function ConversationListPanel({ className = '', activeId, isMobile = false, onCloseMobile }: ConversationListPanelProps) {
-    const pathname = usePathname();
-    const currentUser = getCurrentUser();
-    const currentUserId = getCurrentUserId();
-    const { conversations, isLoading } = useConversations(currentUserId || 'test@example.com');
+export function ConversationListPanel({
+  className = "",
+  activeId,
+  isMobile = false,
+  onCloseMobile,
+}: ConversationListPanelProps) {
+  const pathname = usePathname()
+  const currentUser = getCurrentUser()
+  const currentUserId = getCurrentUserId()
+  const { conversations, isLoading } = useConversations(currentUserId || "test@example.com")
 
-    // Local state for UI
-    const [activeTab, setActiveTab] = useState<'direct' | 'groups'>('direct');
-    const [searchTerm, setSearchTerm] = useState('');
-    const [filterType, setFilterType] = useState<'all' | 'online' | 'unread'>('all');
-    const [groupFilter, setGroupFilter] = useState<'all' | 'joined' | 'public' | 'private'>('all');
-    const [mounted, setMounted] = useState(false);
+  const [activeTab, setActiveTab] = useState<"direct" | "groups">("direct")
+  const [searchTerm, setSearchTerm] = useState("")
+  const [filterType, setFilterType] = useState<"all" | "online" | "unread">("all")
+  const [groupFilter, setGroupFilter] = useState<"all" | "joined" | "public" | "private">("all")
+  const [mounted, setMounted] = useState(false)
 
-    useEffect(() => {
-        setMounted(true);
-    }, []);
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
+  const getActiveSection = () => {
+    if (!pathname) return "chats"
+    if (pathname === "/chat") return "chats"
+    if (pathname === "/chat/discover") return "discover"
+    if (pathname.startsWith("/chat/groups")) return "groups"
+    if (pathname.startsWith("/chat/direct")) return "direct"
+    return "chats"
+  }
 
+  const activeSection = getActiveSection()
 
-    // Determine active section based on pathname
-    const getActiveSection = () => {
-        if (!pathname) return 'chats';
-        if (pathname === '/chat') return 'chats';
-        if (pathname === '/chat/discover') return 'discover';
-        if (pathname.startsWith('/chat/groups')) return 'groups';
-        if (pathname.startsWith('/chat/direct')) return 'direct';
-        return 'chats';
-    };
+  const [groups, setGroups] = useState<any[]>([])
+  const [groupsLoading, setGroupsLoading] = useState(false)
 
-    const activeSection = getActiveSection();
+  useEffect(() => {
+    const loadGroups = async () => {
+      try {
+        setGroupsLoading(true)
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "getUserGroups",
+            data: { userId: currentUserId },
+          }),
+        })
 
-    // Placeholder for groups data
-    const [groups] = useState<any[]>([
-        {
-            _id: '1',
-            name: 'Math Study Group',
-            description: 'Advanced mathematics problem solving',
-            type: 'public',
-            memberCount: 25,
-            isMember: true,
-            tags: ['Math', 'Study'],
-            lastActivity: '2h ago'
-        },
-        {
-            _id: '2',
-            name: 'Science Club',
-            description: 'Explore scientific concepts',
-            type: 'public',
-            memberCount: 18,
-            isMember: false,
-            tags: ['Science'],
-            lastActivity: '1d ago'
+        if (response.ok) {
+          const data = await response.json()
+          console.log("[v0] Groups loaded:", data.groups)
+          setGroups(data.groups || [])
         }
-    ]);
+      } catch (error) {
+        console.error("[v0] Error loading groups:", error)
+      } finally {
+        setGroupsLoading(false)
+      }
+    }
 
-    const filteredConversations = conversations.filter(conv => {
-        const matchesSearch = conv.otherUser?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            conv.otherUser?.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    if (currentUserId && activeTab === "groups") {
+      loadGroups()
+    }
+  }, [currentUserId, activeTab])
 
-        if (filterType === 'online') return matchesSearch && conv.otherUser?.isOnline;
-        if (filterType === 'unread') return matchesSearch && conv.unreadCount > 0;
-        return matchesSearch;
-    });
+  const filteredConversations = conversations.filter((conv) => {
+    const matchesSearch =
+      conv.otherUser?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      conv.otherUser?.email?.toLowerCase().includes(searchTerm.toLowerCase())
 
-    const filteredGroups = groups.filter(group => {
-        const matchesSearch = group.name.toLowerCase().includes(searchTerm.toLowerCase());
+    if (filterType === "online") return matchesSearch && conv.otherUser?.isOnline
+    if (filterType === "unread") return matchesSearch && conv.unreadCount > 0
+    return matchesSearch
+  })
 
-        if (groupFilter === 'joined') return matchesSearch && group.isMember;
-        if (groupFilter === 'public') return matchesSearch && group.type === 'public';
-        if (groupFilter === 'private') return matchesSearch && group.type === 'private';
-        return matchesSearch;
-    });
+  const filteredGroups = groups.filter((group) => {
+    const matchesSearch = group.name.toLowerCase().includes(searchTerm.toLowerCase())
 
-    return (
-        <div className={cn("flex flex-col h-full bg-background border-r border-border", className)}>
-            {/* Header */}
-            <div className="p-4 border-b border-border">
-                {/* Logo and Close Button */}
-                <div className="flex items-center justify-between mb-4">
-                    <Link href="/" className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                            <span className="text-primary-foreground font-bold text-lg">Q</span>
-                        </div>
-                        <span className="font-semibold text-lg">Quix Chat</span>
-                    </Link>
-                    {isMobile && (
-                        <Button variant="ghost" size="icon" onClick={onCloseMobile}>
-                            <X className="w-5 h-5" />
-                        </Button>
-                    )}
-                </div>
+    if (groupFilter === "joined") return matchesSearch
+    if (groupFilter === "public") return matchesSearch && group.isPublic
+    if (groupFilter === "private") return matchesSearch && !group.isPublic
+    return matchesSearch
+  })
 
-                {/* Chat Tabs (only show on chat pages) */}
-                {(activeSection === 'chats' || activeSection === 'direct') && (
-                    <>
-
-                        {/* Search */}
-                        <div className="relative mt-3">
-                            <Search className="absolute left-3 top-1/2 bottom-1/2 transform -translate-y-1/2 text-muted-foreground w-3 h-3" />
-                            <Input
-                                placeholder="Search..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-9 h-8 text-sm"
-                            />
-                        </div>
-
-                        <div className="flex mt-3 gap-2">
-                            <Button
-                                size="sm"
-                                variant={activeTab === 'direct' ? 'default' : 'ghost'}
-                                onClick={() => setActiveTab('direct')}
-                                className="flex-1 h-8 text-xs"
-                            >
-                                <MessageCircle className="w-3 h-3 mr-1" />
-                                Direct
-                            </Button>
-                            <Button
-                                size="sm"
-                                variant={activeTab === 'groups' ? 'default' : 'ghost'}
-                                onClick={() => setActiveTab('groups')}
-                                className="flex-1 h-8 text-xs"
-                            >
-                                <Users className="w-3 h-3 mr-1" />
-                                Groups
-                            </Button>
-                        </div>
-
-
-
-                        {/* Filters */}
-                        {activeTab === 'direct' ? (
-                            <div className="flex gap-2 justify-start overflow-x-auto pb-1 scrollbar-hide mt-3">
-                                <Button
-                                    size="sm"
-                                    variant={filterType === 'all' ? 'secondary' : 'ghost'}
-                                    className="h-7 text-xs px-2"
-                                    onClick={() => setFilterType('all')}
-                                >
-                                    All
-                                </Button>
-                                <Button
-                                    size="sm"
-                                    variant={filterType === 'online' ? 'secondary' : 'ghost'}
-                                    className="h-7 text-xs px-2"
-                                    onClick={() => setFilterType('online')}
-                                >
-                                    Online
-                                </Button>
-                                <Button
-                                    size="sm"
-                                    variant={filterType === 'unread' ? 'secondary' : 'ghost'}
-                                    className="h-7 text-xs px-2"
-                                    onClick={() => setFilterType('unread')}
-                                >
-                                    Unread
-                                </Button>
-                            </div>
-                        ) : (
-                            <div className="flex gap-2 justify-start overflow-x-auto pb-1 scrollbar-hide mt-3">
-                                <Button
-                                    size="sm"
-                                    variant={groupFilter === 'all' ? 'secondary' : 'ghost'}
-                                    className="h-7 text-xs px-2"
-                                    onClick={() => setGroupFilter('all')}
-                                >
-                                    All
-                                </Button>
-                                <Button
-                                    size="sm"
-                                    variant={groupFilter === 'joined' ? 'secondary' : 'ghost'}
-                                    className="h-7 text-xs px-2"
-                                    onClick={() => setGroupFilter('joined')}
-                                >
-                                    Joined
-                                </Button>
-                                <Button
-                                    size="sm"
-                                    variant={groupFilter === 'public' ? 'secondary' : 'ghost'}
-                                    className="h-7 text-xs px-2"
-                                    onClick={() => setGroupFilter('public')}
-                                >
-                                    Public
-                                </Button>
-                            </div>
-                        )}
-                    </>
-                )}
+  return (
+    <div className={cn("flex flex-col h-full bg-background border-r border-border", className)}>
+      {/* Header */}
+      <div className="p-4 border-b border-border">
+        {/* Logo and Close Button */}
+        <div className="flex items-center justify-between mb-4">
+          <Link href="/" className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <span className="text-primary-foreground font-bold text-lg">Q</span>
             </div>
-
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto">
-                {/* Show content only on chat pages */}
-                {(activeSection === 'chats' || activeSection === 'direct') ? (
-                    activeTab === 'direct' ? (
-                        isLoading ? (
-                            <div className="flex justify-center p-4 text-sm text-muted-foreground">Loading chats...</div>
-                        ) : filteredConversations.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center p-8 text-center">
-                                <MessageCircle className="w-10 h-10 text-muted-foreground/30 mb-3" />
-                                <p className="text-sm text-muted-foreground">No conversations yet.</p>
-                                <Button variant="link" size="sm" asChild className="mt-2" onClick={isMobile ? onCloseMobile : undefined}>
-                                    <Link href="/chat/discover">Find people</Link>
-                                </Button>
-                            </div>
-                        ) : (
-                            <div className="space-y-1 p-2">
-                                {filteredConversations.map((conv) => {
-                                    const isActive = activeId === conv.otherUserId;
-                                    return (
-                                        <Link
-                                            key={conv._id}
-                                            href={`/chat/direct/${encodeURIComponent(conv.otherUserId)}`}
-                                            onClick={isMobile ? onCloseMobile : undefined}
-                                            className={`
-                                            block p-3 rounded-lg hover:bg-muted/50 transition-all duration-200
-                                            ${isActive ? 'bg-muted shadow-sm' : 'transparent'}
-                                        `}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <div className="relative">
-                                                    <Avatar className="h-10 w-10 border border-border">
-                                                        <AvatarImage src={conv.otherUser?.image} />
-                                                        <AvatarFallback className="bg-primary/10 text-primary">
-                                                            {conv.otherUser?.name?.charAt(0) || '?'}
-                                                        </AvatarFallback>
-                                                    </Avatar>
-                                                    <OnlineStatusIndicator userId={emailToId(conv.otherUserId)} />
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center justify-between mb-0.5">
-                                                        <h3 className="font-medium text-sm truncate pr-2">
-                                                            {conv.otherUser?.name || conv.otherUserId}
-                                                        </h3>
-                                                        <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                                                            {new Date(conv.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center justify-between gap-2">
-                                                        <p className="text-xs text-muted-foreground truncate max-w-[140px]">
-                                                            {conv.lastMessage}
-                                                        </p>
-                                                        {conv.unreadCount > 0 && (
-                                                            <Badge variant="destructive" className="h-5 min-w-[20px] px-1 text-[10px] flex items-center justify-center">
-                                                                {conv.unreadCount}
-                                                            </Badge>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </Link>
-                                    );
-                                })}
-                            </div>
-                        )
-                    ) : (
-                        <div className="space-y-2 p-2">
-                            {filteredGroups.map((group) => {
-                                const isActive = activeId === group._id;
-                                return (
-                                    <div key={group._id} className={`p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors ${isActive ? 'bg-muted' : ''}`}>
-                                        <div className="flex justify-between items-start mb-1">
-                                            <div className="flex items-center gap-2">
-                                                <h4 className="font-medium text-sm">{group.name}</h4>
-                                                {group.type === 'private' && <Lock className="w-3 h-3 text-muted-foreground" />}
-                                            </div>
-                                            {group.isMember && <Badge variant="secondary" className="text-[10px] h-5">Joined</Badge>}
-                                        </div>
-                                        <p className="text-xs text-muted-foreground mb-2 line-clamp-1">{group.description}</p>
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex gap-2 items-center text-[10px] text-muted-foreground">
-                                                <span className="flex items-center gap-1"><Users className="w-3 h-3" />{group.memberCount}</span>
-                                            </div>
-                                            {!group.isMember ? (
-                                                <Button size="icon" variant="outline" className="h-6 w-6">
-                                                    <Plus className="w-3 h-3" />
-                                                </Button>
-                                            ) : (
-                                                <Button size="sm" variant="ghost" className="h-6 text-xs px-2" asChild onClick={isMobile ? onCloseMobile : undefined}>
-                                                    <Link href={`/chat/groups/${group._id}`}>View</Link>
-                                                </Button>
-                                            )}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )
-                ) : (
-                    // Placeholder for other pages (discover, groups)
-                    <div className="flex items-center justify-center h-full text-muted-foreground">
-                        <div className="text-center">
-                            <MessageCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                            <p>Navigate to see content</p>
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            {/* User Profile Section */}
-            <div className="p-4 border-t border-border">
-                <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/30">
-                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                        <span className="text-sm font-medium text-primary">
-                            {mounted && currentUser?.name ? currentUser.name.charAt(0) : 'U'}
-                        </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{mounted && currentUser?.name ? currentUser.name : 'User'}</p>
-                        <p className="text-xs text-muted-foreground truncate">Online</p>
-                    </div>
-                    <Button variant="ghost" size="icon" className="shrink-0">
-                        <Settings className="w-4 h-4" />
-                    </Button>
-                </div>
-            </div>
+            <span className="font-semibold text-lg">Quix Chat</span>
+          </Link>
+          {isMobile && (
+            <Button variant="ghost" size="icon" onClick={onCloseMobile}>
+              <X className="w-5 h-5" />
+            </Button>
+          )}
         </div>
-    );
+
+        {/* Search and Tabs */}
+        {(activeSection === "chats" || activeSection === "direct") && (
+          <>
+            <div className="relative mt-3">
+              <Search className="absolute left-3 top-1/2 bottom-1/2 transform -translate-y-1/2 text-muted-foreground w-3 h-3" />
+              <Input
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 h-8 text-sm"
+              />
+            </div>
+
+            <div className="flex mt-3 gap-2">
+              <Button
+                size="sm"
+                variant={activeTab === "direct" ? "default" : "ghost"}
+                onClick={() => setActiveTab("direct")}
+                className="flex-1 h-8 text-xs"
+              >
+                <MessageCircle className="w-3 h-3 mr-1" />
+                Direct
+              </Button>
+              <Button
+                size="sm"
+                variant={activeTab === "groups" ? "default" : "ghost"}
+                onClick={() => setActiveTab("groups")}
+                className="flex-1 h-8 text-xs"
+              >
+                <Users className="w-3 h-3 mr-1" />
+                Groups
+              </Button>
+            </div>
+
+            {/* Filters */}
+            {activeTab === "direct" ? (
+              <div className="flex gap-2 justify-start overflow-x-auto pb-1 scrollbar-hide mt-3">
+                <Button
+                  size="sm"
+                  variant={filterType === "all" ? "secondary" : "ghost"}
+                  className="h-7 text-xs px-2"
+                  onClick={() => setFilterType("all")}
+                >
+                  All
+                </Button>
+                <Button
+                  size="sm"
+                  variant={filterType === "online" ? "secondary" : "ghost"}
+                  className="h-7 text-xs px-2"
+                  onClick={() => setFilterType("online")}
+                >
+                  Online
+                </Button>
+                <Button
+                  size="sm"
+                  variant={filterType === "unread" ? "secondary" : "ghost"}
+                  className="h-7 text-xs px-2"
+                  onClick={() => setFilterType("unread")}
+                >
+                  Unread
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-2 justify-start overflow-x-auto pb-1 scrollbar-hide mt-3">
+                <Button
+                  size="sm"
+                  variant={groupFilter === "all" ? "secondary" : "ghost"}
+                  className="h-7 text-xs px-2"
+                  onClick={() => setGroupFilter("all")}
+                >
+                  All
+                </Button>
+                <Button
+                  size="sm"
+                  variant={groupFilter === "joined" ? "secondary" : "ghost"}
+                  className="h-7 text-xs px-2"
+                  onClick={() => setGroupFilter("joined")}
+                >
+                  Joined
+                </Button>
+                <Button
+                  size="sm"
+                  variant={groupFilter === "public" ? "secondary" : "ghost"}
+                  className="h-7 text-xs px-2"
+                  onClick={() => setGroupFilter("public")}
+                >
+                  Public
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto">
+        {activeSection === "chats" || activeSection === "direct" ? (
+          activeTab === "direct" ? (
+            isLoading ? (
+              <div className="flex justify-center p-4 text-sm text-muted-foreground">Loading conversations...</div>
+            ) : filteredConversations.length === 0 ? (
+              <div className="flex flex-col items-center justify-center p-8 text-center">
+                <MessageCircle className="w-10 h-10 text-muted-foreground/30 mb-3" />
+                <p className="text-sm text-muted-foreground">No conversations yet.</p>
+                <Button
+                  variant="link"
+                  size="sm"
+                  asChild
+                  className="mt-2"
+                  onClick={isMobile ? onCloseMobile : undefined}
+                >
+                  <Link href="/chat/discover">Find people</Link>
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-1 p-2">
+                {filteredConversations.map((conv) => {
+                  const isActive = activeId === conv.otherUserId
+                  return (
+                    <Link
+                      key={conv._id}
+                      href={`/chat/direct/${encodeURIComponent(conv.otherUserId)}`}
+                      onClick={isMobile ? onCloseMobile : undefined}
+                      className={`block p-3 rounded-lg hover:bg-muted/50 transition-all duration-200 ${
+                        isActive ? "bg-muted shadow-sm" : "transparent"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <Avatar className="h-10 w-10 border border-border">
+                            <AvatarImage src={conv.otherUser?.image || "/placeholder.svg"} />
+                            <AvatarFallback className="bg-primary/10 text-primary">
+                              {conv.otherUser?.name?.charAt(0) || "?"}
+                            </AvatarFallback>
+                          </Avatar>
+                          {conv.otherUser?.isOnline && (
+                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-background" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-0.5">
+                            <h3 className="font-medium text-sm truncate pr-2">
+                              {conv.otherUser?.name || conv.otherUserId}
+                            </h3>
+                            <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                              {new Date(conv.lastMessageTime).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-xs text-muted-foreground truncate max-w-[140px]">{conv.lastMessage}</p>
+                            {conv.unreadCount > 0 && (
+                              <Badge
+                                variant="destructive"
+                                className="h-5 min-w-[20px] px-1 text-[10px] flex items-center justify-center"
+                              >
+                                {conv.unreadCount}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            )
+          ) : groupsLoading ? (
+            <div className="flex justify-center p-4 text-sm text-muted-foreground">Loading groups...</div>
+          ) : (
+            <div className="space-y-2 p-2">
+              {filteredGroups.map((group) => {
+                const isActive = activeId === group._id
+                return (
+                  <div
+                    key={group._id}
+                    className={`p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors ${isActive ? "bg-muted" : ""}`}
+                  >
+                    <div className="flex justify-between items-start mb-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-medium text-sm">{group.name}</h4>
+                        {!group.isPublic && <Lock className="w-3 h-3 text-muted-foreground" />}
+                      </div>
+                      <Badge variant="secondary" className="text-[10px] h-5">
+                        Joined
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-2 line-clamp-1">{group.description}</p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex gap-2 items-center text-[10px] text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Users className="w-3 h-3" />
+                          {group.members?.length || 0}
+                        </span>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 text-xs px-2"
+                        asChild
+                        onClick={isMobile ? onCloseMobile : undefined}
+                      >
+                        <Link href={`/chat/groups/${group._id}`}>View</Link>
+                      </Button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )
+        ) : (
+          <div className="flex items-center justify-center h-full text-muted-foreground">
+            <div className="text-center">
+              <MessageCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>Navigate to see content</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* User Profile Section */}
+      <div className="p-4 border-t border-border">
+        <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/30">
+          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+            <span className="text-sm font-medium text-primary">
+              {mounted && currentUser?.name ? currentUser.name.charAt(0) : "U"}
+            </span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">{mounted && currentUser?.name ? currentUser.name : "User"}</p>
+            <p className="text-xs text-muted-foreground truncate">Online</p>
+          </div>
+          <Button variant="ghost" size="icon" className="shrink-0">
+            <Settings className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
 }

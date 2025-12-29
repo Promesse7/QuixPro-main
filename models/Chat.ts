@@ -74,3 +74,5 @@ export interface TypingIndicator {
   isTyping: boolean
   lastUpdated: Date
 }
+
+export type Chat = Message | Conversation | Group | UserGroup | TypingIndicator

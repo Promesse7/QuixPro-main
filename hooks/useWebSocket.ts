@@ -1,8 +1,8 @@
 "use client"
-// hooks/useWebSocket.ts
-import { useEffect, useRef, useState } from "react"
+
+import { useEffect, useRef, useState, useCallback } from "react"
 import { io, type Socket } from "socket.io-client"
-import { getCurrentUser } from "@/lib/auth"
+import { getCurrentUserId } from "@/lib/userUtils"
 
 export interface WebSocketContextType {
   isConnected: boolean
@@ -14,31 +14,94 @@ export interface WebSocketContextType {
 }
 
 export const useWebSocket = (): WebSocketContextType => {
-  // Temporarily disable WebSocket to prevent connection errors
-  const [isConnected, setIsConnected] = useState(false);
-  const socketRef = useRef<Socket | null>(null);
+  const [isConnected, setIsConnected] = useState(false)
+  const socketRef = useRef<Socket | null>(null)
+  const eventListenersRef = useRef<Map<string, Set<Function>>>(new Map())
 
-  // Mock implementation for now
-  const joinGroups = (groupIds: string[]) => {
-    console.log('WebSocket disabled - joinGroups called with:', groupIds);
-  };
+  useEffect(() => {
+    const userId = getCurrentUserId()
+    if (!userId) return
 
-  const sendMessage = (groupId: string, content: string, type?: string, metadata?: any) => {
-    console.log('WebSocket disabled - sendMessage called');
-  };
+    // Create socket connection with proper configuration
+    const socket = io(window.location.origin, {
+      path: "/api/socket/io",
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5,
+      transports: ["websocket", "polling"],
+      auth: {
+        token: userId, // In production, use actual auth token
+      },
+    })
 
-  const setTyping = (groupId: string, isTyping: boolean) => {
-    console.log('WebSocket disabled - setTyping called');
-  };
+    // Connection event handlers
+    socket.on("connect", () => {
+      console.log("[v0] WebSocket connected")
+      setIsConnected(true)
+    })
 
-  const markAsRead = (messageId: string) => {
-    console.log('WebSocket disabled - markAsRead called');
-  };
+    socket.on("disconnect", () => {
+      console.log("[v0] WebSocket disconnected")
+      setIsConnected(false)
+    })
 
-  const onEvent = (event: string, callback: (data: any) => void) => {
-    console.log('WebSocket disabled - onEvent called for:', event);
-    return () => {}; // Return cleanup function
-  };
+    socket.on("connect_error", (error: any) => {
+      console.warn("[v0] WebSocket connection error:", error.message)
+    })
+
+    // Re-emit all registered events
+    socket.on("*", (event: string, data: any) => {
+      const listeners = eventListenersRef.current.get(event)
+      if (listeners) {
+        listeners.forEach((callback) => callback(data))
+      }
+    })
+
+    socketRef.current = socket
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect()
+      }
+    }
+  }, [])
+
+  const joinGroups = useCallback((groupIds: string[]) => {
+    if (socketRef.current?.connected) {
+      socketRef.current.emit("joinGroups", groupIds)
+    }
+  }, [])
+
+  const sendMessage = useCallback((groupId: string, content: string, type?: string, metadata?: any) => {
+    if (socketRef.current?.connected) {
+      socketRef.current.emit("sendMessage", { groupId, content, type, metadata })
+    }
+  }, [])
+
+  const setTyping = useCallback((groupId: string, isTyping: boolean) => {
+    if (socketRef.current?.connected) {
+      socketRef.current.emit("typing", { groupId, isTyping })
+    }
+  }, [])
+
+  const markAsRead = useCallback((messageId: string) => {
+    if (socketRef.current?.connected) {
+      socketRef.current.emit("markAsRead", { messageId })
+    }
+  }, [])
+
+  const onEvent = useCallback((event: string, callback: (data: any) => void) => {
+    if (!eventListenersRef.current.has(event)) {
+      eventListenersRef.current.set(event, new Set())
+    }
+    eventListenersRef.current.get(event)?.add(callback)
+
+    // Return cleanup function
+    return () => {
+      eventListenersRef.current.get(event)?.delete(callback)
+    }
+  }, [])
 
   return {
     isConnected,
@@ -46,6 +109,6 @@ export const useWebSocket = (): WebSocketContextType => {
     sendMessage,
     setTyping,
     markAsRead,
-    onEvent
-  };
-};
+    onEvent,
+  }
+}
