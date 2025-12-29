@@ -1,10 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-// Temporarily disable problematic components
-// import { WebSocketProvider } from '@/context/WebSocketContext';
 import Provider from '@/components/Provider';
-// import { FloatingNavbar } from '@/components/floating-navbar';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -51,7 +48,6 @@ export default function RootLayout({
       <body className={inter.className}>
         <Provider>
           <main id="main-content">{children}</main>
-          {/* <FloatingNavbar /> */}
         </Provider>
       </body>
     </html>

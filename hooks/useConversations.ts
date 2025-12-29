@@ -54,22 +54,27 @@ export const useConversations = (userId: string) => {
         }
 
         const conversationList: Conversation[] = Object.entries(data).map(
-          ([otherUserEmail, convData]: [string, any]) => ({
-            _id: otherUserEmail,
-            otherUserId: otherUserEmail,
-            otherUserEmail: otherUserEmail,
-            lastMessage: convData.lastMessage || "No messages yet",
-            lastMessageTime: convData.lastMessageTime || new Date().toISOString(),
-            unreadCount: convData.unreadCount || 0,
-            otherUser: {
-              name: convData.otherUserName || otherUserEmail.split("@")[0] || "User",
-              email: otherUserEmail,
-              image: convData.otherUserImage,
-              isOnline: convData.isOnline || false,
-              school: convData.school,
-              level: convData.level,
-            },
-          }),
+          ([firebaseId, convData]: [string, any]) => {
+            const email = convData.otherUserEmail || firebaseId
+            const name = convData.otherUserName || email.split("@")[0] || "User"
+
+            return {
+              _id: firebaseId,
+              otherUserId: firebaseId,
+              otherUserEmail: email,
+              lastMessage: convData.lastMessage || "No messages yet",
+              lastMessageTime: convData.lastMessageTime || new Date().toISOString(),
+              unreadCount: convData.unreadCount || 0,
+              otherUser: {
+                name: name,
+                email: email,
+                image: convData.otherUserImage,
+                isOnline: convData.isOnline || false,
+                school: convData.school,
+                level: convData.level,
+              },
+            }
+          },
         )
 
         // Sort by last message time

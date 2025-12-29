@@ -251,8 +251,9 @@ export class ChatService {
     content: string;
     type?: string;
     metadata?: any;
+    senderName?: string;
   }) {
-    await this.ensureDbConnection();
+    // Pure Firebase - Skip MongoDB insert
     const now = new Date();
 
     const message = {
@@ -263,16 +264,13 @@ export class ChatService {
       read: false
     };
 
-    const result = await this.db.collection('directMessages').insertOne(message);
-    const stored = { ...message, _id: result.insertedId };
-
-    // Hybrid: Publish to Firebase for Realtime Signal
+    // Publish to Firebase
     try {
       await this.retryOperation(() =>
         firebaseAdmin.publishDirectMessage(
-          messageData.senderId,
+          messageData.senderId, // Assuming these are emails now
           messageData.recipientId,
-          stored
+          message
         ),
         3,
         200
@@ -281,132 +279,18 @@ export class ChatService {
       console.warn('Firebase publishDirectMessage failed:', err?.message || err);
     }
 
-    return stored;
+    return message;
   }
 
   async getDirectMessages(userId1: string, userId2: string, before?: Date) {
-    await this.ensureDbConnection();
-
-    const query: any = {
-      $or: [
-        { senderId: userId1, recipientId: userId2 },
-        { senderId: userId2, recipientId: userId1 }
-      ]
-    };
-
-    if (before) {
-      query.createdAt = { $lt: before };
-    }
-
-    const messages = await this.db
-      .collection('directMessages')
-      .find(query)
-      .sort({ createdAt: -1 })
-      .limit(50)
-      .toArray();
-
-    return messages.reverse();
+    // This should now be handled by the client directly via Firebase hooks
+    // Returning empty array for API backward compatibility
+    return [];
   }
 
   async getDirectConversations(userId: string) {
-    await this.ensureDbConnection();
-
-    // Handle both MongoDB ObjectId and Firebase-safe IDs
-    // Try to find user by ID first, then by email mapping
-    let userObjectId = userId;
-    let userEmail = userId;
-
-    // If userId looks like Firebase-safe ID, try to find the corresponding email
-    if (userId.startsWith('user_')) {
-      const user = await this.db.collection('users').findOne({ 
-        $or: [
-          { email: userId },
-          { firebaseId: userId }
-        ]
-      });
-      if (user) {
-        userObjectId = user._id.toString();
-        userEmail = user.email;
-      }
-    }
-
-    const pipeline = [
-      {
-        $match: {
-          $or: [
-            { senderId: userObjectId }, 
-            { recipientId: userObjectId },
-            { senderId: userEmail }, 
-            { recipientId: userEmail }
-          ]
-        }
-      },
-      {
-        $project: {
-          otherUserId: {
-            $cond: {
-              if: { $eq: ['$senderId', userObjectId] },
-              then: '$recipientId',
-              else: '$senderId'
-            }
-          },
-          lastMessage: '$content',
-          lastMessageTime: '$createdAt',
-          unreadCount: {
-            $cond: {
-              if: { $and: [{ $eq: ['$recipientId', userObjectId] }, { $eq: ['$read', false] }] },
-              then: 1,
-              else: 0
-            }
-          }
-        }
-      },
-      {
-        $sort: { lastMessageTime: -1 }
-      },
-      {
-        $group: {
-          _id: '$otherUserId',
-          lastMessage: { $first: '$lastMessage' },
-          lastMessageTime: { $first: '$lastMessageTime' },
-          unreadCount: { $sum: '$unreadCount' }
-        }
-      },
-      {
-        $lookup: {
-          from: 'users',
-          localField: '_id',
-          foreignField: 'email',
-          as: 'userDetails'
-        }
-      },
-      {
-        $unwind: {
-          path: '$userDetails',
-          preserveNullAndEmptyArrays: true
-        }
-      },
-      {
-        $project: {
-          otherUserId: '$_id',
-          lastMessage: 1,
-          lastMessageTime: 1,
-          unreadCount: 1,
-          otherUser: {
-            name: '$userDetails.name',
-            image: '$userDetails.image',
-            email: '$userDetails.email',
-            school: '$userDetails.school',
-            level: '$userDetails.level'
-          }
-        }
-      },
-      {
-        $sort: { lastMessageTime: -1 }
-      }
-    ];
-
-    return await this.db.collection('directMessages').aggregate(pipeline).toArray();
+    // This should now be handled by the client directly via useConversations hook
+    return [];
   }
 }
 

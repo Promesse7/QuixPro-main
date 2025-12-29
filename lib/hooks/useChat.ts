@@ -140,7 +140,7 @@ export function useChat(conversationId: string) {
           type,
           senderEmail: currentUserId,
           senderName: currentUserId.split("@")[0],
-          senderId: currentUserId,
+          senderId: getFirebaseId(currentUserId),
           createdAt: new Date().toISOString(),
           metadata,
         }

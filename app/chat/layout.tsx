@@ -18,7 +18,7 @@ export default function ChatLayout({
         <div className="flex h-screen bg-background overflow-hidden">
             {/* Mobile Sidebar Overlay */}
             {isSidebarOpen && (
-                <div 
+                <div
                     className="md:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
                     onClick={() => setIsSidebarOpen(false)}
                 />
@@ -29,7 +29,7 @@ export default function ChatLayout({
                 ${isSidebarOpen ? 'fixed inset-y-0 left-0 z-50' : 'hidden'} 
                 md:flex md:relative w-80 h-full
             `}>
-                <ConversationListPanel 
+                <ConversationListPanel
                     isMobile={!isSidebarOpen}
                     onCloseMobile={() => setIsSidebarOpen(false)}
                 />

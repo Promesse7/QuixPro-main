@@ -116,17 +116,25 @@ export const firebaseAdmin = {
       timestamp: Date.now()
     };
 
-    const messagesRef = realtimeDb.ref(`chats/${conversationId}/messages`).push();
-    await messagesRef.set(signal);
+    const messagesRef = realtimeDb.ref(`conversations/${conversationId}/messages`).push();
+    await messagesRef.set({
+      ...message,
+      senderEmail,
+      senderName: message.senderName || senderEmail.split('@')[0],
+      createdAt: message.createdAt.toISOString ? message.createdAt.toISOString() : message.createdAt,
+      _id: messagesRef.key
+    });
 
     // Update conversation summaries for Sidebar (Pulse Signal)
     const updateConversation = async (uid: string, otherUid: string, unreadInc: number) => {
       const ref = realtimeDb.ref(`user_conversations/${uid}/${otherUid}`);
       await ref.update({
         lastMessage: message.content,
-        lastMessageTime: message.createdAt.toISOString(),
+        lastMessageTime: message.createdAt.toISOString ? message.createdAt.toISOString() : message.createdAt,
         unreadCount: firebaseAdmin.increment(unreadInc),
-        otherUserId: otherUid
+        otherUserId: otherUid,
+        otherUserEmail: recipientEmail,
+        otherUserName: message.senderName || senderEmail.split('@')[0], // For the recipient to see who sent
       });
     };
 
@@ -165,7 +173,7 @@ export const firebaseAdmin = {
 
     // 2. Emit 'chat.read' Signal to the conversation room
     const conversationId = [userId, otherUserId].sort().join('_');
-    const messagesRef = realtimeDb.ref(`chats/${conversationId}/messages`).push();
+    const messagesRef = realtimeDb.ref(`conversations/${conversationId}/messages`).push();
     await messagesRef.set({
       type: 'chat.read',
       payload: {

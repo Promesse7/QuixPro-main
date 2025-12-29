@@ -2,21 +2,22 @@
 
 import { ThemeProvider } from 'next-themes';
 import { usePresence } from '@/hooks/usePresence';
+import { authenticateWithFirebase } from '@/lib/firebaseClient';
 import { getCurrentUser } from '@/lib/auth';
 import { useEffect } from 'react';
-import { getCurrentUserId } from '@/lib/userUtils';
+import { getCurrentUserId, getFirebaseId } from '@/lib/userUtils';
 
 export default function Provider({ children }: { children: React.ReactNode }) {
   const userId = getCurrentUserId();
+  const firebaseId = userId ? getFirebaseId(userId) : undefined;
 
-  // Skip Firebase authentication for now - using public rules
-  // useEffect(() => {
-  //   if (userId) {
-  //     authenticateWithFirebase(userId);
-  //   }
-  // }, [userId]);
+  useEffect(() => {
+    if (firebaseId) {
+      authenticateWithFirebase(firebaseId);
+    }
+  }, [firebaseId]);
 
-  usePresence(userId || undefined);
+  usePresence(firebaseId);
 
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>

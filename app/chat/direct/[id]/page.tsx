@@ -19,6 +19,9 @@ interface Message {
   _id: string
   senderId: string
   recipientId: string
+  senderEmail?: string
+  senderName?: string
+  recipientEmail?: string
   content: string
   type: string
   createdAt: string
@@ -51,14 +54,14 @@ export default function DirectChatPage() {
 
   // Get current user with ID
   const currentUser = getCurrentUserWithId()
-  
+
   // Ref for auto-scrolling to bottom
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Convert URL email to user ID (handle both email and MongoDB ObjectId)
   const decodedEmail = decodeURIComponent(urlUserId)
   let otherUserId: string
-  
+
   // Check if the URL parameter is an email or already a MongoDB ObjectId
   if (decodedEmail.includes('@')) {
     // It's an email, convert to MongoDB ObjectId (would need lookup in production)
@@ -71,57 +74,14 @@ export default function DirectChatPage() {
 
   // Real-time messaging
   const { messages, loading, sendMessage: sendRealtimeMessage } = useRealtimeMessages(otherUserId)
-  
+
   // Real-time online status
   const { isOnline, lastSeenText, loading: statusLoading } = useOnlineStatus(otherUserId)
-
-  // Fallback loading state
-  const [fallbackLoading, setFallbackLoading] = useState(false)
-  const [fallbackMessages, setFallbackMessages] = useState<Message[]>([])
-
-  // Load messages via API if Firebase isn't working
-  useEffect(() => {
-    if (loading === false && messages.length === 0 && database) {
-      // Firebase is working but no messages, that's fine
-      return
-    }
-    
-    if (!database) {
-      // Firebase not available, use API fallback
-      loadMessagesViaAPI()
-    }
-  }, [loading, messages, database])
-
-  const loadMessagesViaAPI = async () => {
-    try {
-      setFallbackLoading(true)
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'getDirectMessages',
-          data: {
-            userId: currentUser?.email || 'test@example.com',
-            otherUserId: decodedEmail
-          }
-        })
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        setFallbackMessages(data.messages || [])
-      }
-    } catch (error) {
-      console.error('Failed to load messages via API:', error)
-    } finally {
-      setFallbackLoading(false)
-    }
-  }
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, fallbackMessages])
+  }, [messages])
 
   useEffect(() => {
     // Load other user info only
@@ -134,7 +94,7 @@ export default function DirectChatPage() {
     try {
       setSending(true)
       const success = await sendRealtimeMessage(newMessage.trim())
-      
+
       if (success) {
         setNewMessage('')
       } else {
@@ -164,7 +124,7 @@ export default function DirectChatPage() {
 
       // Skip MongoDB API calls - use Firebase data only
       // The conversation list will provide user details when available
-      
+
     } catch (error) {
       console.error('Failed to load user info:', error)
     } finally {
@@ -229,38 +189,41 @@ export default function DirectChatPage() {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {loading || fallbackLoading ? (
+          {loading ? (
             <div className="text-center text-muted-foreground mt-10">Loading messages...</div>
-          ) : (database ? messages : fallbackMessages).length === 0 ? (
+          ) : messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-50">
               <MessageCircle className="w-16 h-16 mb-4" />
               <p>No messages yet. Say hello!</p>
-              {!database && (
-                <p className="text-xs mt-2">Using fallback mode - Real-time features unavailable</p>
-              )}
             </div>
           ) : (
             <>
-              {(database ? messages : fallbackMessages).map((message) => (
-                <div
-                  key={message._id}
-                  className={`flex ${message.senderId === currentUser?.id ? 'justify-end' : 'justify-start'}`}
-                >
+              {messages.map((message) => {
+                const currentFirebaseId = getFirebaseId(currentUser?.email || currentUser?.id || "")
+                const isMe = message.senderId === currentFirebaseId || message.senderEmail === currentUser?.email
+                return (
                   <div
-                    className={`max-w-[75%] px-4 py-2 rounded-2xl ${message.senderId === currentUser?.id
-                      ? 'bg-primary text-primary-foreground rounded-tr-sm'
-                      : 'bg-muted rounded-tl-sm'
-                      }`}
+                    key={message._id}
+                    className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
                   >
-                    <p className="text-sm">{message.content}</p>
-                    <div className="flex items-center justify-end gap-1 mt-1 opacity-70">
-                      <p className="text-[10px] opacity-70 mt-1 text-right">
-                        {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </p>
+                    <div
+                      className={`max-w-[75%] px-4 py-2 rounded-2xl ${isMe
+                        ? 'bg-primary text-primary-foreground rounded-tr-sm'
+                        : 'bg-muted rounded-tl-sm'
+                        }`}
+                    >
+                      <p className="text-sm">{message.content}</p>
+                      <div className="flex items-center justify-end gap-1 mt-1 opacity-70">
+                        <p className="text-[10px] opacity-70 mt-1 text-right">
+                          {message.createdAt && !isNaN(new Date(message.createdAt).getTime())
+                            ? new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                            : '--:--'}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
               <div ref={messagesEndRef} />
             </>
           )}

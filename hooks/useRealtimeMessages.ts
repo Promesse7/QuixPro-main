@@ -10,6 +10,9 @@ interface Message {
   _id: string;
   senderId: string;
   recipientId: string;
+  senderEmail?: string;
+  senderName?: string;
+  recipientEmail?: string;
   content: string;
   type: string;
   createdAt: string;
@@ -24,8 +27,8 @@ export function useRealtimeMessages(otherUserId: string) {
 
   useEffect(() => {
     if (!otherUserId || !database || !currentUser?.id) {
-      console.log('Realtime messages hook - missing data:', { 
-        hasOtherUserId: !!otherUserId, 
+      console.log('Realtime messages hook - missing data:', {
+        hasOtherUserId: !!otherUserId,
         hasDatabase: !!database,
         hasCurrentUserId: !!currentUser?.id
       });
@@ -35,17 +38,17 @@ export function useRealtimeMessages(otherUserId: string) {
 
     // Create a unique chat ID using MongoDB ObjectIds (sorted to ensure same ID for both users)
     const chatId = [currentUser.id, otherUserId].sort().join('_');
-    
+
     // Use Firebase-safe IDs for the path
-    const currentFirebaseId = getFirebaseId(currentUser.id);
+    const currentFirebaseId = getFirebaseId(currentUser.email || currentUser.id);
     const otherFirebaseId = getFirebaseId(otherUserId);
     const firebaseChatId = [currentFirebaseId, otherFirebaseId].sort().join('_');
-    
-    const chatRef = ref(database, `chats/${firebaseChatId}/messages`);
 
-    console.log('Setting up real-time messages listener for:', { 
-      chatId: firebaseChatId, 
-      currentUserId: currentUser.id, 
+    const chatRef = ref(database, `conversations/${firebaseChatId}/messages`);
+
+    console.log('Setting up real-time messages listener for:', {
+      chatId: firebaseChatId,
+      currentUserId: currentUser.id,
       otherUserId,
       currentFirebaseId,
       otherFirebaseId
@@ -62,7 +65,7 @@ export function useRealtimeMessages(otherUserId: string) {
           _id: key,
           ...value,
         })).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-        
+
         console.log('Messages loaded:', messageList.length);
         setMessages(messageList);
       } else {
@@ -89,17 +92,20 @@ export function useRealtimeMessages(otherUserId: string) {
     if (!content.trim() || !otherUserId || !database || !currentUser?.id) return;
 
     try {
-      const chatId = [currentUser.id, otherUserId].sort().join('_');
-      const chatRef = ref(database, `chats/${chatId}/messages`);
+      const currentFirebaseId = getFirebaseId(currentUser.email || currentUser.id);
+      const otherFirebaseId = getFirebaseId(otherUserId);
+      const chatId = [currentFirebaseId, otherFirebaseId].sort().join('_');
+      const chatRef = ref(database, `conversations/${chatId}/messages`);
 
       const newMessage = {
-        senderId: currentUser.id,
-        recipientId: otherUserId,
-        senderEmail: currentUser.email, // Keep email for display purposes
+        senderId: getFirebaseId(currentUser.email || currentUser.id),
+        recipientId: getFirebaseId(otherUserId),
+        senderEmail: currentUser.email,
+        senderName: currentUser.name || currentUser.email.split('@')[0],
         recipientEmail: otherUserId, // This might be email in some cases
         content: content.trim(),
         type: 'text',
-        createdAt: serverTimestamp(),
+        createdAt: new Date().toISOString(),
         read: false,
       };
 
