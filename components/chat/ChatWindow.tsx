@@ -129,12 +129,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ groupId, className = "" }) => {
             {messages.map((msg) => (
               <div
                 key={msg._id}
-                className={`flex ${msg.senderId === currentUserId || msg._id === currentUserId ? "justify-end" : "justify-start"}`}
+                className={`flex ${msg.sender?.email === userEmail ? "justify-end" : "justify-start"}`}
                 role="article"
                 aria-label={`${msg.sender?.name || "User"} message at ${new Date(msg.createdAt).toLocaleTimeString()}`}
               >
                 <div
-                  className={`flex max-w-[80%] space-x-2 ${msg.senderId === currentUserId ? "flex-row-reverse" : ""}`}
+                  className={`flex max-w-[80%] space-x-2 ${msg.sender?.email === userEmail ? "flex-row-reverse" : ""}`}
                 >
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={msg.sender?.image || msg.sender?.avatar} alt={msg.sender?.name} />
@@ -142,7 +142,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ groupId, className = "" }) => {
                   </Avatar>
                   <div
                     className={`rounded-lg px-4 py-2 ${
-                      msg.senderId === currentUserId ? "bg-primary text-primary-foreground" : "bg-muted"
+                      msg.sender?.email === userEmail ? "bg-primary text-primary-foreground" : "bg-muted"
                     }`}
                   >
                     {msg.type === "math" ? (
@@ -152,7 +152,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ groupId, className = "" }) => {
                     )}
                     <p
                       className={`text-xs mt-1 ${
-                        msg.senderId === currentUserId ? "text-primary-foreground/70" : "text-muted-foreground"
+                        msg.sender?.email === userEmail ? "text-primary-foreground/70" : "text-muted-foreground"
                       }`}
                     >
                       {new Date(msg.createdAt).toLocaleTimeString([], {

@@ -3,14 +3,14 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Search, MessageCircle, Users, Lock, Settings, X } from "lucide-react"
+import { Search, MessageCircle, Users, Settings, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useConversations } from "@/hooks/useConversations"
 import { getCurrentUser } from "@/lib/auth"
-import { getCurrentUserId, getFirebaseId } from "@/lib/userUtils"
+import { getCurrentUserId } from "@/lib/userUtils"
 import { cn } from "@/lib/utils"
 
 interface ConversationListPanelProps {
@@ -29,12 +29,11 @@ export function ConversationListPanel({
   const pathname = usePathname()
   const currentUser = getCurrentUser()
   const currentUserId = getCurrentUserId()
-  const { conversations, isLoading } = useConversations(currentUserId || "test@example.com")
+  const { conversations, isLoading } = useConversations(currentUserId || "")
 
   const [activeTab, setActiveTab] = useState<"direct" | "groups">("direct")
   const [searchTerm, setSearchTerm] = useState("")
   const [filterType, setFilterType] = useState<"all" | "online" | "unread">("all")
-  const [groupFilter, setGroupFilter] = useState<"all" | "joined" | "public" | "private">("all")
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -52,39 +51,6 @@ export function ConversationListPanel({
 
   const activeSection = getActiveSection()
 
-  const [groups, setGroups] = useState<any[]>([])
-  const [groupsLoading, setGroupsLoading] = useState(false)
-
-  useEffect(() => {
-    const loadGroups = async () => {
-      try {
-        setGroupsLoading(true)
-        const response = await fetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "getUserGroups",
-            data: { userId: currentUserId },
-          }),
-        })
-
-        if (response.ok) {
-          const data = await response.json()
-          console.log("[v0] Groups loaded:", data.groups)
-          setGroups(data.groups || [])
-        }
-      } catch (error) {
-        console.error("[v0] Error loading groups:", error)
-      } finally {
-        setGroupsLoading(false)
-      }
-    }
-
-    if (currentUserId && activeTab === "groups") {
-      loadGroups()
-    }
-  }, [currentUserId, activeTab])
-
   const filteredConversations = conversations.filter((conv) => {
     const matchesSearch =
       conv.otherUser?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -92,15 +58,6 @@ export function ConversationListPanel({
 
     if (filterType === "online") return matchesSearch && conv.otherUser?.isOnline
     if (filterType === "unread") return matchesSearch && conv.unreadCount > 0
-    return matchesSearch
-  })
-
-  const filteredGroups = groups.filter((group) => {
-    const matchesSearch = group.name.toLowerCase().includes(searchTerm.toLowerCase())
-
-    if (groupFilter === "joined") return matchesSearch
-    if (groupFilter === "public") return matchesSearch && group.isPublic
-    if (groupFilter === "private") return matchesSearch && !group.isPublic
     return matchesSearch
   })
 
@@ -187,30 +144,7 @@ export function ConversationListPanel({
               </div>
             ) : (
               <div className="flex gap-2 justify-start overflow-x-auto pb-1 scrollbar-hide mt-3">
-                <Button
-                  size="sm"
-                  variant={groupFilter === "all" ? "secondary" : "ghost"}
-                  className="h-7 text-xs px-2"
-                  onClick={() => setGroupFilter("all")}
-                >
-                  All
-                </Button>
-                <Button
-                  size="sm"
-                  variant={groupFilter === "joined" ? "secondary" : "ghost"}
-                  className="h-7 text-xs px-2"
-                  onClick={() => setGroupFilter("joined")}
-                >
-                  Joined
-                </Button>
-                <Button
-                  size="sm"
-                  variant={groupFilter === "public" ? "secondary" : "ghost"}
-                  className="h-7 text-xs px-2"
-                  onClick={() => setGroupFilter("public")}
-                >
-                  Public
-                </Button>
+                {/* Placeholder for group filters if needed in the future */}
               </div>
             )}
           </>
@@ -292,47 +226,12 @@ export function ConversationListPanel({
                 })}
               </div>
             )
-          ) : groupsLoading ? (
-            <div className="flex justify-center p-4 text-sm text-muted-foreground">Loading groups...</div>
           ) : (
-            <div className="space-y-2 p-2">
-              {filteredGroups.map((group) => {
-                const isActive = activeId === group._id
-                return (
-                  <div
-                    key={group._id}
-                    className={`p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors ${isActive ? "bg-muted" : ""}`}
-                  >
-                    <div className="flex justify-between items-start mb-1">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-medium text-sm">{group.name}</h4>
-                        {!group.isPublic && <Lock className="w-3 h-3 text-muted-foreground" />}
-                      </div>
-                      <Badge variant="secondary" className="text-[10px] h-5">
-                        Joined
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground mb-2 line-clamp-1">{group.description}</p>
-                    <div className="flex items-center justify-between">
-                      <div className="flex gap-2 items-center text-[10px] text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Users className="w-3 h-3" />
-                          {group.members?.length || 0}
-                        </span>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 text-xs px-2"
-                        asChild
-                        onClick={isMobile ? onCloseMobile : undefined}
-                      >
-                        <Link href={`/chat/groups/${group._id}`}>View</Link>
-                      </Button>
-                    </div>
-                  </div>
-                )
-              })}
+            <div className="flex items-center justify-center h-full text-muted-foreground">
+              <div className="text-center">
+                <MessageCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>Navigate to see content</p>
+              </div>
             </div>
           )
         ) : (

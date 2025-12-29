@@ -3,167 +3,186 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import type { Message } from "@/models/Chat"
 import { database, authenticateWithFirebase } from "@/lib/firebaseClient"
-import { getCurrentUserId } from "@/lib/userUtils"
-import { ref, onValue, onChildAdded, off } from "firebase/database"
+import { getCurrentUserId, getFirebaseId } from "@/lib/userUtils"
+import { ref, onChildAdded, off, push, set, get } from "firebase/database"
 
 interface EnrichedMessage extends Omit<Message, "senderId"> {
-  sender: { _id: string; name: string; avatar?: string; image?: string }
+  sender: { _id: string; name: string; avatar?: string; image?: string; email?: string }
 }
 
-const userCache = new Map<string, any>()
-
-async function fetchUsers(ids: string[]) {
-  const uniqueIds = [...new Set(ids.filter((id) => !userCache.has(id)))]
-  if (uniqueIds.length === 0) return
-
-  try {
-    const response = await fetch(`/api/users?ids=${uniqueIds.join(",")}`)
-    if (!response.ok) throw new Error("Failed to fetch user data")
-    const users = await response.json()
-    users.forEach((user: any) => userCache.set(user._id, user))
-  } catch (error) {
-    console.error("[v0] Error fetching user data:", error)
-  }
-}
-
-export function useChat(groupId: string) {
+export function useChat(conversationId: string) {
   const [messages, setMessages] = useState<EnrichedMessage[]>([])
   const [typingUsers, setTypingUsers] = useState<Record<string, boolean>>({})
   const [error, setError] = useState<string | null>(null)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [currentUserFirebaseId, setCurrentUserFirebaseId] = useState<string | null>(null)
   const isFetching = useRef(false)
-
-  const enrichMessages = async (messages: Message[]): Promise<EnrichedMessage[]> => {
-    const senderIds = messages.map((m) => m.senderId)
-    await fetchUsers(senderIds)
-    return messages.map((msg) => ({
-      ...msg,
-      sender: userCache.get(msg.senderId) || { _id: msg.senderId, name: "Unknown User" },
-    }))
-  }
 
   useEffect(() => {
     async function setup() {
       if (isFetching.current) return
       isFetching.current = true
+
       try {
         const userId = getCurrentUserId()
         setCurrentUserId(userId)
 
         if (userId) {
-          await authenticateWithFirebase(userId)
+          const firebaseId = getFirebaseId(userId)
+          setCurrentUserFirebaseId(firebaseId)
+          await authenticateWithFirebase(firebaseId)
         }
 
-        // Fetch initial messages from MongoDB
-        const response = await fetch(`/api/groups/${groupId}/messages`)
-        if (!response.ok) throw new Error("Failed to fetch initial messages")
-        const data = await response.json()
+        // Load initial messages from Firebase
+        if (conversationId && database) {
+          const messagesRef = ref(database, `conversations/${conversationId}/messages`)
+          const snapshot = await get(messagesRef)
+          const data = snapshot.val()
 
-        const enriched = await enrichMessages(data.messages || [])
-        setMessages(enriched)
-        console.log("[v0] Initial messages loaded:", enriched.length)
+          if (data) {
+            const messagesList = Object.entries(data).map(([_, msg]: [string, any]) => ({
+              ...msg,
+              sender: {
+                _id: msg.senderEmail || msg.senderId,
+                name: msg.senderName || msg.senderEmail?.split("@")[0] || "Unknown",
+                email: msg.senderEmail,
+              },
+            }))
+
+            setMessages(messagesList)
+            console.log("[v0] Initial messages loaded:", messagesList.length)
+          }
+        }
       } catch (err: any) {
-        console.error("[v0] Error fetching initial messages:", err)
+        console.error("[v0] Setup error:", err)
         setError(err.message)
       } finally {
         isFetching.current = false
       }
     }
 
-    if (groupId) setup()
-  }, [groupId])
+    setup()
+  }, [conversationId])
 
+  // Listen for new messages
   useEffect(() => {
-    if (!groupId || !database) return
+    if (!conversationId || !database) return
 
-    // Listen for NEW messages from Firebase (using onChildAdded)
-    const messagesRef = ref(database, `messages/${groupId}`)
-    const unsubscribeFromMessages = onChildAdded(
-      messagesRef,
-      async (snapshot) => {
-        const newMessage = snapshot.val()
-        console.log("[v0] New message received:", newMessage)
+    const messagesRef = ref(database, `conversations/${conversationId}/messages`)
 
-        if (newMessage && newMessage._id) {
-          // Check if message already exists to avoid duplicates
-          setMessages((prevMessages) => {
-            const exists = prevMessages.some((m) => m._id === newMessage._id)
-            if (exists) return prevMessages
+    const unsubscribe = onChildAdded(messagesRef, (snapshot) => {
+      const newMessage = snapshot.val()
 
-            // Enrich new message with user data
-            enrichMessages([newMessage]).then((enriched) => {
-              setMessages((prev) => [...prev, enriched[0]])
-            })
-
-            return prevMessages
-          })
+      if (newMessage) {
+        const enrichedMessage: EnrichedMessage = {
+          ...newMessage,
+          sender: {
+            _id: newMessage.senderEmail || newMessage.senderId,
+            name: newMessage.senderName || newMessage.senderEmail?.split("@")[0] || "Unknown",
+            email: newMessage.senderEmail,
+          },
         }
-      },
-      (error) => {
-        console.error("[v0] Firebase messages listener error:", error)
-      },
-    )
 
-    const typingRef = ref(database, `typingIndicators/${groupId}`)
-    const unsubscribeFromTyping = onValue(
-      typingRef,
-      (snapshot) => {
-        const typingData = snapshot.val() || {}
-        const newTypingUsers = Object.entries(typingData)
-          .filter(([_, data]: [string, any]) => data?.isTyping === true)
-          .reduce((acc, [userId]) => ({ ...acc, [userId]: true }), {} as Record<string, boolean>)
-
-        setTypingUsers(newTypingUsers)
-      },
-      (error) => {
-        console.warn("[v0] Firebase typing listener error:", error)
-      },
-    )
+        setMessages((prev) => {
+          const exists = prev.some((m) => m._id === enrichedMessage._id)
+          if (exists) return prev
+          return [...prev, enrichedMessage]
+        })
+      }
+    })
 
     return () => {
-      off(messagesRef, "child_added", unsubscribeFromMessages as any)
-      off(typingRef, "value", unsubscribeFromTyping as any)
+      off(messagesRef, "child_added", unsubscribe as any)
     }
-  }, [groupId, database])
+  }, [conversationId, database])
+
+  // Listen for typing indicators
+  useEffect(() => {
+    if (!conversationId || !database) return
+
+    const typingRef = ref(database, `conversations/${conversationId}/typing`)
+
+    const unsubscribe = onChildAdded(typingRef, (snapshot) => {
+      const data = snapshot.val()
+      if (data && data.isTyping) {
+        setTypingUsers((prev) => ({
+          ...prev,
+          [data.userEmail]: true,
+        }))
+
+        // Auto-clear typing after 3 seconds
+        setTimeout(() => {
+          setTypingUsers((prev) => {
+            const updated = { ...prev }
+            delete updated[data.userEmail]
+            return updated
+          })
+        }, 3000)
+      }
+    })
+
+    return () => {
+      off(typingRef, "child_added", unsubscribe as any)
+    }
+  }, [conversationId, database])
 
   const sendMessage = useCallback(
     async (content: string, type = "text", metadata?: any) => {
-      if (!groupId) return
-      try {
-        const response = await fetch(`/api/groups/${groupId}/messages`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content, type, metadata }),
-        })
+      if (!conversationId || !database || !currentUserId) return
 
-        if (!response.ok) {
-          throw new Error("Failed to send message")
+      try {
+        const messagesRef = ref(database, `conversations/${conversationId}/messages`)
+        const newMessageRef = push(messagesRef)
+
+        const messageData = {
+          _id: newMessageRef.key,
+          content,
+          type,
+          senderEmail: currentUserId,
+          senderName: currentUserId.split("@")[0],
+          senderId: currentUserId,
+          createdAt: new Date().toISOString(),
+          metadata,
         }
 
+        await set(newMessageRef, messageData)
         console.log("[v0] Message sent successfully")
       } catch (err: any) {
         console.error("[v0] Error sending message:", err)
         setError(err.message)
       }
     },
-    [groupId],
+    [conversationId, database, currentUserId],
   )
 
   const setTyping = useCallback(
     async (isTyping: boolean) => {
-      if (!groupId) return
+      if (!conversationId || !database || !currentUserId || !currentUserFirebaseId) return
+
       try {
-        await fetch(`/api/groups/${groupId}/typing`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ isTyping }),
-        })
+        const typingRef = ref(database, `conversations/${conversationId}/typing/${currentUserFirebaseId}`)
+        if (isTyping) {
+          await set(typingRef, {
+            userEmail: currentUserId,
+            isTyping: true,
+          })
+        } else {
+          // Remove typing indicator
+          await set(typingRef, null)
+        }
       } catch (err: any) {
         console.warn("[v0] Error setting typing indicator:", err)
       }
     },
-    [groupId],
+    [conversationId, database, currentUserId, currentUserFirebaseId],
   )
 
-  return { messages, typingUsers, sendMessage, setTyping, error, currentUserId }
+  return {
+    messages,
+    typingUsers,
+    sendMessage,
+    setTyping,
+    error,
+    currentUserId,
+  }
 }
