@@ -1,6 +1,7 @@
 'use client'
 import React from 'react'
 import { useReducedMotion } from 'framer-motion'
+import { useTheme } from 'next-themes'
 
 /**
  * Lightweight canvas particle background.
@@ -9,6 +10,7 @@ import { useReducedMotion } from 'framer-motion'
  */
 export default function ParticleBackground({ className = '' }: { className?: string }) {
   const prefersReducedMotion = useReducedMotion()
+  const { theme } = useTheme()
   const ref = React.useRef<HTMLCanvasElement | null>(null)
   const raf = React.useRef<number | null>(null)
 
@@ -27,7 +29,7 @@ export default function ParticleBackground({ className = '' }: { className?: str
     resize()
 
     const particles: { x: number; y: number; vx: number; vy: number; r: number }[] = []
-    const count = Math.max(16, Math.floor((canvas.width * canvas.height) / (90000 * DPR)))
+    const count = Math.max(240, Math.floor((canvas.width * canvas.height) / (20000 * DPR)))
 
     for (let i = 0; i < count; i++) {
       particles.push({
@@ -35,21 +37,26 @@ export default function ParticleBackground({ className = '' }: { className?: str
         y: Math.random() * canvas.height,
         vx: (Math.random() - 0.5) * 0.25,
         vy: (Math.random() - 0.5) * 0.25,
-        r: Math.random() * 1.8 + 0.6,
+        r: Math.random() * 4.8 + 0.6,
       })
     }
 
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-      // subtle backdrop gradient
+      // subtle backdrop gradient - theme aware
       const g = ctx.createLinearGradient(0, 0, canvas.width, canvas.height)
-      g.addColorStop(0, 'rgba(45,212,247,0.02)')
-      g.addColorStop(1, 'rgba(139,92,246,0.02)')
+      if (theme === 'dark') {
+        g.addColorStop(0, 'rgba(59,130,246,0.03)')
+        g.addColorStop(1, 'rgba(139,92,246,0.03)')
+      } else {
+        g.addColorStop(0, 'rgba(45,212,247,0.02)')
+        g.addColorStop(1, 'rgba(139,92,246,0.02)')
+      }
       ctx.fillStyle = g
       ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-      // particles
+      // particles - theme aware colors
       ctx.globalCompositeOperation = 'lighter'
       for (const p of particles) {
         p.x += p.vx
@@ -60,21 +67,29 @@ export default function ParticleBackground({ className = '' }: { className?: str
         if (p.y > canvas.height) p.y = 0
 
         ctx.beginPath()
-        ctx.fillStyle = 'rgba(45,212,247,0.9)'
+        if (theme === 'dark') {
+          ctx.fillStyle = 'rgba(59,130,246,0.8)'
+        } else {
+          ctx.fillStyle = 'rgba(45,212,247,0.9)'
+        }
         ctx.globalAlpha = 0.6
         ctx.arc(p.x, p.y, p.r * DPR, 0, Math.PI * 2)
         ctx.fill()
       }
 
-      // light connections
-      ctx.globalAlpha = 0.06
-      ctx.strokeStyle = 'rgba(139,92,246,0.6)'
+      // light connections - theme aware
+      ctx.globalAlpha = 0.4
+      if (theme === 'dark') {
+        ctx.strokeStyle = 'rgba(139,92,246,0.4)'
+      } else {
+        ctx.strokeStyle = 'rgba(139,92,246,0.6)'
+      }
       for (let i = 0; i < particles.length; i++) {
         for (let j = i + 1; j < particles.length; j++) {
           const a = particles[i], b = particles[j]
           const dx = a.x - b.x, dy = a.y - b.y
           const dist = Math.sqrt(dx * dx + dy * dy)
-          if (dist < 80 * DPR) {
+          if (dist < 200 * DPR) {
             ctx.lineWidth = 0.6
             ctx.beginPath()
             ctx.moveTo(a.x, a.y)

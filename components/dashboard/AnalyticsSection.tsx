@@ -7,7 +7,18 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF'];
 
 export function AnalyticsSection({ analytics }: { analytics: any }) {
-    const { weeklyActivity, subjectDistribution, difficultyBreakdown, chatActivity } = analytics;
+    if (!analytics) {
+        return (
+            <section className="space-y-4">
+                <h2 className="text-xl font-semibold text-foreground">Your Analytics</h2>
+                <div className="text-center text-muted-foreground p-8">
+                    Loading analytics data...
+                </div>
+            </section>
+        );
+    }
+
+    const { weeklyActivity = [], subjectDistribution = [], difficultyBreakdown = [], chatActivity = [] } = analytics;
 
     const renderChart = (data: any[], dataKey: string, name: string) => (
         <ResponsiveContainer width="100%" height={200}>

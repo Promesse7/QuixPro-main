@@ -1,4 +1,4 @@
-const { MongoClient } = require("mongodb");
+const { MongoClient, ObjectId } = require("mongodb");
 require("dotenv").config();
 
 const uri = process.env.MONGO_URI ||
@@ -24,7 +24,7 @@ async function seedS3S6Questions() {
     }
     const secondarySchoolId = secondarySchool._id;
 
-    // Create or fetch S3 and S6 levels
+    // Create or fetch levels
     const createOrGetLevel = async (levelName) => {
       let level = await levelsCol.findOne({ name: levelName });
       if (!level) {
@@ -42,7 +42,7 @@ async function seedS3S6Questions() {
     const s3LevelId = await createOrGetLevel("S3");
     const s6LevelId = await createOrGetLevel("S6");
 
-    // Create courses for each level
+    // Create courses
     const createOrGetCourse = async (courseName, levelId) => {
       let course = await coursesCol.findOne({
         name: courseName,
@@ -60,7 +60,6 @@ async function seedS3S6Questions() {
       return course._id;
     };
 
-    // Create Biology courses for S3 and S6
     const s3BiologyCourseId = await createOrGetCourse("Biology", s3LevelId);
     const s6BiologyCourseId = await createOrGetCourse("Biology", s6LevelId);
 
@@ -90,23 +89,26 @@ async function seedS3S6Questions() {
     const s6Unit1Id = await createOrGetUnit("Unit 1: Genetics and Evolution", s6BiologyCourseId);
     const s6Unit2Id = await createOrGetUnit("Unit 2: Ecology and Conservation", s6BiologyCourseId);
 
-    // Helper to build questions compatible with the current UI (QuestionCard)
+    // Helper to build questions with proper structure
     const buildQuestions = (items) => {
-      return items.map((q, idx) => ({
-        id: `q${idx + 1}`,
-        question: q.question,
-        options: q.options,
-        // correctAnswer is an index in options
-        correctAnswer: typeof q.correctAnswer === "number"
+      return items.map((q) => {
+        const correctIndex = typeof q.correctAnswer === "number"
           ? q.correctAnswer
-          : q.options.findIndex(o => String(o) === String(q.correctAnswer)),
-        explanation: q.explanation || undefined
-      }));
+          : q.options.findIndex(o => String(o) === String(q.correctAnswer));
+        
+        return {
+          _id: new ObjectId(),
+          question: q.question,
+          options: q.options,
+          correctAnswer: correctIndex,
+          explanation: q.explanation || undefined
+        };
+      });
     };
 
-    // Define quizzes for S3 and S6, each unit with one quiz per difficulty
+    // Define quizzes data
     const quizzesData = [
-      // S3 - Unit 1
+      // S3 - Unit 1: Cell Structure and Function
       {
         title: "Biology S3 - Cell Structure and Function (Easy)",
         description: "Fundamentals of cell structure and basic functions.",
@@ -126,11 +128,11 @@ async function seedS3S6Questions() {
         ])
       },
       {
-        title: "Biology S3 - Cell Structure and Function (Moderate)",
+        title: "Biology S3 - Cell Structure and Function (Medium)",
         description: "Intermediate questions on organelles and their functions.",
         subject: "Biology",
         level: "S3",
-        difficulty: "moderate",
+        difficulty: "medium",
         duration: 12,
         levelId: s3LevelId,
         courseId: s3BiologyCourseId,
@@ -180,7 +182,7 @@ async function seedS3S6Questions() {
         ])
       },
 
-      // S3 - Unit 2 (Transport in Plants), provide a sample easy quiz
+      // S3 - Unit 2: Transport in Plants
       {
         title: "Biology S3 - Transport in Plants (Easy)",
         description: "Basics of xylem, phloem, and transpiration.",
@@ -200,7 +202,7 @@ async function seedS3S6Questions() {
         ])
       },
 
-      // S6 - Unit 1 (Genetics and Evolution)
+      // S6 - Unit 1: Genetics and Evolution
       {
         title: "Biology S6 - Genetics and Evolution (Easy)",
         description: "Core facts in genetics and inheritance.",
@@ -220,11 +222,11 @@ async function seedS3S6Questions() {
         ])
       },
       {
-        title: "Biology S6 - Genetics and Evolution (Moderate)",
+        title: "Biology S6 - Genetics and Evolution (Medium)",
         description: "Punnett squares, ratios, and molecular basics.",
         subject: "Biology",
         level: "S6",
-        difficulty: "moderate",
+        difficulty: "medium",
         duration: 14,
         levelId: s6LevelId,
         courseId: s6BiologyCourseId,
@@ -274,7 +276,7 @@ async function seedS3S6Questions() {
         ])
       },
 
-      // S6 - Unit 2 (Ecology and Conservation), provide a sample easy quiz
+      // S6 - Unit 2: Ecology and Conservation
       {
         title: "Biology S6 - Ecology and Conservation (Easy)",
         description: "Basic ecological terms and conservation ideas.",
@@ -295,14 +297,14 @@ async function seedS3S6Questions() {
       }
     ];
 
-    // Clean and insert
+    // Insert quizzes
     console.log("🌱 Seeding S3/S6 quizzes...");
     for (const q of quizzesData) {
-      // Use a stable synthetic id for re-runs
-      const stableId = `${q.subject.toLowerCase()}-${q.level.toLowerCase()}-${String(q.unitId)}-${q.difficulty}`;
-      await quizzesCol.deleteOne({ id: stableId });
+      // Create unique quiz ID
+      const quizId = new ObjectId();
+      
       await quizzesCol.insertOne({
-        id: stableId,
+        _id: quizId,
         title: q.title,
         subject: q.subject,
         level: q.level,

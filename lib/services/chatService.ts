@@ -243,6 +243,96 @@ export class ChatService {
       this.db = await getDatabase();
     }
   }
+
+  // Direct Message Methods
+  async createDirectMessage(messageData: {
+    senderId: string;
+    recipientId: string;
+    content: string;
+    type?: string;
+    metadata?: any;
+  }) {
+    await this.ensureDbConnection();
+    const now = new Date();
+    
+    const message = {
+      ...messageData,
+      type: messageData.type || 'text',
+      metadata: messageData.metadata || {},
+      createdAt: now,
+      read: false
+    };
+
+    const result = await this.db.collection('directMessages').insertOne(message);
+    return { ...message, _id: result.insertedId };
+  }
+
+  async getDirectMessages(userId1: string, userId2: string, before?: Date) {
+    await this.ensureDbConnection();
+    
+    const query: any = {
+      $or: [
+        { senderId: userId1, recipientId: userId2 },
+        { senderId: userId2, recipientId: userId1 }
+      ]
+    };
+
+    if (before) {
+      query.createdAt = { $lt: before };
+    }
+
+    return await this.db
+      .collection('directMessages')
+      .find(query)
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .toArray();
+  }
+
+  async getDirectConversations(userId: string) {
+    await this.ensureDbConnection();
+    
+    const pipeline = [
+      {
+        $match: {
+          $or: [{ senderId: userId }, { recipientId: userId }]
+        }
+      },
+      {
+        $project: {
+          otherUserId: {
+            $cond: {
+              if: { $eq: ['$senderId', userId] },
+              then: '$recipientId',
+              else: '$senderId'
+            }
+          },
+          lastMessage: '$content',
+          lastMessageTime: '$createdAt',
+          unreadCount: {
+            $cond: {
+              if: { $and: [{ $eq: ['$recipientId', userId] }, { $eq: ['$read', false] }] },
+              then: 1,
+              else: 0
+            }
+          }
+        }
+      },
+      {
+        $sort: { lastMessageTime: -1 }
+      },
+      {
+        $group: {
+          _id: '$otherUserId',
+          lastMessage: { $first: '$lastMessage' },
+          lastMessageTime: { $first: '$lastMessageTime' },
+          unreadCount: { $sum: '$unreadCount' }
+        }
+      }
+    ];
+
+    return await this.db.collection('directMessages').aggregate(pipeline).toArray();
+  }
 }
 
 export const chatService = ChatService.getInstance();

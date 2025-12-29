@@ -29,6 +29,15 @@ const navItems: NavItem[] = [
   { label: 'Quix Editor', href: '/quix-editor', icon: Settings, badge: 'Create' },
 ]
 
+const teacherNavItems: NavItem[] = [
+  { label: 'Dashboard', href: '/teacher', icon: BarChart3, badge: 'Teach' },
+  { label: 'Create Quiz', href: '/teacher/quiz/create', icon: Zap, badge: 'Build' },
+  { label: 'My Classes', href: '/teacher/classes', icon: Users },
+  { label: 'Analytics', href: '/teacher/analytics', icon: BarChart3 },
+  { label: 'Resources', href: '/teacher/resources', icon: BookOpen },
+  { label: 'Quix Editor', href: '/quix-editor', icon: Settings, badge: 'Create' },
+]
+
 export function FloatingNavbar() {
   const pathname = usePathname()
   const [isExpanded, setIsExpanded] = React.useState(false)
@@ -63,6 +72,11 @@ export function FloatingNavbar() {
   if (onPublicLandingOrAuth && !user) {
     return null
   }
+
+  // Choose navigation items based on user role
+  const currentNavItems = user?.role === 'teacher' && pathname?.startsWith('/teacher') 
+    ? teacherNavItems 
+    : navItems
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/'
@@ -134,7 +148,7 @@ export function FloatingNavbar() {
               {/* Navigation items */}
               <div className="flex flex-col gap-1 flex-1 overflow-y-auto scrollbar-thin">
                 <AnimatePresence>
-                  {navItems.map((item) => {
+                  {currentNavItems.map((item) => {
                     const Icon = item.icon
                     const active = isActive(item.href)
 
@@ -216,7 +230,7 @@ export function FloatingNavbar() {
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border/50 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
         <div className="mx-auto max-w-3xl">
           <ul className="grid grid-cols-5">
-            {navItems.slice(0, 5).map((item) => {
+            {currentNavItems.slice(0, 5).map((item) => {
               const Icon = item.icon
               const active = isActive(item.href)
               return (

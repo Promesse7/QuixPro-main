@@ -25,6 +25,7 @@ interface QuizData {
 // Fallback data in case API fails
 const fallbackQuizzes = [
 	{
+		_id: "rec-1",
 		id: "rec-1",
 		title: "Advanced Mathematics",
 		subject: "Mathematics",
@@ -37,6 +38,7 @@ const fallbackQuizzes = [
 		reason: "Based on your strong math performance",
 	},
 	{
+		_id: "rec-2",
 		id: "rec-2",
 		title: "Rwandan Literature",
 		subject: "Literature",
@@ -49,6 +51,7 @@ const fallbackQuizzes = [
 		reason: "Recommended for your level",
 	},
 	{
+		_id: "rec-3",
 		id: "rec-3",
 		title: "Environmental Science",
 		subject: "Science",
@@ -67,23 +70,34 @@ export function RecommendedQuizzes() {
 	const [isLoading, setIsLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
 
+	// Function to get random 4 quizzes
+	const getRandomQuizzes = (quizArray: QuizData[], count: number = 4): QuizData[] => {
+		const shuffled = [...quizArray].sort(() => 0.5 - Math.random())
+		return shuffled.slice(0, count)
+	}
+
 	useEffect(() => {
 		async function fetchRecommendedQuizzes() {
 			try {
 				setIsLoading(true)
-				const response = await fetch("/api/quiz?limit=3")
+				// Fetch more quizzes to have a pool to randomize from
+				const response = await fetch("/api/quiz?limit=20")
 
 				if (!response.ok) {
 					throw new Error("Failed to fetch recommended quizzes")
 				}
 
 				const data = await response.json()
-				setQuizzes(data.quizzes || [])
+				const allQuizzes = data.quizzes || []
+				// Get 4 random quizzes from the fetched pool
+				const randomQuizzes = getRandomQuizzes(allQuizzes.length > 0 ? allQuizzes : fallbackQuizzes as QuizData[])
+				setQuizzes(randomQuizzes)
 			} catch (err) {
 				console.error("Error fetching recommended quizzes:", err)
 				setError("Failed to load recommendations")
-				// Use fallback data if API fails
-				setQuizzes(fallbackQuizzes as QuizData[])
+				// Use fallback data if API fails - get 4 random from fallback
+				const randomFallback = getRandomQuizzes(fallbackQuizzes as QuizData[])
+				setQuizzes(randomFallback)
 			} finally {
 				setIsLoading(false)
 			}
@@ -120,9 +134,9 @@ export function RecommendedQuizzes() {
 				) : error ? (
 					<div className="text-center py-4 text-red-500">{error}</div>
 				) : (
-					<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-						{(quizzes.length > 0 ? quizzes : fallbackQuizzes).map((quiz) => (
-							<Card key={quiz._id || quiz.id} className="p-0">
+					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+						{quizzes.map((quiz) => (
+							<Card key={quiz.id || quiz._id} className="p-0">
 								<div className="flex flex-col h-full">
 									<div className="p-4 flex-1">
 										<div className="flex items-start gap-3">

@@ -16,7 +16,7 @@ export interface Question {
 }
 
 interface QuestionCardProps {
-  question: Question
+  question: Question | null
   questionNumber: number
   totalQuestions: number
   onAnswerSelect: (answerIndex: number | string) => void
@@ -42,6 +42,17 @@ export function QuestionCard({
 }: QuestionCardProps) {
   const [submitted, setSubmitted] = useState(false)
   const isAnswered = selectedAnswer !== null && selectedAnswer !== undefined
+
+  // Return loading state if question is null
+  if (!question) {
+    return (
+      <Card className="w-full max-w-4xl mx-auto glass-effect border-border/50">
+        <CardContent className="p-8 text-center">
+          <p>Loading question...</p>
+        </CardContent>
+      </Card>
+    )
+  }
   const isCorrect = showFeedback && isAnswered && String(selectedAnswer) === String(question.correctAnswer)
 
   const handleAnswerSelect = (value: string) => {

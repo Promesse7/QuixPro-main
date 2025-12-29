@@ -24,6 +24,8 @@ export interface User {
   }
   createdAt?: Date
   updatedAt?: Date
+  resetPasswordToken?: string
+  resetPasswordExpires?: Date
 }
 
 export interface Level {
@@ -242,12 +244,12 @@ export const registerUser = async (userData: {
       stats:
         userData.role === "student"
           ? {
-              totalQuizzes: 0,
-              completedQuizzes: 0,
-              averageScore: 0,
-              totalPoints: 0,
-              certificates: 0,
-            }
+            totalQuizzes: 0,
+            completedQuizzes: 0,
+            averageScore: 0,
+            totalPoints: 0,
+            certificates: 0,
+          }
           : undefined,
       gamification: {
         totalXP: 0,

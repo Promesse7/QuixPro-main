@@ -6,7 +6,10 @@ export function useQuixSites() {
     fetch('/api/sites/posts')
       .then((r) => r.json())
       .then((j) => setPosts(j.posts || []))
-      .catch(() => setPosts([]))
+      .catch((error) => {
+        console.error('Failed to fetch posts:', error)
+        setPosts([])
+      })
   }
 
   useEffect(() => {

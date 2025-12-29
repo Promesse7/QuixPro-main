@@ -1,7 +1,6 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { getAuth, signInWithCustomToken, Auth } from 'firebase/auth';
 import { getDatabase, ref, onChildAdded, off, Database } from 'firebase/database';
-import { Chat } from '@/models';
 
 let firebaseApp: FirebaseApp | null = null;
 let auth: Auth | null = null;
@@ -15,6 +14,12 @@ const firebaseConfig = {
 };
 
 function initializeFirebase() {
+  // Skip Firebase initialization if not properly configured
+  if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+    console.warn('Firebase API key not configured, skipping Firebase initialization');
+    return;
+  }
+  
   if (!getApps().length) {
     firebaseApp = initializeApp(firebaseConfig);
   } else {
@@ -39,12 +44,22 @@ async function getFirebaseToken(): Promise<string | null> {
 }
 
 async function authenticateWithFirebase() {
+  // Skip Firebase authentication if not properly configured
+  if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+    console.warn('Firebase API key not configured, skipping authentication');
+    return;
+  }
+  
   if (!auth) throw new Error('Firebase not initialized.');
   if (auth.currentUser) return;
 
   const token = await getFirebaseToken();
   if (token) {
-    await signInWithCustomToken(auth, token);
+    try {
+      await signInWithCustomToken(auth, token);
+    } catch (error) {
+      console.warn('Firebase authentication failed, continuing without it:', error);
+    }
   }
 }
 
@@ -54,17 +69,23 @@ export const firebaseClient = {
     await authenticateWithFirebase();
   },
 
-  onMessage(groupId: string, callback: (message: Chat) => void) {
-    if (!db) throw new Error('Firebase not initialized.');
+  onMessage(groupId: string, callback: (message: any) => void) {
+    if (!db) {
+      console.warn('Firebase not initialized, message listening disabled');
+      return () => {}; // Return empty cleanup function
+    }
     const messagesRef = ref(db, `messages/${groupId}`);
     const listener = onChildAdded(messagesRef, (snapshot) => {
-      callback(snapshot.val() as Chat);
+      callback(snapshot.val());
     });
     return () => off(messagesRef, 'child_added', listener);
   },
 
   onTyping(groupId: string, callback: (typingData: { [userId: string]: any }) => void) {
-    if (!db) throw new Error('Firebase not initialized.');
+    if (!db) {
+      console.warn('Firebase not initialized, typing indicators disabled');
+      return () => {}; // Return empty cleanup function
+    }
     const typingRef = ref(db, `typingIndicators/${groupId}`);
     const listener = onChildAdded(typingRef, (snapshot) => {
       callback({ [snapshot.key as string]: snapshot.val() });
@@ -73,6 +94,10 @@ export const firebaseClient = {
   },
 
   async setTyping(groupId: string, isTyping: boolean) {
+    if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+      console.warn('Firebase not configured, typing indicators disabled');
+      return;
+    }
     // Note: This requires a corresponding API route to be created
     await fetch(`/api/groups/${groupId}/typing`, {
       method: 'POST',

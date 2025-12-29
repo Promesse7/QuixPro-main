@@ -8,8 +8,21 @@ interface SocialSignalsData {
     groupUpdates: number;
 }
 
-export function SocialSignals({ data }: { data: SocialSignalsData }) {
-    const { unreadMessages, groupUpdates } = data;
+export function SocialSignals({ data }: { data?: SocialSignalsData }) {
+    if (!data) {
+        return (
+            <section className="space-y-4">
+                <h2 className="text-xl font-semibold text-foreground">Notifications</h2>
+                <Card className="bg-card/60 backdrop-blur-sm border border-border/50 shadow-lg">
+                    <CardContent className="text-center py-4">
+                        <p className="text-muted-foreground">Loading notifications...</p>
+                    </CardContent>
+                </Card>
+            </section>
+        );
+    }
+
+    const { unreadMessages = 0, groupUpdates = 0 } = data;
     const hasNotifications = unreadMessages > 0 || groupUpdates > 0;
 
     return (

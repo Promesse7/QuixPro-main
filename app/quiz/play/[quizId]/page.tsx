@@ -74,19 +74,21 @@ export default function PlayQuizPage({ params }: PageProps) {
       if (res.ok) {
         const data = await res.json()
         const rawQuiz = data.quiz
+        
+        // Handle the format from buildQuestions function
         const transformedQuestions: Question[] = (rawQuiz.questions || []).map((q: any) => {
-          const optionsText = (q.options || []).map((o: any) => o.text)
-          const correctIndex = (q.options || []).findIndex((o: any) => o.correct)
+          // Your seed format: { _id, question, options: string[], correctAnswer: number, explanation }
           return {
-            _id: q.id,
-            question: q.text,
-            options: optionsText,
-            correctAnswer: correctIndex >= 0 ? correctIndex : 0,
+            _id: q._id?.toString() || q.id,
+            question: q.question,
+            options: q.options, // Already an array of strings
+            correctAnswer: q.correctAnswer, // Already a number index
             explanation: q.explanation,
           }
         })
+        
         setQuiz({
-          _id: rawQuiz._id || rawQuiz.id,
+          _id: rawQuiz._id?.toString() || rawQuiz.id,
           title: rawQuiz.title,
           description: rawQuiz.description,
           duration: rawQuiz.duration,
@@ -318,7 +320,7 @@ export default function PlayQuizPage({ params }: PageProps) {
           {/* Question Card */}
           <div className="mb-6">
             <QuestionCard
-              question={Array.isArray(quiz?.questions) ? quiz!.questions[currentQuestion] : undefined}
+              question={Array.isArray(quiz?.questions) && quiz.questions[currentQuestion] ? quiz.questions[currentQuestion] : null}
               questionNumber={currentQuestion + 1}
               totalQuestions={questionsLength}
               selectedAnswer={answers[currentQuestion] ?? null}
