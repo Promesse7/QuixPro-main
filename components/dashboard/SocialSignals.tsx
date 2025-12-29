@@ -13,7 +13,7 @@ export function SocialSignals({ data }: { data?: SocialSignalsData }) {
         return (
             <section className="space-y-4">
                 <h2 className="text-xl font-semibold text-foreground">Notifications</h2>
-                <Card className="bg-card/60 backdrop-blur-sm border border-border/50 shadow-lg">
+                <Card className="border border-border/50 shadow-xl">
                     <CardContent className="text-center py-4">
                         <p className="text-muted-foreground">Loading notifications...</p>
                     </CardContent>
@@ -28,10 +28,10 @@ export function SocialSignals({ data }: { data?: SocialSignalsData }) {
     return (
         <section className="space-y-4">
             <h2 className="text-xl font-semibold text-foreground">Notifications</h2>
-            <Card className="bg-card/60 backdrop-blur-sm border border-border/50 shadow-lg">
+            <Card className="border border-border/50 shadow-xl">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                        <BellIcon className="h-5 w-5"/>
+                        <BellIcon className="h-5 w-5" />
                         <span>Stay Connected</span>
                     </CardTitle>
                 </CardHeader>
@@ -39,7 +39,7 @@ export function SocialSignals({ data }: { data?: SocialSignalsData }) {
                     {hasNotifications ? (
                         <div className="space-y-3">
                             {unreadMessages > 0 && (
-                                <Link href="/chat" className="flex items-center justify-between p-3 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 transition-colors">
+                                <Link href="/chat" className="flex items-center justify-between p-3 rounded-2xl bg-muted/50 hover:bg-muted/80 transition-all duration-300 hover-lift border border-border/10">
                                     <div className="flex items-center gap-3">
                                         <ChatBubbleLeftRightIcon className="h-6 w-6 text-blue-400" />
                                         <span className="font-semibold">Unread Messages</span>
@@ -48,7 +48,7 @@ export function SocialSignals({ data }: { data?: SocialSignalsData }) {
                                 </Link>
                             )}
                             {groupUpdates > 0 && (
-                                <Link href="/groups" className="flex items-center justify-between p-3 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 transition-colors">
+                                <Link href="/groups" className="flex items-center justify-between p-3 rounded-2xl bg-muted/50 hover:bg-muted/80 transition-all duration-300 hover-lift border border-border/10">
                                     <div className="flex items-center gap-3">
                                         <UserGroupIcon className="h-6 w-6 text-purple-400" />
                                         <span className="font-semibold">Group Updates</span>

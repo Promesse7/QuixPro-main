@@ -26,7 +26,7 @@ export function AnalyticsSection({ analytics }: { analytics: any }) {
                 <XAxis dataKey="day" fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis fontSize={12} tickLine={false} axisLine={false} />
                 <Tooltip />
-                <Bar dataKey={dataKey} name={name} fill="#8884d8" radius={[4, 4, 0, 0]} />
+                <Bar dataKey={dataKey} name={name} fill="#8884d8" radius={[6, 6, 0, 0]} />
             </BarChart>
         </ResponsiveContainer>
     );
@@ -45,7 +45,7 @@ export function AnalyticsSection({ analytics }: { analytics: any }) {
     );
 
     const renderAnalyticsCard = (title: string, description: string, data: any[], chart: React.ReactNode) => (
-        <Card className="bg-card/60 backdrop-blur-sm border-border/50 shadow-lg">
+        <Card className="border-border/50 shadow-lg hover-lift">
             <CardHeader>
                 <CardTitle>{title}</CardTitle>
                 <p className="text-sm text-muted-foreground">{description}</p>

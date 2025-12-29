@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useConversations } from "@/hooks/useConversations"
 import { getCurrentUser } from "@/lib/auth"
-import { getCurrentUserId } from "@/lib/userUtils"
+import { getCurrentUserId, getFirebaseId } from "@/lib/userUtils"
 import { cn } from "@/lib/utils"
 
 interface ConversationListPanelProps {

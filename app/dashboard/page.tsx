@@ -217,8 +217,8 @@ export default function Ultimate2025Dashboard() {
     <div className="flex flex-col h-full bg-card/50 backdrop-blur-xl border-r border-border">
       <div className="p-6">
         <Link href="/" className="flex items-center gap-3 mb-8 hover:opacity-80 transition-opacity">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-lg shadow-primary/20">
-            <Brain className="w-6 h-6 text-white" />
+          <div className="w-12 h-12 rounded-[22px] bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-lg shadow-primary/20 transition-transform duration-300 group-hover:rotate-6">
+            <Brain className="w-7 h-7 text-white" />
           </div>
           <div>
             <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">Quix</h1>
@@ -234,7 +234,7 @@ export default function Ultimate2025Dashboard() {
                 key={item.id}
                 href={item.href}
                 className={cn(
-                  "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-300 font-medium group",
+                  "w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 font-medium group",
                   isActive
                     ? "bg-primary/10 text-primary border border-primary/20 shadow-sm"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -250,8 +250,9 @@ export default function Ultimate2025Dashboard() {
       </div>
 
       <div className="mt-auto p-6 border-t border-border/50">
-        <div className="p-4 rounded-2xl bg-gradient-to-br from-card to-muted border border-border/50 shadow-sm">
-          <div className="flex items-center gap-3">
+        <div className="p-4 rounded-3xl bg-gradient-to-br from-card to-muted border border-border/50 shadow-inner group/user relative overflow-hidden">
+          <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover/user:opacity-100 transition-opacity duration-300" />
+          <div className="flex items-center gap-3 relative z-10">
             <Avatar className="h-10 w-10 border-2 border-background shadow-md">
               <AvatarImage src={user?.avatar} />
               <AvatarFallback className="bg-primary/10 text-primary font-bold">
@@ -265,7 +266,7 @@ export default function Ultimate2025Dashboard() {
                 <p className="text-xs text-muted-foreground">Level {user?.level || 1}</p>
               </div>
             </div>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10">
               <LogOut className="w-4 h-4" />
             </Button>
           </div>
@@ -353,7 +354,7 @@ export default function Ultimate2025Dashboard() {
             <div className="hidden md:block">
               <QuickStartCTA />
             </div>
-            <Button variant="outline" size="icon" className="rounded-xl hidden md:flex relative">
+            <Button variant="outline" size="icon" className="rounded-2xl hidden md:flex relative shadow-sm border-border/50">
               <Bell className="w-5 h-5" />
               <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-background" />
             </Button>

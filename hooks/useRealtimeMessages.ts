@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { ref, onValue, push, serverTimestamp, off } from 'firebase/database';
 import { database } from '@/lib/firebaseClient';
 import { getCurrentUser } from '@/lib/auth';
+import { getFirebaseId } from '@/lib/userUtils';
 
 interface Message {
   _id: string;
@@ -32,11 +33,23 @@ export function useRealtimeMessages(otherUserId: string) {
       return;
     }
 
-    // Create a unique chat ID using user IDs (sorted to ensure same ID for both users)
+    // Create a unique chat ID using MongoDB ObjectIds (sorted to ensure same ID for both users)
     const chatId = [currentUser.id, otherUserId].sort().join('_');
-    const chatRef = ref(database, `chats/${chatId}/messages`);
+    
+    // Use Firebase-safe IDs for the path
+    const currentFirebaseId = getFirebaseId(currentUser.id);
+    const otherFirebaseId = getFirebaseId(otherUserId);
+    const firebaseChatId = [currentFirebaseId, otherFirebaseId].sort().join('_');
+    
+    const chatRef = ref(database, `chats/${firebaseChatId}/messages`);
 
-    console.log('Setting up real-time messages listener for:', { chatId, currentUserId: currentUser.id, otherUserId });
+    console.log('Setting up real-time messages listener for:', { 
+      chatId: firebaseChatId, 
+      currentUserId: currentUser.id, 
+      otherUserId,
+      currentFirebaseId,
+      otherFirebaseId
+    });
 
     setLoading(true);
 

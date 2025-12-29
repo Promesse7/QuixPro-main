@@ -28,6 +28,7 @@
     "groups": {
       "$groupId": {
         ".read": "auth != null && data.child('members').hasChild(auth.uid)",
+
         "members": {
           "$uid": {
             ".write": "auth != null && $uid === auth.uid"
@@ -46,13 +47,7 @@
         ".write": "auth != null && root.child('groups').child($groupId).child('members').hasChild(auth.uid)",
 
         "$messageId": {
-          ".validate": "
-            newData.hasChildren(['senderId', 'content', 'createdAt', 'type']) &&
-            newData.child('senderId').val() === auth.uid &&
-            newData.child('content').isString() &&
-            newData.child('content').val().length > 0 &&
-            newData.child('type').val().matches(/^(text|image|file|math)$/)
-          "
+          ".validate": "newData.hasChildren(['senderId', 'content', 'createdAt', 'type']) && newData.child('senderId').val() === auth.uid && newData.child('content').isString() && newData.child('content').val().length > 0 && newData.child('type').val().matches(/^(text|image|file|math)$/)"
         }
       }
     },
@@ -62,16 +57,8 @@
         ".read": "auth != null && root.child('groups').child($groupId).child('members').hasChild(auth.uid)",
 
         "$uid": {
-          ".write": "
-            auth != null &&
-            $uid === auth.uid &&
-            root.child('groups').child($groupId).child('members').hasChild(auth.uid)
-          ",
-          ".validate": "
-            newData.hasChildren(['isTyping', 'updatedAt']) &&
-            newData.child('isTyping').isBoolean() &&
-            newData.child('updatedAt').isNumber()
-          "
+          ".write": "auth != null && $uid === auth.uid && root.child('groups').child($groupId).child('members').hasChild(auth.uid)",
+          ".validate": "newData.hasChildren(['isTyping', 'updatedAt']) && newData.child('isTyping').isBoolean() && newData.child('updatedAt').isNumber()"
         }
       }
     },
@@ -80,11 +67,7 @@
       "$groupId": {
         "$messageId": {
           "$uid": {
-            ".write": "
-              auth != null &&
-              $uid === auth.uid &&
-              root.child('groups').child($groupId).child('members').hasChild(auth.uid)
-            "
+            ".write": "auth != null && $uid === auth.uid && root.child('groups').child($groupId).child('members').hasChild(auth.uid)"
           }
         }
       }

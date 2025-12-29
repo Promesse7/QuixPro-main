@@ -136,7 +136,7 @@ export class ChatService {
         3,
         200
       );
-    } catch (err) {
+    } catch (err: any) {
       console.warn('Firebase publishMessage failed after retries:', err?.message || err);
     }
 
@@ -216,7 +216,7 @@ export class ChatService {
     // Also set typing indicator in Firebase for low-latency updates (with retries)
     try {
       await this.retryOperation(() => firebaseAdmin.setUserTyping(userId, groupId, isTyping), 3, 150);
-    } catch (err) {
+    } catch (err: any) {
       console.warn('Firebase setUserTyping failed after retries:', err?.message || err);
     }
 
@@ -277,7 +277,7 @@ export class ChatService {
         3,
         200
       );
-    } catch (err) {
+    } catch (err: any) {
       console.warn('Firebase publishDirectMessage failed:', err?.message || err);
     }
 
@@ -311,17 +311,41 @@ export class ChatService {
   async getDirectConversations(userId: string) {
     await this.ensureDbConnection();
 
+    // Handle both MongoDB ObjectId and Firebase-safe IDs
+    // Try to find user by ID first, then by email mapping
+    let userObjectId = userId;
+    let userEmail = userId;
+
+    // If userId looks like Firebase-safe ID, try to find the corresponding email
+    if (userId.startsWith('user_')) {
+      const user = await this.db.collection('users').findOne({ 
+        $or: [
+          { email: userId },
+          { firebaseId: userId }
+        ]
+      });
+      if (user) {
+        userObjectId = user._id.toString();
+        userEmail = user.email;
+      }
+    }
+
     const pipeline = [
       {
         $match: {
-          $or: [{ senderId: userId }, { recipientId: userId }]
+          $or: [
+            { senderId: userObjectId }, 
+            { recipientId: userObjectId },
+            { senderId: userEmail }, 
+            { recipientId: userEmail }
+          ]
         }
       },
       {
         $project: {
           otherUserId: {
             $cond: {
-              if: { $eq: ['$senderId', userId] },
+              if: { $eq: ['$senderId', userObjectId] },
               then: '$recipientId',
               else: '$senderId'
             }
@@ -330,7 +354,7 @@ export class ChatService {
           lastMessageTime: '$createdAt',
           unreadCount: {
             $cond: {
-              if: { $and: [{ $eq: ['$recipientId', userId] }, { $eq: ['$read', false] }] },
+              if: { $and: [{ $eq: ['$recipientId', userObjectId] }, { $eq: ['$read', false] }] },
               then: 1,
               else: 0
             }

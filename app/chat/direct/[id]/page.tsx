@@ -11,7 +11,7 @@ import { getCurrentUser } from '@/lib/auth'
 import { ConversationListPanel } from '@/components/chat/ConversationListPanel'
 import { useRealtimeMessages } from '@/hooks/useRealtimeMessages'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
-import { getCurrentUserWithId, emailToId } from '@/lib/userUtils'
+import { getCurrentUserWithId, getCurrentUserId, getFirebaseId } from '@/lib/userUtils'
 import { database } from '@/lib/firebaseClient'
 import { MathInput } from '@/components/math/MathInput'
 
@@ -55,9 +55,19 @@ export default function DirectChatPage() {
   // Ref for auto-scrolling to bottom
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Convert URL email to user ID
+  // Convert URL email to user ID (handle both email and MongoDB ObjectId)
   const decodedEmail = decodeURIComponent(urlUserId)
-  const otherUserId = emailToId(decodedEmail)
+  let otherUserId: string
+  
+  // Check if the URL parameter is an email or already a MongoDB ObjectId
+  if (decodedEmail.includes('@')) {
+    // It's an email, convert to MongoDB ObjectId (would need lookup in production)
+    // For now, use the emailToId mapping for compatibility
+    otherUserId = getFirebaseId(decodedEmail)
+  } else {
+    // It's already an ID (MongoDB ObjectId or Firebase-safe ID)
+    otherUserId = decodedEmail
+  }
 
   // Real-time messaging
   const { messages, loading, sendMessage: sendRealtimeMessage } = useRealtimeMessages(otherUserId)
@@ -152,34 +162,9 @@ export default function DirectChatPage() {
       }
       setOtherUser(fallbackUser)
 
-      // Try to get user info from conversations first (faster)
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'getDirectConversations',
-          data: { userId: currentUser?.email || 'test@example.com' }
-        })
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        const conversation = data.conversations?.find((conv: any) =>
-          conv.otherUserId === decodedEmail
-        )
-
-        if (conversation?.otherUser) {
-          setOtherUser(conversation.otherUser)
-          return
-        }
-      }
-
-      // Fallback to direct user API if needed
-      const userResponse = await fetch(`/api/users/${decodedEmail}`)
-      if (userResponse.ok) {
-        const userData = await userResponse.json()
-        setOtherUser(userData.user)
-      }
+      // Skip MongoDB API calls - use Firebase data only
+      // The conversation list will provide user details when available
+      
     } catch (error) {
       console.error('Failed to load user info:', error)
     } finally {

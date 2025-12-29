@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { database } from "@/lib/firebaseClient"
 import { ref, onValue, off } from "firebase/database"
-import { emailToId } from "@/lib/userUtils"
+import { getCurrentUserId, getFirebaseId } from "@/lib/userUtils"
 
 export interface User {
   _id?: string
@@ -29,47 +29,17 @@ export const useConversations = (userId: string) => {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchConversations = useCallback(async () => {
-    if (!userId) return
-
-    try {
-      setIsLoading(true)
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "getDirectConversations",
-          data: { userId },
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch conversations")
-      }
-
-      const data = await response.json()
-      console.log("[v0] Conversations fetched from MongoDB:", data.conversations)
-      setConversations(data.conversations || [])
-      setError(null)
-    } catch (err) {
-      console.error("[v0] Error fetching conversations:", err)
-      setError("Failed to load conversations")
-      setConversations([]) // Set to empty array on error
-    } finally {
-      setIsLoading(false)
-    }
-  }, [userId])
-
-  // Initial Fetch from MongoDB
+  // Skip MongoDB fetch - use Firebase only
   useEffect(() => {
-    fetchConversations()
-  }, [fetchConversations])
+    setIsLoading(false)
+  }, [])
 
   useEffect(() => {
     if (!userId || !database) return
 
-    const safeUserId = emailToId(userId)
-    const convsRef = ref(database, `user_conversations/${safeUserId}`)
+    // Use Firebase-safe ID for the path
+    const firebaseUserId = getFirebaseId(userId)
+    const convsRef = ref(database, `user_conversations/${firebaseUserId}`)
 
     const handleUpdate = (snapshot: any) => {
       const data = snapshot.val()
@@ -85,11 +55,13 @@ export const useConversations = (userId: string) => {
         lastMessageTime: convData.lastMessageTime || new Date().toISOString(),
         unreadCount: convData.unreadCount || 0,
         otherUser: {
-          name: convData.otherUserName || otherUserId.replace(/[^a-zA-Z0-9@.]/g, "").split("@")[0] || "User",
-          email: otherUserId,
+          name: (convData.otherUserName || otherUserId.replace(/[^a-zA-Z0-9@.]/g, "").split("@")[0] || "User") as string,
+          email: otherUserId || '',
           image: convData.otherUserImage,
           isOnline: convData.isOnline || false,
-        },
+          school: convData.otherUserSchool || '',
+          level: convData.otherUserLevel || ''
+        } as User,
       }))
 
       // Merge with MongoDB conversations
@@ -108,8 +80,8 @@ export const useConversations = (userId: string) => {
               unreadCount: firebaseConv.unreadCount,
               otherUser: {
                 ...merged[existingIndex].otherUser,
-                isOnline: firebaseConv.otherUser?.isOnline,
-              },
+                isOnline: firebaseConv.otherUser?.isOnline || false,
+              } as User,
             }
           } else {
             // Add new conversation from Firebase
@@ -135,6 +107,6 @@ export const useConversations = (userId: string) => {
     conversations,
     isLoading,
     error,
-    refreshConversations: fetchConversations,
+    refreshConversations: () => {}, // No-op since we're using Firebase only
   }
 }

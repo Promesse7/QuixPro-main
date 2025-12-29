@@ -75,7 +75,7 @@ const ActivityItem = ({ type, description, time, link }: ActivityItemProps) => {
   );
 
   return link ? (
-    <Link href={link} className="block hover:bg-accent rounded-lg p-3 -m-3 transition-colors duration-200">
+    <Link href={link} className="block hover:bg-muted/50 rounded-2xl p-3 -m-3 transition-all duration-300">
       {content}
     </Link>
   ) : (
@@ -91,7 +91,7 @@ export function ActivityFeed({ activities }: { activities: ActivityItemProps[] }
   return (
     <section className="space-y-4">
       <h2 className="text-xl font-semibold text-foreground">Learning Timeline</h2>
-      <Card className="bg-card/60 backdrop-blur-sm border border-border/50 shadow-lg p-4">
+      <Card className="border border-border/50 shadow-xl p-4">
         <CardContent className="p-0">
           <ul className="divide-y divide-border -mx-3"> {/* Added negative margin to counteract Card padding */}
             {activities.map((activity, index) => (

@@ -21,15 +21,15 @@ export function QuickStartCTA() {
           const data = await res.json()
           setResumeLinks(data)
         }
-      } catch {}
+      } catch { }
     }
     load()
   }, [])
 
   return (
-    <div className="mt-6 rounded-xl border border-border/50 glass-effect p-5 flex items-center justify-between">
+    <div className="mt-6 rounded-3xl border border-border/50 bg-muted/20 backdrop-blur-xl shadow-xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all duration-300 hover:shadow-2xl">
       <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-lg bg-primary/15 flex items-center justify-center">
+        <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center shadow-inner">
           <Rocket className="h-5 w-5 text-primary" />
         </div>
         <div>
@@ -40,21 +40,21 @@ export function QuickStartCTA() {
       <div className="flex flex-wrap gap-2">
         {resumeLinks.lastQuizUrl && (
           <Button asChild size="sm" className="glow-effect">
-            <Link href={resumeLinks.lastQuizUrl}><RotateCcw className="h-4 w-4 mr-2" /> Resume Quiz</Link>
+            <Link href={resumeLinks.lastQuizUrl} className="rounded-xl"><RotateCcw className="h-4 w-4 mr-2" /> Resume Quiz</Link>
           </Button>
         )}
         {resumeLinks.continueCourseUrl && (
           <Button asChild size="sm" variant="outline">
-            <Link href={resumeLinks.continueCourseUrl}><BookOpen className="h-4 w-4 mr-2" /> Continue Course</Link>
+            <Link href={resumeLinks.continueCourseUrl} className="rounded-xl"><BookOpen className="h-4 w-4 mr-2" /> Continue Course</Link>
           </Button>
         )}
         {resumeLinks.latestCertificateUrl && (
           <Button asChild size="sm" variant="outline">
-            <Link href={resumeLinks.latestCertificateUrl}><Award className="h-4 w-4 mr-2" /> Latest Certificate</Link>
+            <Link href={resumeLinks.latestCertificateUrl} className="rounded-xl"><Award className="h-4 w-4 mr-2" /> Latest Certificate</Link>
           </Button>
         )}
         <Button asChild size="sm" className="glow-effect">
-          <Link href="/quiz"><Play className="h-4 w-4 mr-2" /> Take a Quiz</Link>
+          <Link href="/quiz" className="rounded-xl"><Play className="h-4 w-4 mr-2" /> Take a Quiz</Link>
         </Button>
         <Button asChild size="sm" variant="outline">
           <Link href="/quiz-selection"><GraduationCap className="h-4 w-4 mr-2" /> Explore Courses</Link>

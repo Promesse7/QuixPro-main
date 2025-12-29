@@ -127,9 +127,10 @@ export class WebSocketService {
           await chatService.markMessageAsRead(messageId, userId);
           
           // Broadcast to group that message was read
-          const message = await chatService.getMessage(messageId);
-          if (message) {
-            this.io?.to(`group_${message.groupId}`).emit('messageRead', {
+          const messages = await chatService.getMessages(data.groupId || '', 1);
+          const foundMessage = messages[0];
+          if (foundMessage) {
+            this.io?.to(`group_${foundMessage.groupId}`).emit('messageRead', {
               messageId,
               userId,
               readAt: new Date()

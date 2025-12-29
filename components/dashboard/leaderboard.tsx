@@ -73,7 +73,7 @@ export function Leaderboard() {
 
         if (levelResponse.ok) {
           // Transform data to match component's expected format
-          const formattedLevelData = levelData.leaderboard.map((user, index) => ({
+          const formattedLevelData = levelData.leaderboard.map((user: any, index: number) => ({
             id: user.id,
             name: user.name,
             level: user.level,
@@ -89,7 +89,7 @@ export function Leaderboard() {
 
         if (overallResponse.ok) {
           // Transform data to match component's expected format
-          const formattedOverallData = overallDataResult.leaderboard.map((user, index) => ({
+          const formattedOverallData = overallDataResult.leaderboard.map((user: any, index: number) => ({
             id: user.id,
             name: user.name,
             level: user.level,
@@ -120,7 +120,7 @@ export function Leaderboard() {
 
   if (loading) {
     return (
-      <Card className="glass-effect border-border/50">
+      <Card className="border-border/50">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2 glow-text">
             <Trophy className="h-5 w-5" />
@@ -136,7 +136,7 @@ export function Leaderboard() {
   }
 
   return (
-    <Card className="glass-effect border-border/50">
+    <Card className="border-border/50 shadow-xl">
       <CardHeader>
         <CardTitle className="flex items-center space-x-2 glow-text">
           <Trophy className="h-5 w-5" />
@@ -146,14 +146,8 @@ export function Leaderboard() {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="level" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 glass-effect">
-            <TabsTrigger value="level" className="text-xs">
-              My Level
-            </TabsTrigger>
-            <TabsTrigger value="exam" className="text-xs">
-              By Exam
-            </TabsTrigger>
-            <TabsTrigger value="overall" className="text-xs">
+          <TabsList className="grid w-full grid-cols-3 bg-muted/30 p-1 rounded-2xl">
+            <TabsTrigger value="overall" className="text-xs rounded-xl">
               Overall
             </TabsTrigger>
           </TabsList>
@@ -161,7 +155,7 @@ export function Leaderboard() {
           <TabsContent value="level" className="space-y-4">
             <div className="flex items-center justify-between">
               <Select value={selectedLevel} onValueChange={setSelectedLevel}>
-                <SelectTrigger className="w-32 glass-effect">
+                <SelectTrigger className="w-32 rounded-xl bg-muted/30">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -189,11 +183,10 @@ export function Leaderboard() {
                 leaderboardData.map((student) => (
                   <div
                     key={student.id}
-                    className={`flex items-center space-x-3 p-3 rounded-lg transition-all ${
-                      student.id === currentUser?.id
-                        ? "bg-primary/20 border border-primary/30 glow-effect"
-                        : "bg-accent/10 hover:bg-accent/20"
-                    }`}
+                    className={`flex items-center space-x-3 p-3 rounded-2xl transition-all ${student.id === currentUser?.id
+                      ? "bg-primary/20 border border-primary/30 glow-effect"
+                      : "bg-muted/50 hover:bg-muted/80"
+                      }`}
                   >
                     <div className="flex items-center space-x-2">
                       {getRankIcon(student.rank)}
@@ -228,7 +221,7 @@ export function Leaderboard() {
 
           <TabsContent value="exam" className="space-y-4">
             <Select value={selectedExam} onValueChange={setSelectedExam}>
-              <SelectTrigger className="glass-effect">
+              <SelectTrigger className="rounded-xl bg-muted/30">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -241,7 +234,7 @@ export function Leaderboard() {
           </TabsContent>
 
           <TabsContent value="overall" className="space-y-4">
-            <div className="text-center p-4 bg-accent/10 rounded-lg">
+            <div className="text-center p-4 bg-muted/30 rounded-2xl">
               <div className="flex items-center justify-center space-x-2 mb-2">
                 <Star className="h-5 w-5 text-primary" />
                 <span className="font-bold">Your Overall Rank</span>
@@ -254,11 +247,10 @@ export function Leaderboard() {
               {overallData.slice(0, 10).map((student) => (
                 <div
                   key={student.id}
-                  className={`flex items-center space-x-3 p-3 rounded-lg transition-all ${
-                    student.id === currentUser?.id
-                      ? "bg-primary/20 border border-primary/30 glow-effect"
-                      : "bg-accent/10 hover:bg-accent/20"
-                  }`}
+                  className={`flex items-center space-x-3 p-3 rounded-2xl transition-all ${student.id === currentUser?.id
+                    ? "bg-primary/20 border border-primary/30 glow-effect"
+                    : "bg-muted/50 hover:bg-muted/80"
+                    }`}
                 >
                   <div className="flex items-center space-x-2">
                     {getRankIcon(student.rank)}

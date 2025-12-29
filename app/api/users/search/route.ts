@@ -5,12 +5,13 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search') || ''
+    const email = searchParams.get('email') // Add email parameter support
     const school = searchParams.get('school')
     const level = searchParams.get('level')
     const limit = parseInt(searchParams.get('limit') || '20')
     const skip = parseInt(searchParams.get('skip') || '0')
 
-    console.log('User search API called with:', { search, school, level, limit, skip })
+    console.log('User search API called with:', { search, email, school, level, limit, skip })
 
     const db = await getDatabase()
     const usersCollection = db.collection('users')
@@ -18,8 +19,12 @@ export async function GET(request: Request) {
     // Build search query
     const query: any = {}
 
+    // Search by exact email if provided
+    if (email) {
+      query.email = email
+    } 
     // Search by name or email
-    if (search) {
+    else if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
         { email: { $regex: search, $options: 'i' } }
