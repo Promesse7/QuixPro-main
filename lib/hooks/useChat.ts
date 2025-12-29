@@ -30,6 +30,7 @@ export function useChat(groupId: string) {
   const [messages, setMessages] = useState<EnrichedMessage[]>([])
   const [typingUsers, setTypingUsers] = useState<Record<string, boolean>>({})
   const [error, setError] = useState<string | null>(null)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const isFetching = useRef(false)
 
   const enrichMessages = async (messages: Message[]): Promise<EnrichedMessage[]> => {
@@ -47,6 +48,8 @@ export function useChat(groupId: string) {
       isFetching.current = true
       try {
         const userId = getCurrentUserId()
+        setCurrentUserId(userId)
+
         if (userId) {
           await authenticateWithFirebase(userId)
         }
@@ -162,5 +165,5 @@ export function useChat(groupId: string) {
     [groupId],
   )
 
-  return { messages, typingUsers, sendMessage, setTyping, error }
+  return { messages, typingUsers, sendMessage, setTyping, error, currentUserId }
 }
