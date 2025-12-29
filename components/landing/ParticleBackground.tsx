@@ -10,7 +10,7 @@ import { useTheme } from 'next-themes'
  */
 export default function ParticleBackground({ className = '' }: { className?: string }) {
   const prefersReducedMotion = useReducedMotion()
-  const { theme } = useTheme()
+  const { resolvedTheme } = useTheme()
   const ref = React.useRef<HTMLCanvasElement | null>(null)
   const raf = React.useRef<number | null>(null)
 
@@ -23,6 +23,7 @@ export default function ParticleBackground({ className = '' }: { className?: str
 
     const DPR = Math.max(1, window.devicePixelRatio || 1)
     function resize() {
+      if (!canvas) return
       canvas.width = canvas.clientWidth * DPR
       canvas.height = canvas.clientHeight * DPR
     }
@@ -32,6 +33,7 @@ export default function ParticleBackground({ className = '' }: { className?: str
     const count = Math.max(240, Math.floor((canvas.width * canvas.height) / (20000 * DPR)))
 
     for (let i = 0; i < count; i++) {
+      // ... (this loop doesn't use canvas/ctx methods that can fail, but uses width/height which are numbers)
       particles.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
@@ -42,11 +44,12 @@ export default function ParticleBackground({ className = '' }: { className?: str
     }
 
     function draw() {
+      if (!canvas || !ctx) return
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
       // subtle backdrop gradient - theme aware
       const g = ctx.createLinearGradient(0, 0, canvas.width, canvas.height)
-      if (theme === 'dark') {
+      if (resolvedTheme === 'dark') {
         g.addColorStop(0, 'rgba(59,130,246,0.03)')
         g.addColorStop(1, 'rgba(139,92,246,0.03)')
       } else {
@@ -67,7 +70,7 @@ export default function ParticleBackground({ className = '' }: { className?: str
         if (p.y > canvas.height) p.y = 0
 
         ctx.beginPath()
-        if (theme === 'dark') {
+        if (resolvedTheme === 'dark') {
           ctx.fillStyle = 'rgba(59,130,246,0.8)'
         } else {
           ctx.fillStyle = 'rgba(45,212,247,0.9)'
@@ -79,7 +82,7 @@ export default function ParticleBackground({ className = '' }: { className?: str
 
       // light connections - theme aware
       ctx.globalAlpha = 0.4
-      if (theme === 'dark') {
+      if (resolvedTheme === 'dark') {
         ctx.strokeStyle = 'rgba(139,92,246,0.4)'
       } else {
         ctx.strokeStyle = 'rgba(139,92,246,0.6)'
@@ -108,7 +111,7 @@ export default function ParticleBackground({ className = '' }: { className?: str
       if (raf.current) cancelAnimationFrame(raf.current)
       window.removeEventListener('resize', resize)
     }
-  }, [prefersReducedMotion])
+  }, [prefersReducedMotion, resolvedTheme])
 
   return (
     <div className={`absolute inset-0 pointer-events-none overflow-hidden ${className}`} aria-hidden>

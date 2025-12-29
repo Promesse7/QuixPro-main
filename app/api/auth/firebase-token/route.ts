@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server'
+import { firebaseAdmin } from '@/lib/services/firebase'
 
 export async function POST(req: Request) {
   try {
-    // For development/testing, return a mock token
-    // In production, implement proper Firebase authentication
-    
     const body = await req.json()
     const { uid } = body
 
@@ -15,10 +13,10 @@ export async function POST(req: Request) {
       )
     }
 
-    // Return a mock token for testing
-    const mockToken = `mock-token-${uid}-${Date.now()}`
+    // Generate real Firebase custom token
+    const token = await firebaseAdmin.createCustomToken(uid)
 
-    return NextResponse.json({ token: mockToken })
+    return NextResponse.json({ token })
   } catch (error) {
     console.error('Error creating Firebase token:', error)
     return NextResponse.json(
@@ -30,15 +28,16 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   try {
-    // For GET requests, return a simple mock token for a test user
-    const testUserId = 'test-user-123'
-    const mockToken = `mock-token-${testUserId}-${Date.now()}`
-
-    return NextResponse.json({ token: mockToken })
-  } catch (error) {
-    console.error('Error creating Firebase token:', error)
+    // For GET requests, we might not have a UID in the body, but we can try to get it from the session if implemented
+    // For now, let's return a 400 if no UID can be determined
     return NextResponse.json(
-      { error: 'Failed to create token' },
+      { error: 'POST with UID is required for token generation' },
+      { status: 400 }
+    )
+  } catch (error) {
+    console.error('Error in Firebase token GET:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

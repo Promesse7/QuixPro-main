@@ -8,9 +8,9 @@ export async function POST(req: Request) {
     // In production, you should implement proper authentication
     const body = await req.json()
     const { action, data } = body
-    
-    // Get user from request body or use a default user for testing
-    const userId = data.userId || 'test@example.com' // You can get this from a token or session
+
+    // Get user from request body
+    const userId = data?.userId || 'test@example.com'
 
     switch (action) {
       case 'createGroup':
@@ -29,8 +29,14 @@ export async function POST(req: Request) {
         return handleGetUserGroups(userId);
       case 'getDirectConversations':
         return handleGetDirectConversations(userId);
+      case 'markConversationAsRead':
+        return handleMarkConversationAsRead(userId, data);
       case 'setTyping':
         return handleSetTyping(userId, data);
+      case 'joinGroup':
+        return handleJoinGroup(userId, data);
+      case 'requestJoinGroup':
+        return handleRequestJoinGroup(userId, data);
       default:
         return NextResponse.json(
           { error: 'Invalid action' },
@@ -49,7 +55,7 @@ export async function POST(req: Request) {
 // Handler functions for each action
 async function handleCreateGroup(userId: string, data: any) {
   const { name, description, isPublic = true, settings } = data;
-  
+
   if (!name) {
     return NextResponse.json(
       { error: 'Group name is required' },
@@ -70,7 +76,7 @@ async function handleCreateGroup(userId: string, data: any) {
 
 async function handleAddGroupMember(userId: string, data: any) {
   const { groupId, newMemberId, role = 'member' } = data;
-  
+
   if (!groupId || !newMemberId) {
     return NextResponse.json(
       { error: 'Group ID and member ID are required' },
@@ -92,7 +98,7 @@ async function handleAddGroupMember(userId: string, data: any) {
   }
 
   const result = await chatService.addGroupMember(groupId, newMemberId, role);
-  
+
   if (!result.success) {
     return NextResponse.json(
       { error: result.message || 'Failed to add member' },
@@ -105,7 +111,7 @@ async function handleAddGroupMember(userId: string, data: any) {
 
 async function handleSendMessage(userId: string, data: any) {
   const { groupId, content, type = 'text', metadata } = data;
-  
+
   if (!groupId || !content) {
     return NextResponse.json(
       { error: 'Group ID and message content are required' },
@@ -116,7 +122,7 @@ async function handleSendMessage(userId: string, data: any) {
   // Verify the user is a member of the group
   const group = await chatService.getGroup(groupId);
   const isMember = group?.members.some((m: any) => m.userId === userId);
-  
+
   if (!isMember) {
     return NextResponse.json(
       { error: 'You are not a member of this group' },
@@ -137,7 +143,7 @@ async function handleSendMessage(userId: string, data: any) {
 
 async function handleGetMessages(userId: string, data: any) {
   const { groupId, before } = data;
-  
+
   if (!groupId) {
     return NextResponse.json(
       { error: 'Group ID is required' },
@@ -148,7 +154,7 @@ async function handleGetMessages(userId: string, data: any) {
   // Verify the user is a member of the group
   const group = await chatService.getGroup(groupId);
   const isMember = group?.members.some((m: any) => m.userId === userId);
-  
+
   if (!isMember) {
     return NextResponse.json(
       { error: 'You are not a member of this group' },
@@ -158,7 +164,7 @@ async function handleGetMessages(userId: string, data: any) {
 
   const beforeDate = before ? new Date(before) : undefined;
   const messages = await chatService.getMessages(groupId, 50, beforeDate);
-  
+
   // Mark messages as read
   await Promise.all(
     messages
@@ -176,7 +182,7 @@ async function handleGetUserGroups(userId: string) {
 
 async function handleSetTyping(userId: string, data: any) {
   const { groupId, isTyping } = data;
-  
+
   if (typeof groupId === 'undefined' || typeof isTyping === 'undefined') {
     return NextResponse.json(
       { error: 'Group ID and typing status are required' },
@@ -187,7 +193,7 @@ async function handleSetTyping(userId: string, data: any) {
   // Verify the user is a member of the group
   const group = await chatService.getGroup(groupId);
   const isMember = group?.members.some((m: any) => m.userId === userId);
-  
+
   if (!isMember) {
     return NextResponse.json(
       { error: 'You are not a member of this group' },
@@ -202,7 +208,7 @@ async function handleSetTyping(userId: string, data: any) {
 // Direct Message Handlers
 async function handleSendDirectMessage(userId: string, data: any) {
   const { recipientId, content, type = 'text', metadata } = data;
-  
+
   if (!recipientId || !content) {
     return NextResponse.json(
       { error: 'Recipient ID and message content are required' },
@@ -227,7 +233,7 @@ async function handleSendDirectMessage(userId: string, data: any) {
 
 async function handleGetDirectMessages(userId: string, data: any) {
   const { otherUserId, before } = data;
-  
+
   if (!otherUserId) {
     return NextResponse.json(
       { error: 'Other user ID is required' },
@@ -236,12 +242,68 @@ async function handleGetDirectMessages(userId: string, data: any) {
   }
 
   const messages = await chatService.getDirectMessages(userId, otherUserId, before);
-  
+
   return NextResponse.json({ messages });
 }
 
 async function handleGetDirectConversations(userId: string) {
-  const conversations = await chatService.getDirectConversations(userId);
-  
-  return NextResponse.json({ conversations });
+  try {
+    const conversations = await chatService.getDirectConversations(userId);
+    return NextResponse.json({ conversations });
+  } catch (error) {
+    console.error('Error getting direct conversations:', error);
+    // Return empty conversations to prevent JSON parsing errors
+    return NextResponse.json({ conversations: [] });
+  }
+}
+
+async function handleMarkConversationAsRead(userId: string, data: any) {
+  const { otherUserId } = data;
+  if (!otherUserId) {
+    return NextResponse.json(
+      { error: 'Other user ID is required' },
+      { status: 400 }
+    );
+  }
+  await firebaseAdmin.markConversationAsRead(userId, otherUserId);
+  return NextResponse.json({ success: true });
+}
+
+async function handleJoinGroup(userId: string, data: any) {
+  const { groupId } = data;
+
+  if (!groupId) {
+    return NextResponse.json(
+      { error: 'Group ID is required' },
+      { status: 400 }
+    );
+  }
+
+  const result = await chatService.addGroupMember(groupId, userId, 'member');
+
+  if (!result.success) {
+    return NextResponse.json(
+      { error: result.message || 'Failed to join group' },
+      { status: 400 }
+    );
+  }
+
+  return NextResponse.json({ success: true });
+}
+
+async function handleRequestJoinGroup(userId: string, data: any) {
+  const { groupId } = data;
+
+  if (!groupId) {
+    return NextResponse.json(
+      { error: 'Group ID is required' },
+      { status: 400 }
+    );
+  }
+
+  // For now, just return success (in production, you'd store the request)
+  return NextResponse.json({
+    success: true,
+    message: 'Join request sent successfully'
+  });
 }

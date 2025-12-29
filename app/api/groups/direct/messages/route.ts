@@ -3,8 +3,9 @@ import { chatService } from '@/lib/services/chatService'
 
 export async function GET(req: Request) {
   try {
-    // For now, we'll use a simple approach without proper authentication
-    const userId = 'test@example.com' // In production, get from auth context
+    // Get user from query params or use fallback
+    const { searchParams } = new URL(req.url)
+    const userId = searchParams.get('userId') || 'test@example.com' // In production, get from auth context
 
     const conversations = await chatService.getDirectConversations(userId)
     

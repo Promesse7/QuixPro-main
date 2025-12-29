@@ -1,6 +1,10 @@
+'use client';
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Message } from '@/models/Chat';
-import { firebaseClient } from '@/lib/client/firebase';
+import { database, authenticateWithFirebase } from '@/lib/firebaseClient';
+import { getCurrentUserId } from '@/lib/userUtils';
+import { ref, onChildAdded, off } from 'firebase/database';
 
 // Enriched message type that includes the full sender object
 interface EnrichedMessage extends Omit<Message, 'senderId'> {
@@ -46,12 +50,15 @@ export function useChat(groupId: string) {
       if (isFetching.current) return;
       isFetching.current = true;
       try {
-        await firebaseClient.initialize();
+        const userId = getCurrentUserId();
+        if (userId) {
+          await authenticateWithFirebase(userId);
+        }
 
         const response = await fetch(`/api/groups/${groupId}/messages`);
         if (!response.ok) throw new Error('Failed to fetch initial messages');
         const data = await response.json();
-        
+
         const enriched = await enrichMessages(data.messages);
         setMessages(enriched);
       } catch (err: any) {
@@ -61,28 +68,32 @@ export function useChat(groupId: string) {
       }
     }
 
-    if(groupId) setup();
+    if (groupId) setup();
   }, [groupId]);
 
   // Listen for real-time updates
   useEffect(() => {
-    if (!groupId) return;
+    if (!groupId || !database) return;
 
-    const unsubscribeFromMessages = firebaseClient.onMessage(groupId, async (newMessage: Message) => {
+    const messagesRef = ref(database, `messages/${groupId}`);
+    const unsubscribeFromMessages = onChildAdded(messagesRef, async (snapshot) => {
+      const newMessage = snapshot.val();
       const [enrichedNewMessage] = await enrichMessages([newMessage]);
       setMessages((prevMessages) => [...prevMessages, enrichedNewMessage]);
     });
 
-    const unsubscribeFromTyping = firebaseClient.onTyping(groupId, (typingData) => {
-        const newTypingUsers = Object.keys(typingData).filter(userId => typingData[userId].isTyping);
-        setTypingUsers(newTypingUsers);
+    const typingRef = ref(database, `typingIndicators/${groupId}`);
+    const unsubscribeFromTyping = onChildAdded(typingRef, (snapshot) => {
+      const typingData = { [snapshot.key as string]: snapshot.val() };
+      const newTypingUsers = Object.keys(typingData).filter(userId => typingData[userId].isTyping);
+      setTypingUsers(newTypingUsers);
     });
 
     return () => {
-      unsubscribeFromMessages();
-      unsubscribeFromTyping();
+      off(messagesRef);
+      off(typingRef);
     };
-  }, [groupId]);
+  }, [groupId, database]);
 
   const sendMessage = useCallback(
     async (content: string) => {
@@ -102,12 +113,16 @@ export function useChat(groupId: string) {
 
   const sendTypingNotification = useCallback(
     async (isTyping: boolean) => {
-        if (!groupId) return;
-        try {
-            await firebaseClient.setTyping(groupId, isTyping);
-        } catch (err: any) {
-            setError(err.message);
-        }
+      if (!groupId) return;
+      try {
+        await fetch(`/api/groups/${groupId}/typing`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isTyping }),
+        });
+      } catch (err: any) {
+        setError(err.message);
+      }
     },
     [groupId]
   );

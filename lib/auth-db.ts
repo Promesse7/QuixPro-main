@@ -352,3 +352,39 @@ export const getLeaderboardData = async (filters?: {
     return []
   }
 }
+
+export const getPublicGroups = async (filters?: {
+  subject?: string
+  level?: string
+  limit?: number
+}) => {
+  try {
+    const db = await getDatabase()
+    const groupsCol = db.collection("groups")
+
+    const query: any = { isPublic: true }
+
+    if (filters?.subject && filters.subject !== 'all') {
+      query.subject = filters.subject
+    }
+
+    if (filters?.level && filters.level !== 'all') {
+      query.level = filters.level
+    }
+
+    const groups = await groupsCol
+      .find(query)
+      .sort({ createdAt: -1 })
+      .limit(filters?.limit || 20)
+      .toArray()
+
+    return groups.map(group => ({
+      ...group,
+      id: group._id.toString(),
+      _id: undefined
+    }))
+  } catch (error) {
+    console.error("Error fetching public groups:", error)
+    return []
+  }
+}

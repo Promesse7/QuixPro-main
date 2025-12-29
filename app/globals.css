@@ -120,4 +120,20 @@
   .hover-glow:hover {
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
   }
+
+  .glass-effect {
+    @apply bg-background/80 backdrop-blur-md border border-border/50;
+  }
+
+  .glow-text {
+    @apply drop-shadow-sm;
+  }
+
+  .dark .glow-text {
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+  }
+
+  .glow-effect {
+    box-shadow: 0 0 10px rgba(var(--primary), 0.5);
+  }
 }

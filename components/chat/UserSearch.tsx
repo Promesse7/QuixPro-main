@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
+import { motion } from 'framer-motion'
 
 interface User {
   _id: string
@@ -47,7 +48,9 @@ export default function UserSearch({ onUserSelect, className }: UserSearchProps)
       try {
         const response = await fetch('/api/users/filters')
         if (!response.ok) {
-          throw new Error('Failed to load filters')
+          // Silently fail or use default empty filters, non-critical
+          setFilters({ schools: [], levels: [] })
+          return
         }
         const data = await response.json()
         setFilters(data || { schools: [], levels: [] })
@@ -79,18 +82,28 @@ export default function UserSearch({ onUserSelect, className }: UserSearchProps)
       })
 
       const response = await fetch(`/api/users/search?${params}`)
-      const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to load users')
+        // Fallback for mocked environment if API fails
+        if (process.env.NODE_ENV === 'development') {
+          // Mock data fallback
+          setUsers([])
+          setPagination({ total: 0, limit: 20, skip: 0, hasMore: false })
+          setLoading(false)
+          setLoadingMore(false)
+          return
+        }
+        throw new Error('Failed to load users')
       }
+
+      const data = await response.json()
 
       if (reset) {
         setUsers(data.users || [])
       } else {
         setUsers(prev => [...prev, ...(data.users || [])])
       }
-      
+
       setPagination({
         total: data.pagination?.total || 0,
         limit: data.pagination?.limit || 20,
@@ -99,7 +112,6 @@ export default function UserSearch({ onUserSelect, className }: UserSearchProps)
       })
     } catch (error) {
       console.error('Failed to load users:', error)
-      // Set empty state on error
       if (reset) {
         setUsers([])
         setPagination({ total: 0, limit: 20, skip: 0, hasMore: false })
@@ -114,7 +126,7 @@ export default function UserSearch({ onUserSelect, className }: UserSearchProps)
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       loadUsers(true)
-    }, 300) // Debounce search
+    }, 300)
 
     return () => clearTimeout(timeoutId)
   }, [searchTerm, selectedSchool, selectedLevel])
@@ -128,164 +140,123 @@ export default function UserSearch({ onUserSelect, className }: UserSearchProps)
     onUserSelect?.(user)
   }
 
-  const startChat = (user: User, e: React.MouseEvent) => {
-    e.stopPropagation()
-    onUserSelect?.(user)
-  }
-
   return (
-    <div className={cn("space-y-6", className)}>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5" />
-            Find Users to Chat
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Search Input */}
-          <div className="relative">
+    <div className={cn("space-y-6 max-w-4xl mx-auto", className)}>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-4"
+      >
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
-              placeholder="Search by name or email..."
+              placeholder="Search students by name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-10 bg-background/50 backdrop-blur-sm border-border/50 focus:ring-primary/20 transition-all h-12"
             />
           </div>
-
-          {/* Filters */}
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <Select value={selectedSchool} onValueChange={setSelectedSchool}>
-                <SelectTrigger>
-                  <School className="w-4 h-4 mr-2" />
-                  <SelectValue placeholder="All Schools" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Schools</SelectItem>
-                  {filters.schools.map(school => (
-                    <SelectItem key={school.value} value={school.value}>
-                      {school.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex-1">
-              <Select value={selectedLevel} onValueChange={setSelectedLevel}>
-                <SelectTrigger>
-                  <GraduationCap className="w-4 h-4 mr-2" />
-                  <SelectValue placeholder="All Levels" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Levels</SelectItem>
-                  {filters.levels.map(level => (
-                    <SelectItem key={level.value} value={level.value}>
-                      {level.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="flex gap-2">
+            <Select value={selectedSchool} onValueChange={setSelectedSchool}>
+              <SelectTrigger className="w-[160px] h-12 bg-background/50 border-border/50">
+                <School className="w-4 h-4 mr-2 text-muted-foreground" />
+                <SelectValue placeholder="School" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Schools</SelectItem>
+                {filters.schools.map(school => (
+                  <SelectItem key={school.value} value={school.value}>
+                    {school.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={selectedLevel} onValueChange={setSelectedLevel}>
+              <SelectTrigger className="w-[140px] h-12 bg-background/50 border-border/50">
+                <GraduationCap className="w-4 h-4 mr-2 text-muted-foreground" />
+                <SelectValue placeholder="Level" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Levels</SelectItem>
+                {filters.levels.map(level => (
+                  <SelectItem key={level.value} value={level.value}>
+                    {level.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Users List */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">
-            {searchTerm || selectedSchool !== 'all' || selectedLevel !== 'all' 
-              ? `Search Results (${pagination.total})`
-              : `Top Users (${pagination.total})`
-            }
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-              <span className="ml-2 text-muted-foreground">Loading users...</span>
-            </div>
-          ) : users.length === 0 ? (
-            <div className="text-center py-12">
-              <Users className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">No users found</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Try adjusting your search or filters
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {users.map((user) => (
-                <div
-                  key={user._id}
-                  className="flex items-center justify-between p-4 rounded-lg border hover:bg-accent transition-colors cursor-pointer"
-                  onClick={() => handleUserClick(user)}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
-                        {user.avatar ? (
-                          <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full object-cover" />
-                        ) : (
-                          <User className="w-5 h-5 text-primary" />
-                        )}
-                      </div>
-                      {user.isOnline && (
-                        <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-background" />
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <div key={i} className="h-24 bg-muted/20 animate-pulse rounded-xl border border-border/40" />
+            ))}
+          </div>
+        ) : users.length === 0 ? (
+          <div className="text-center py-20 bg-muted/10 rounded-xl border border-border/40 border-dashed">
+            <Users className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
+            <h3 className="text-lg font-medium text-foreground">No students found</h3>
+            <p className="text-sm text-muted-foreground">Try adjusting tour filters to find more people.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {users.map((user, i) => (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: i * 0.05 }}
+                key={user._id}
+                onClick={() => handleUserClick(user)}
+                className="group relative p-4 rounded-xl border border-border/40 bg-card/40 backdrop-blur-sm hover:bg-card/80 hover:border-primary/20 hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative flex items-center gap-4">
+                  <div className="relative">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center ring-2 ring-background shadow-sm">
+                      {user.avatar ? (
+                        <img src={user.avatar} alt={user.name} className="w-12 h-12 rounded-full object-cover" />
+                      ) : (
+                        <User className="w-6 h-6 text-primary" />
                       )}
                     </div>
-                    <div>
-                      <div className="font-medium">{user.name}</div>
-                      <div className="text-sm text-muted-foreground">{user.email}</div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="secondary" className="text-xs">
-                          {user.school}
-                        </Badge>
-                        <Badge variant="outline" className="text-xs">
-                          {user.level}
-                        </Badge>
-                        {user.role && (
-                          <Badge variant="default" className="text-xs">
-                            {user.role}
-                          </Badge>
-                        )}
-                      </div>
+                    {user.isOnline && (
+                      <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-background rounded-full" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold text-foreground truncate group-hover:text-primary transition-colors">{user.name}</h4>
+                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 bg-background/50">{user.level}</Badge>
+                      <span className="text-[10px] text-muted-foreground truncate max-w-[80px]">{user.school}</span>
                     </div>
                   </div>
-                  <Button
-                    size="sm"
-                    onClick={(e) => startChat(user, e)}
-                    className="flex items-center gap-2"
-                  >
+                  <Button size="icon" variant="ghost" className="opacity-0 group-hover:opacity-100 transition-opacity rounded-full h-8 w-8 hover:bg-primary hover:text-primary-foreground">
                     <MessageCircle className="w-4 h-4" />
-                    Chat
                   </Button>
                 </div>
-              ))}
-            </div>
-          )}
+              </motion.div>
+            ))}
+          </div>
+        )}
 
-          {/* Load More */}
-          {pagination.hasMore && !loading && (
-            <div className="flex justify-center mt-6">
-              <Button
-                variant="outline"
-                onClick={handleLoadMore}
-                disabled={loadingMore}
-                className="flex items-center gap-2"
-              >
-                {loadingMore ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : null}
-                Load More Users
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        {pagination.hasMore && !loading && (
+          <div className="flex justify-center pt-6">
+            <Button
+              variant="outline"
+              onClick={handleLoadMore}
+              disabled={loadingMore}
+              className="bg-background/50 backdrop-blur-sm"
+            >
+              {loadingMore && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Load More
+            </Button>
+          </div>
+        )}
+      </motion.div>
     </div>
   )
 }

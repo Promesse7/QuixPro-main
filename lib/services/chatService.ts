@@ -37,7 +37,7 @@ export class ChatService {
   async createGroup(groupData: Omit<Group, '_id' | 'createdAt' | 'updatedAt' | 'members'>) {
     await this.ensureDbConnection();
     const now = new Date();
-    
+
     const group: Group = {
       ...groupData,
       createdAt: now,
@@ -65,7 +65,7 @@ export class ChatService {
 
   async addGroupMember(groupId: string, userId: string, role: 'admin' | 'member' = 'member') {
     await this.ensureDbConnection();
-    
+
     // Check if user is already a member
     const existingMember = await this.db.collection('groups').findOne({
       _id: new ObjectId(groupId),
@@ -95,7 +95,7 @@ export class ChatService {
 
   async removeGroupMember(groupId: string, userId: string) {
     await this.ensureDbConnection();
-    
+
     const result = await this.db.collection('groups').updateOne(
       { _id: new ObjectId(groupId) },
       {
@@ -110,7 +110,7 @@ export class ChatService {
   // Message Management
   async createMessage(message: Omit<Message, '_id' | 'createdAt' | 'updatedAt' | 'readBy'>) {
     await this.ensureDbConnection();
-    
+
     const newMessage: Message = {
       ...message,
       readBy: [message.senderId],
@@ -145,7 +145,7 @@ export class ChatService {
 
   async getMessages(groupId: string, limit = 50, before?: Date) {
     await this.ensureDbConnection();
-    
+
     const query: any = { groupId };
     if (before) {
       query.createdAt = { $lt: before };
@@ -160,7 +160,7 @@ export class ChatService {
 
   async markMessageAsRead(messageId: string, userId: string) {
     await this.ensureDbConnection();
-    
+
     const result = await this.db.collection('messages').updateOne(
       { _id: new ObjectId(messageId) },
       { $addToSet: { readBy: userId } }
@@ -172,7 +172,7 @@ export class ChatService {
   // User Group Management
   async getUserGroups(userId: string) {
     await this.ensureDbConnection();
-    
+
     return this.db.collection('groups')
       .find({
         'members.userId': userId,
@@ -185,7 +185,7 @@ export class ChatService {
   // Typing Indicators
   async setTypingIndicator(userId: string, groupId: string, isTyping: boolean) {
     await this.ensureDbConnection();
-    
+
     const now = new Date();
     await this.db.collection('typingIndicators').updateOne(
       { userId, groupId },
@@ -225,10 +225,10 @@ export class ChatService {
 
   async getTypingUsers(groupId: string) {
     await this.ensureDbConnection();
-    
+
     // Only return users who have been typing in the last 3 seconds
     const threeSecondsAgo = new Date(Date.now() - 3000);
-    
+
     return this.db.collection('typingIndicators')
       .find({
         groupId,
@@ -254,7 +254,7 @@ export class ChatService {
   }) {
     await this.ensureDbConnection();
     const now = new Date();
-    
+
     const message = {
       ...messageData,
       type: messageData.type || 'text',
@@ -264,12 +264,29 @@ export class ChatService {
     };
 
     const result = await this.db.collection('directMessages').insertOne(message);
-    return { ...message, _id: result.insertedId };
+    const stored = { ...message, _id: result.insertedId };
+
+    // Hybrid: Publish to Firebase for Realtime Signal
+    try {
+      await this.retryOperation(() =>
+        firebaseAdmin.publishDirectMessage(
+          messageData.senderId,
+          messageData.recipientId,
+          stored
+        ),
+        3,
+        200
+      );
+    } catch (err) {
+      console.warn('Firebase publishDirectMessage failed:', err?.message || err);
+    }
+
+    return stored;
   }
 
   async getDirectMessages(userId1: string, userId2: string, before?: Date) {
     await this.ensureDbConnection();
-    
+
     const query: any = {
       $or: [
         { senderId: userId1, recipientId: userId2 },
@@ -281,17 +298,19 @@ export class ChatService {
       query.createdAt = { $lt: before };
     }
 
-    return await this.db
+    const messages = await this.db
       .collection('directMessages')
       .find(query)
       .sort({ createdAt: -1 })
       .limit(50)
       .toArray();
+
+    return messages.reverse();
   }
 
   async getDirectConversations(userId: string) {
     await this.ensureDbConnection();
-    
+
     const pipeline = [
       {
         $match: {
@@ -328,6 +347,38 @@ export class ChatService {
           lastMessageTime: { $first: '$lastMessageTime' },
           unreadCount: { $sum: '$unreadCount' }
         }
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: 'email',
+          as: 'userDetails'
+        }
+      },
+      {
+        $unwind: {
+          path: '$userDetails',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $project: {
+          otherUserId: '$_id',
+          lastMessage: 1,
+          lastMessageTime: 1,
+          unreadCount: 1,
+          otherUser: {
+            name: '$userDetails.name',
+            image: '$userDetails.image',
+            email: '$userDetails.email',
+            school: '$userDetails.school',
+            level: '$userDetails.level'
+          }
+        }
+      },
+      {
+        $sort: { lastMessageTime: -1 }
       }
     ];
 
