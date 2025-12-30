@@ -36,6 +36,32 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ groupId, className = "" }) => {
 
   const [deliveryStatus, setDeliveryStatus] = useState<string | null>(null)
 
+  useEffect(() => {
+    console.log("[v0] ChatWindow initialized:", {
+      groupId,
+      userEmail,
+      currentUserId,
+      messageCount: messages.length,
+      timestamp: new Date().toISOString(),
+    })
+  }, [])
+
+  useEffect(() => {
+    console.log("[v0] Messages updated:", {
+      count: messages.length,
+      groupId,
+      currentUserId,
+      messages: messages.map((m) => ({
+        _id: m._id,
+        senderId: m.senderId,
+        senderName: m.sender?.name,
+        currentUserMatch: m.senderId === currentUserId,
+        isFromCurrent: m.senderId === currentUserId,
+      })),
+      timestamp: new Date().toISOString(),
+    })
+  }, [messages, groupId, currentUserId])
+
   const addToLovedOnes = (user: { email: string; name: string; image?: string }) => {
     LovedOnesManager.addLovedOne({
       id: user.email,

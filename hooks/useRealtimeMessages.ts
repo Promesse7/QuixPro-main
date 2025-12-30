@@ -94,10 +94,11 @@ export function useRealtimeMessages(otherUserId: string) {
   // Firebase messages effect
   useEffect(() => {
     if (!otherUserId || !database || !currentUserId) {
-      console.log("Real-time messages hook - missing data:", {
-        hasOtherUserId: !!otherUserId,
-        hasDatabase: !!database,
-        hasCurrentUserId: !!currentUserId,
+      console.log("[v0] useRealtimeMessages - Missing dependencies:", {
+        otherUserId,
+        database: !!database,
+        currentUserId,
+        timestamp: new Date().toISOString(),
       })
       setLoading(false)
       return
@@ -105,16 +106,28 @@ export function useRealtimeMessages(otherUserId: string) {
 
     const chatId = createChatId(currentUserId, otherUserId)
 
-    const chatRef = ref(database, `chats/${chatId}/messages`)
+    console.log("[v0] useRealtimeMessages setup:", {
+      otherUserId,
+      currentUserId,
+      chatId,
+      firebasePath: `chats/${chatId}/messages`,
+      timestamp: new Date().toISOString(),
+    })
 
-    console.log("[v0] Setting up real-time messages for:", { chatId, currentUserId, otherUserId })
+    const chatRef = ref(database, `chats/${chatId}/messages`)
 
     setLoading(true)
 
     const unsubscribeFirebase = onValue(
       chatRef,
       (snapshot) => {
-        console.log("[v0] Messages snapshot received:", snapshot.exists())
+        console.log("[v0] Messages Firebase snapshot:", {
+          exists: snapshot.exists(),
+          size: snapshot.size,
+          key: snapshot.key,
+          timestamp: new Date().toISOString(),
+        })
+
         const data = snapshot.val()
         if (data) {
           const messageList = Object.entries(data)
@@ -124,15 +137,32 @@ export function useRealtimeMessages(otherUserId: string) {
             }))
             .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
 
-          console.log("[v0] Messages loaded:", messageList.length)
+          console.log("[v0] Messages loaded and transformed:", {
+            count: messageList.length,
+            chatId,
+            messages: messageList.map((m) => ({
+              _id: m._id,
+              senderId: m.senderId,
+              content: m.content,
+              createdAt: m.createdAt,
+            })),
+          })
+
           setMessages(messageList)
         } else {
+          console.log("[v0] No messages found in Firebase for chatId:", chatId)
           setMessages([])
         }
         setLoading(false)
       },
       (error) => {
-        console.error("[v0] Error loading messages:", error)
+        console.error("[v0] Firebase messages error:", {
+          code: error.code,
+          message: error.message,
+          chatId,
+          currentUserId,
+          otherUserId,
+        })
         setLoading(false)
       },
     )
