@@ -268,7 +268,7 @@ export class ChatService {
     try {
       await this.retryOperation(() =>
         firebaseAdmin.publishDirectMessage(
-          messageData.senderId, // Assuming these are emails now
+          messageData.senderId, // Now using unique IDs
           messageData.recipientId,
           message
         ),

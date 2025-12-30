@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { useConversations } from "@/hooks/useConversations"
+import { useConversations } from "@/hooks/useConversationsNative"
 import { getCurrentUser } from "@/lib/auth"
 import { getCurrentUserId } from "@/lib/userUtils"
 import { cn } from "@/lib/utils"
@@ -29,7 +29,7 @@ export function ConversationListPanel({
   const pathname = usePathname()
   const currentUser = getCurrentUser()
   const currentUserId = getCurrentUserId()
-  const { conversations, isLoading } = useConversations(currentUserId || "")
+  const { conversations, loading } = useConversations()
 
   const [activeTab, setActiveTab] = useState<"direct" | "groups">("direct")
   const [searchTerm, setSearchTerm] = useState("")
@@ -155,7 +155,7 @@ export function ConversationListPanel({
       <div className="flex-1 overflow-y-auto">
         {activeSection === "chats" || activeSection === "direct" ? (
           activeTab === "direct" ? (
-            isLoading ? (
+            loading ? (
               <div className="flex justify-center p-4 text-sm text-muted-foreground">Loading conversations...</div>
             ) : filteredConversations.length === 0 ? (
               <div className="flex flex-col items-center justify-center p-8 text-center">

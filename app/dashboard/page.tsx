@@ -12,7 +12,7 @@ import {
 
 import { ProgressStats } from '@/components/dashboard/progress-stats';
 import { AnalyticsSection } from '@/components/dashboard/AnalyticsSection';
-import { Leaderboard } from '@/components/dashboard/Leaderboard';
+import { Leaderboard } from '@/components/dashboard/leaderboard';
 import { RecommendedQuizzes } from '@/components/dashboard/recommended-quizzes';
 import { ActivityFeed } from '@/components/dashboard/ActivityFeed';
 import { Achievements } from '@/components/dashboard/Achievements';

@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
+import { WebSocketProvider } from '@/context/WebSocketContext';
 import Provider from '@/components/Provider';
+import { FloatingNavbar } from '@/components/floating-navbar';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -47,6 +49,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <Provider>
+          <FloatingNavbar />
           <main id="main-content">{children}</main>
         </Provider>
       </body>

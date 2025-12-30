@@ -1,5 +1,5 @@
 import type { Message } from "@/models/Chat"
-import { emailToFirebaseId } from "@/lib/userUtils"
+import { getFirebaseId } from "@/lib/userUtils"
 
 let firebaseApp: any = null
 let auth: any = null
@@ -86,34 +86,34 @@ export const firebaseAdmin = {
     await messagesRef.set(message)
   },
 
-  async publishDirectMessage(senderEmail: string, recipientEmail: string, message: any) {
+  async publishDirectMessage(senderId: string, recipientId: string, message: any) {
     ensureFirebaseInitialized()
     if (!realtimeDb) throw new Error("Firebase Realtime DB not initialized")
 
-    const senderId = emailToFirebaseId(senderEmail)
-    const recipientId = emailToFirebaseId(recipientEmail)
-    const conversationId = [senderId, recipientId].sort().join("_")
+    // Use unique IDs directly - they're already Firebase-safe
+    const senderFirebaseId = getFirebaseId(senderId)
+    const recipientFirebaseId = getFirebaseId(recipientId)
+    const conversationId = [senderFirebaseId, recipientFirebaseId].sort().join("_")
 
     const signal = {
       type: "message.new",
       payload: {
         _id: message._id.toString(),
         content: message.content,
-        senderId: senderId,
-        recipientId: recipientId,
+        senderId: senderFirebaseId,
+        recipientId: recipientFirebaseId,
         createdAt: message.createdAt.toISOString(),
         type: message.type || "text",
       },
       timestamp: Date.now(),
     }
 
-    const messagesRef = realtimeDb.ref(`conversations/${conversationId}/messages`).push()
+    const messagesRef = realtimeDb.ref(`chats/${conversationId}/messages`).push()
     await messagesRef.set({
       ...message,
-      senderEmail,
-      senderId,
-      recipientId,
-      senderName: message.senderName || senderEmail.split("@")[0],
+      senderId: senderFirebaseId,
+      recipientId: recipientFirebaseId,
+      senderName: message.senderName || senderId.split("_")[0], // Fallback for unique IDs
       createdAt: message.createdAt.toISOString ? message.createdAt.toISOString() : message.createdAt,
       _id: messagesRef.key,
     })
@@ -125,13 +125,13 @@ export const firebaseAdmin = {
         lastMessageTime: message.createdAt.toISOString ? message.createdAt.toISOString() : message.createdAt,
         unreadCount: firebaseAdmin.increment(unreadInc),
         otherUserId: otherUid,
-        otherUserEmail: recipientEmail,
-        otherUserName: message.senderName || senderEmail.split("@")[0],
+        otherUserEmail: recipientId.includes('@') ? recipientId : 'unknown@example.com', // Fallback for unique IDs
+        otherUserName: message.senderName || senderId.split("_")[0],
       })
     }
 
-    await updateConversation(senderId, recipientId, 0)
-    await updateConversation(recipientId, senderId, 1)
+    await updateConversation(senderFirebaseId, recipientFirebaseId, 0)
+    await updateConversation(recipientFirebaseId, senderFirebaseId, 1)
   },
 
   increment(val: number) {
@@ -139,25 +139,26 @@ export const firebaseAdmin = {
     return admin.database.ServerValue.increment(val)
   },
 
-  async markConversationAsRead(userEmail: string, otherUserEmail: string) {
+  async markConversationAsRead(userId: string, otherUserId: string) {
     ensureFirebaseInitialized()
     if (!realtimeDb) throw new Error("Firebase Realtime DB not initialized")
 
-    const userId = emailToFirebaseId(userEmail)
-    const otherUserId = emailToFirebaseId(otherUserEmail)
+    // Use unique IDs directly - they're already Firebase-safe
+    const userFirebaseId = getFirebaseId(userId)
+    const otherUserFirebaseId = getFirebaseId(otherUserId)
 
-    const ref = realtimeDb.ref(`user_conversations/${userId}/${otherUserId}`)
+    const ref = realtimeDb.ref(`user_conversations/${userFirebaseId}/${otherUserFirebaseId}`)
     await ref.update({
       lastReadAt: Date.now(),
       unreadCount: 0,
     })
 
-    const conversationId = [userId, otherUserId].sort().join("_")
-    const messagesRef = realtimeDb.ref(`conversations/${conversationId}/messages`).push()
+    const conversationId = [userFirebaseId, otherUserFirebaseId].sort().join("_")
+    const messagesRef = realtimeDb.ref(`chats/${conversationId}/messages`).push()
     await messagesRef.set({
       type: "chat.read",
       payload: {
-        readerId: userId,
+        readerId: userFirebaseId,
         readAt: new Date().toISOString(),
       },
       timestamp: Date.now(),

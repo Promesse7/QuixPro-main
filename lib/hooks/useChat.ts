@@ -35,7 +35,7 @@ export function useChat(conversationId: string) {
 
         // Load initial messages from Firebase
         if (conversationId && database) {
-          const messagesRef = ref(database, `conversations/${conversationId}/messages`)
+          const messagesRef = ref(database, `chats/${conversationId}/messages`)
           const snapshot = await get(messagesRef)
           const data = snapshot.val()
 
@@ -43,8 +43,8 @@ export function useChat(conversationId: string) {
             const messagesList = Object.entries(data).map(([_, msg]: [string, any]) => ({
               ...msg,
               sender: {
-                _id: msg.senderEmail || msg.senderId,
-                name: msg.senderName || msg.senderEmail?.split("@")[0] || "Unknown",
+                _id: msg.senderId || msg.senderEmail, // Use unique ID if available
+                name: msg.senderName || msg.senderId?.split("_")[0] || msg.senderEmail?.split("@")[0] || "Unknown",
                 email: msg.senderEmail,
               },
             }))
@@ -68,7 +68,7 @@ export function useChat(conversationId: string) {
   useEffect(() => {
     if (!conversationId || !database) return
 
-    const messagesRef = ref(database, `conversations/${conversationId}/messages`)
+    const messagesRef = ref(database, `chats/${conversationId}/messages`)
 
     const unsubscribe = onChildAdded(messagesRef, (snapshot) => {
       const newMessage = snapshot.val()
@@ -77,8 +77,8 @@ export function useChat(conversationId: string) {
         const enrichedMessage: EnrichedMessage = {
           ...newMessage,
           sender: {
-            _id: newMessage.senderEmail || newMessage.senderId,
-            name: newMessage.senderName || newMessage.senderEmail?.split("@")[0] || "Unknown",
+            _id: newMessage.senderId || newMessage.senderEmail, // Use unique ID if available
+            name: newMessage.senderName || newMessage.senderId?.split("_")[0] || newMessage.senderEmail?.split("@")[0] || "Unknown",
             email: newMessage.senderEmail,
           },
         }
@@ -100,7 +100,7 @@ export function useChat(conversationId: string) {
   useEffect(() => {
     if (!conversationId || !database) return
 
-    const typingRef = ref(database, `conversations/${conversationId}/typing`)
+    const typingRef = ref(database, `chats/${conversationId}/typing`)
 
     const unsubscribe = onChildAdded(typingRef, (snapshot) => {
       const data = snapshot.val()
@@ -131,7 +131,7 @@ export function useChat(conversationId: string) {
       if (!conversationId || !database || !currentUserId) return
 
       try {
-        const messagesRef = ref(database, `conversations/${conversationId}/messages`)
+        const messagesRef = ref(database, `chats/${conversationId}/messages`)
         const newMessageRef = push(messagesRef)
 
         const messageData = {
@@ -139,7 +139,7 @@ export function useChat(conversationId: string) {
           content,
           type,
           senderEmail: currentUserId,
-          senderName: currentUserId.split("@")[0],
+          senderName: currentUserId.includes("@") ? currentUserId.split("@")[0] : currentUserId.split("_")[0], // Handle both email and unique ID
           senderId: getFirebaseId(currentUserId),
           createdAt: new Date().toISOString(),
           metadata,
@@ -160,7 +160,7 @@ export function useChat(conversationId: string) {
       if (!conversationId || !database || !currentUserId || !currentUserFirebaseId) return
 
       try {
-        const typingRef = ref(database, `conversations/${conversationId}/typing/${currentUserFirebaseId}`)
+        const typingRef = ref(database, `chats/${conversationId}/typing/${currentUserFirebaseId}`)
         if (isTyping) {
           await set(typingRef, {
             userEmail: currentUserId,

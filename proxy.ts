@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname
 
-  // Bypass middleware for API routes
+  // Bypass proxy for API routes
   if (path.startsWith('/api/')) {
     return NextResponse.next()
   }

@@ -141,6 +141,56 @@ export class WebSocketService {
         }
       });
 
+      // Handle direct messages between users
+      socket.on('sendDirectMessage', async (data) => {
+        try {
+          const { recipientId, content, type = 'text', metadata } = data;
+          
+          // Create message using unique IDs
+          const message = await chatService.createMessage({
+            groupId: null, // Direct message
+            content,
+            type,
+            metadata,
+            senderId: userId,
+            recipientId,
+          });
+
+          // Send to recipient's personal room
+          const recipientSocketId = this.userSockets.get(recipientId);
+          if (recipientSocketId) {
+            this.io?.to(recipientSocketId).emit('newDirectMessage', message);
+          }
+
+          // Also send to sender for their own message list
+          socket.emit('newDirectMessage', message);
+          
+        } catch (error) {
+          console.error('Error sending direct message:', error);
+          socket.emit('error', { message: 'Failed to send direct message' });
+        }
+      });
+
+      // Handle message read receipts
+      socket.on('markDirectMessageAsRead', async (data) => {
+        try {
+          const { messageId, recipientId } = data;
+          await chatService.markMessageAsRead(messageId, userId);
+          
+          // Notify the recipient that message was read
+          const recipientSocketId = this.userSockets.get(recipientId);
+          if (recipientSocketId) {
+            this.io?.to(recipientSocketId).emit('directMessageRead', {
+              messageId,
+              readerId: userId,
+              readAt: new Date()
+            });
+          }
+        } catch (error) {
+          console.error('Error marking direct message as read:', error);
+        }
+      });
+
       // Handle disconnection
       socket.on('disconnect', () => {
         console.log(`User disconnected: ${userId}`);

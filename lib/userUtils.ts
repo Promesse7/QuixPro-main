@@ -1,45 +1,118 @@
-import { getCurrentUser } from "@/lib/auth"
+import { UserAccountManager } from './userAccount'
 
-// Get current user email (primary identifier for Firebase)
+// Get the current user's unique ID from session/localStorage
 export function getCurrentUserId(): string | null {
-  const user = getCurrentUser()
-  return user?.email || null
+  if (typeof window !== 'undefined') {
+    // Try to get from session first
+    const sessionData = sessionStorage.getItem('currentUser')
+    if (sessionData) {
+      const user = JSON.parse(sessionData)
+      return user.uniqueUserId || null
+    }
+
+    // Fallback to localStorage
+    const localData = localStorage.getItem('currentUser')
+    if (localData) {
+      const user = JSON.parse(localData)
+      return user.uniqueUserId || null
+    }
+  }
+  return null
 }
 
-// Enhanced getCurrentUser that ensures email is available
-export function getCurrentUserWithEmail() {
-  const user = getCurrentUser()
-  if (!user) return null
+// Get current user with full details
+export function getCurrentUser(): any {
+  if (typeof window !== 'undefined') {
+    const sessionData = sessionStorage.getItem('currentUser')
+    if (sessionData) {
+      return JSON.parse(sessionData)
+    }
 
+    const localData = localStorage.getItem('currentUser')
+    if (localData) {
+      return JSON.parse(localData)
+    }
+  }
+  return null
+}
+
+// Get user by ID (for other users, not current user)
+export function getCurrentUserWithId(userId: string): any {
+  // This would typically fetch from API/database
+  // For now, return a basic structure
   return {
-    ...user,
-    email: user.email, // Use email directly
+    uniqueUserId: userId,
+    name: 'Unknown User',
+    email: 'unknown@example.com',
+    role: 'student'
   }
 }
 
-export const getCurrentUserWithId = getCurrentUserWithEmail
-
-// Email-to-ID mapping for Firebase compatibility (keep for existing data)
-const EMAIL_TO_ID_MAP: Record<string, string> = {
-  "aline.uwimana@student.rw": "user_aline_001",
-  "promesserukundo@gmail.com": "user_promesse_002",
-  "test@example.com": "user_test_003",
-  // Add more mappings as needed
+// Set current user in session/localStorage
+export function setCurrentUser(user: { uniqueUserId: string; email: string; name: string; role: string }): void {
+  if (typeof window !== 'undefined') {
+    const userData = JSON.stringify(user)
+    sessionStorage.setItem('currentUser', userData)
+    localStorage.setItem('currentUser', userData)
+  }
 }
 
-// Convert email to Firebase-safe ID (for path safety)
+// Ensure current user has unique ID (for legacy users)
+export function ensureCurrentUserUniqueId(email: string, name?: string): string {
+  if (typeof window !== 'undefined') {
+    const currentUserId = getCurrentUserId()
+    
+    if (currentUserId) {
+      return currentUserId
+    }
+    
+    // Create a unique ID for legacy user
+    const uniqueUserId = `legacy_${email.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}`
+    
+    // Set the user with unique ID
+    setCurrentUser({
+      uniqueUserId,
+      email,
+      name: name || email.split('@')[0],
+      role: 'student'
+    })
+    
+    return uniqueUserId
+  }
+  
+  return email // Fallback
+}
+
+// Clear current user session
+export function clearCurrentUser(): void {
+  if (typeof window !== 'undefined') {
+    sessionStorage.removeItem('currentUser')
+    localStorage.removeItem('currentUser')
+  }
+}
+
+// Convert email to Firebase-safe ID (for backward compatibility)
 export function emailToFirebaseId(email: string): string {
-  return email.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase()
+  return email.replace(/[.@]/g, '_')
 }
 
-// Get Firebase-safe ID for conversation paths
-export function getFirebaseId(email: string): string {
-  if (!email) return "unknown_user"
+// Get Firebase-safe ID from user ID or email
+export function getFirebaseId(identifier: string): string {
+  // If it's already a Firebase-safe ID, return as-is
+  if (identifier.includes('_') && !identifier.includes('@')) {
+    return identifier
+  }
+  
+  // If it's an email, convert to Firebase-safe ID
+  if (identifier.includes('@')) {
+    return emailToFirebaseId(identifier)
+  }
+  
+  // If it's a unique user ID, use it directly
+  return identifier
+}
+
+// Legacy function for backward compatibility
+export function emailToId(email: string): string {
   return emailToFirebaseId(email)
-}
-
-// Extract email from Firebase-safe ID (reverse operation)
-export function firebaseIdToEmail(firebaseId: string): string {
-  // Fallback: user likely used email directly
-  return firebaseId
 }

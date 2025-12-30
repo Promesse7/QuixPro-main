@@ -1,50 +1,56 @@
 import React from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import RenderedContent from './RenderedContent';
-import { Message } from '@/models/Chat';
+import { getCurrentUserId } from '@/lib/userUtils';
 
-// Define the enriched message type that includes the full sender object
-interface EnrichedMessage extends Omit<Message, 'senderId'> {
-  sender: { id: string; name: string; avatar?: string };
+// Define the message type for Firebase-native format
+interface FirebaseMessage {
+  _id: string;
+  senderId: string;
+  recipientId: string;
+  senderEmail?: string;
+  senderName?: string;
+  content: string;
+  type: string;
+  createdAt: string | number;
+  read: boolean;
 }
 
 interface MessageListProps {
-  messages: EnrichedMessage[];
+  messages: FirebaseMessage[];
 }
 
 const MessageList: React.FC<MessageListProps> = ({ messages }) => {
-  const { user } = useAuth();
+  const currentUserId = getCurrentUserId();
 
   return (
     <div className="space-y-4">
-      {messages.map((msg, index) => {
-        const isCurrentUser = msg.sender?.id === user?.id;
+      {messages.map((message) => {
+        const isCurrentUser = message.senderId === currentUserId;
+        
         return (
           <div
-            key={index}
-            className={`flex items-end ${isCurrentUser ? 'justify-end' : ''}`}
+            key={message._id}
+            className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
           >
-            {!isCurrentUser && (
-              <img
-                src={msg.sender?.avatar || 'https://i.pravatar.cc/300'}
-                alt={msg.sender?.name || 'User'}
-                className="w-8 h-8 rounded-full mr-3"
-              />
-            )}
             <div
-              className={`rounded-lg px-4 py-2 ${
+              className={`max-w-[75%] px-4 py-2 rounded-2xl ${
                 isCurrentUser
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-200 text-gray-800'
+                  ? 'bg-primary text-primary-foreground rounded-tr-sm'
+                  : 'bg-muted rounded-tl-sm'
               }`}
             >
-              {!isCurrentUser && (
-                <p className="text-sm font-semibold">{msg.sender?.name}</p>
-              )}
-              <RenderedContent content={msg.content} />
-              <p className="text-xs text-right opacity-70 mt-1">
-                {new Date(msg.createdAt).toLocaleTimeString()}
-              </p>
+              <p className="text-sm">{message.content}</p>
+              <div className="flex items-center justify-end gap-1 mt-1 opacity-70">
+                <p className="text-[10px] opacity-70 mt-1 text-right">
+                  {message.createdAt && !isNaN(new Date(message.createdAt).getTime())
+                    ? new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    : '--:--'}
+                </p>
+                {isCurrentUser && (
+                  <span className="text-[10px]">
+                    {message.read ? '✓✓' : '✓'}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         );

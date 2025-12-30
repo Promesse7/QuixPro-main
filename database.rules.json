@@ -1,6 +1,69 @@
 {
-  /* Visit https://firebase.google.com/docs/database/security to learn more about security rules. */
   "rules": {
+    "messages": {
+      "$conversationId": {
+        ".read": true,
+        ".write": true,
+        "$messageId": {
+          ".read": true,
+          ".write": true
+        }
+      }
+    },
+    
+    "conversations": {
+      ".read": true,
+      ".write": true,
+      "$conversationId": {
+        ".read": true,
+        ".write": true,
+        "participants": {
+          "$userId": {
+            ".read": true,
+            ".write": true
+          }
+        }
+      }
+    },
+    
+    "typing": {
+      "$conversationId": {
+        ".read": true,
+        ".write": true,
+        "$userId": {
+          ".read": true,
+          ".write": true
+        }
+      }
+    },
+    
+    "status": {
+      "$userId": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    
+    "chats": {
+      "$chatId": {
+        ".read": true,
+        ".write": true,
+        "messages": {
+          "$messageId": {
+            ".read": true,
+            ".write": true
+          }
+        }
+      }
+    },
+    
+    "user_conversations": {
+      "$userId": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    
     ".read": false,
     ".write": false
   }

@@ -8,10 +8,11 @@ import { Input } from '@/components/ui/input'
 import { AppBreadcrumb } from '@/components/app/AppBreadcrumb'
 import Link from 'next/link'
 import { getCurrentUser } from '@/lib/auth'
-import { ConversationListPanel } from '@/components/chat/ConversationListPanel'
-import { useRealtimeMessages } from '@/hooks/useRealtimeMessages'
+import MessageList from '@/components/chat/MessageList'
+import { useRealtimeMessages } from '@/hooks/useRealtimeMessagesNative'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
-import { getCurrentUserWithId, getCurrentUserId, getFirebaseId } from '@/lib/userUtils'
+import { useTypingIndicator } from '@/hooks/useTypingIndicatorNative'
+import { getCurrentUserWithId, getCurrentUserId, getFirebaseId, ensureCurrentUserUniqueId } from '@/lib/userUtils'
 import { database } from '@/lib/firebaseClient'
 import { MathInput } from '@/components/math/MathInput'
 
@@ -52,8 +53,12 @@ export default function DirectChatPage() {
   // Mobile sidebar toggle
   const [showSidebar, setShowSidebar] = useState(false)
 
+  // Ensure current user has unique ID
+  const currentUserEmail = getCurrentUser()?.email || 'unknown@example.com'
+  const currentUserId = ensureCurrentUserUniqueId(currentUserEmail, getCurrentUser()?.name)
+  
   // Get current user with ID
-  const currentUser = getCurrentUserWithId()
+  const currentUser = getCurrentUserWithId(currentUserId)
 
   // Ref for auto-scrolling to bottom
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -72,11 +77,14 @@ export default function DirectChatPage() {
     otherUserId = decodedEmail
   }
 
-  // Real-time messaging
-  const { messages, loading, sendMessage: sendRealtimeMessage } = useRealtimeMessages(otherUserId)
+  // Real-time messaging (Firebase Native)
+  const { messages, loading, sendMessage: sendRealtimeMessage, conversationId } = useRealtimeMessages(otherUserId)
 
   // Real-time online status
   const { isOnline, lastSeenText, loading: statusLoading } = useOnlineStatus(otherUserId)
+
+  // Typing indicator (Firebase Native)
+  const { setTyping, isSomeoneTyping, getTypingUsersArray } = useTypingIndicator(conversationId || '')
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -97,6 +105,7 @@ export default function DirectChatPage() {
 
       if (success) {
         setNewMessage('')
+        setTyping(false) // Stop typing indicator when message is sent
       } else {
         console.error('Failed to send message')
       }
@@ -104,6 +113,16 @@ export default function DirectChatPage() {
       console.error('Failed to send message:', error)
     } finally {
       setSending(false)
+    }
+  }
+
+  const handleTypingChange = (value: string) => {
+    setNewMessage(value)
+    // Set typing indicator when user starts typing
+    if (value.trim()) {
+      setTyping(true)
+    } else {
+      setTyping(false)
     }
   }
 
@@ -188,7 +207,7 @@ export default function DirectChatPage() {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4">
           {loading ? (
             <div className="text-center text-muted-foreground mt-10">Loading messages...</div>
           ) : messages.length === 0 ? (
@@ -197,45 +216,25 @@ export default function DirectChatPage() {
               <p>No messages yet. Say hello!</p>
             </div>
           ) : (
-            <>
-              {messages.map((message) => {
-                const currentFirebaseId = getFirebaseId(currentUser?.email || currentUser?.id || "")
-                const isMe = message.senderId === currentFirebaseId || message.senderEmail === currentUser?.email
-                return (
-                  <div
-                    key={message._id}
-                    className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div
-                      className={`max-w-[75%] px-4 py-2 rounded-2xl ${isMe
-                        ? 'bg-primary text-primary-foreground rounded-tr-sm'
-                        : 'bg-muted rounded-tl-sm'
-                        }`}
-                    >
-                      <p className="text-sm">{message.content}</p>
-                      <div className="flex items-center justify-end gap-1 mt-1 opacity-70">
-                        <p className="text-[10px] opacity-70 mt-1 text-right">
-                          {message.createdAt && !isNaN(new Date(message.createdAt).getTime())
-                            ? new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                            : '--:--'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-              <div ref={messagesEndRef} />
-            </>
+            <MessageList messages={messages} />
           )}
+          <div ref={messagesEndRef} />
         </div>
 
         {/* Input */}
         <div className="p-4 border-t border-border bg-background/50 backdrop-blur-sm">
+          {/* Typing Indicator */}
+          {isSomeoneTyping && (
+            <div className="mb-2 text-sm text-muted-foreground italic">
+              {getTypingUsersArray().join(', ')} is typing...
+            </div>
+          )}
+          
           {showMathKeyboard ? (
             <div className="mb-3">
               <MathInput
                 value={newMessage}
-                onChange={setNewMessage}
+                onChange={handleTypingChange}
                 placeholder="Enter math expression..."
               />
               <div className="flex gap-2 mt-2">
@@ -252,7 +251,7 @@ export default function DirectChatPage() {
               <Input
                 placeholder="Type a message..."
                 value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
+                onChange={(e) => handleTypingChange(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
                 className="flex-1 rounded-full px-4"
               />

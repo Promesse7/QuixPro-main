@@ -11,11 +11,12 @@ export default function Provider({ children }: { children: React.ReactNode }) {
   const userId = getCurrentUserId();
   const firebaseId = userId ? getFirebaseId(userId) : undefined;
 
-  useEffect(() => {
-    if (firebaseId) {
-      authenticateWithFirebase(firebaseId);
-    }
-  }, [firebaseId]);
+  // Temporarily disable Firebase authentication to test basic functionality
+  // useEffect(() => {
+  //   if (firebaseId) {
+  //     authenticateWithFirebase(firebaseId);
+  //   }
+  // }, [firebaseId]);
 
   usePresence(firebaseId);
 

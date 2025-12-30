@@ -2,16 +2,13 @@
 import withPWA from 'next-pwa'
 
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     ignoreBuildErrors: true,
   },
   images: {
     unoptimized: true,
   },
-  webpack: function(config) {
+  webpack: function (config) {
     config.watchOptions = {
       poll: 1000,
       aggregateTimeout: 300,
@@ -25,7 +22,7 @@ export default withPWA({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development', // Disable PWA in development
+  disable: true, // Temporarily disable PWA to diagnose build issues
   runtimeCaching: [
     {
       urlPattern: /^https?.*/,

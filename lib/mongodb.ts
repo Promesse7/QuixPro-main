@@ -38,3 +38,7 @@ export async function getDatabase(): Promise<Db> {
   const clientResolved = await clientPromise
   return clientResolved.db("QuixDB")
 }
+
+export async function connectToDatabase(): Promise<Db> {
+  return getDatabase()
+}
