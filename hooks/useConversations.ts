@@ -32,28 +32,53 @@ export const useConversations = (userId: string) => {
 
   useEffect(() => {
     if (!userId || !database) {
+      console.log("[v0] useConversations - Missing userId or database:", { userId, database: !!database })
       setIsLoading(false)
       return
     }
 
     const firebaseId = getFirebaseId(userId)
+    console.log("[v0] useConversations setup:", {
+      userId,
+      firebaseId,
+      dbInitialized: !!database,
+      timestamp: new Date().toISOString(),
+    })
+
     const conversationsRef = ref(database, `user_conversations/${firebaseId}`)
 
-    console.log("[v0] Setting up conversations listener for:", userId, "Firebase ID:", firebaseId)
+    console.log("[v0] Firebase path being used:", `user_conversations/${firebaseId}`)
 
     const unsubscribe = onValue(
       conversationsRef,
       (snapshot) => {
+        console.log("[v0] Conversations Firebase snapshot:", {
+          exists: snapshot.exists(),
+          key: snapshot.key,
+          size: snapshot.size,
+          timestamp: new Date().toISOString(),
+        })
+
         const data = snapshot.val()
-        console.log("[v0] Conversations snapshot:", data)
+        console.log("[v0] Raw conversations data:", {
+          data,
+          dataKeys: data ? Object.keys(data) : [],
+        })
 
         if (!data) {
+          console.log("[v0] No conversations found in Firebase")
           setConversations([])
           setIsLoading(false)
           return
         }
 
         const conversationList: Conversation[] = Object.entries(data).map(([firebaseId, convData]: [string, any]) => {
+          console.log("[v0] Processing conversation:", {
+            firebaseId,
+            convData,
+            hasEmail: !!convData.otherUserEmail,
+          })
+
           const email = convData.otherUserEmail || firebaseId
           const name = convData.otherUserName || email.split("@")[0] || "User"
 
@@ -77,11 +102,25 @@ export const useConversations = (userId: string) => {
 
         conversationList.sort((a, b) => new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime())
 
+        console.log("[v0] Conversations transformed:", {
+          count: conversationList.length,
+          conversations: conversationList.map((c) => ({
+            _id: c._id,
+            otherUserEmail: c.otherUserEmail,
+            lastMessage: c.lastMessage,
+          })),
+        })
+
         setConversations(conversationList)
         setIsLoading(false)
       },
       (err) => {
-        console.error("[v0] Conversations listener error:", err)
+        console.error("[v0] Conversations Firebase error:", {
+          code: err.code,
+          message: err.message,
+          firebaseId,
+          path: `user_conversations/${firebaseId}`,
+        })
         setError(err.message)
         setIsLoading(false)
       },

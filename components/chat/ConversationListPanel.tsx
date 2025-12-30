@@ -40,6 +40,33 @@ export function ConversationListPanel({
     setMounted(true)
   }, [])
 
+  useEffect(() => {
+    console.log("[v0] ConversationListPanel initialized:", {
+      currentUser: {
+        name: currentUser?.name,
+        email: currentUser?.email,
+      },
+      currentUserId,
+      timestamp: new Date().toISOString(),
+    })
+  }, [currentUser, currentUserId])
+
+  useEffect(() => {
+    console.log("[v0] Conversations updated:", {
+      count: conversations.length,
+      loading,
+      currentUserId,
+      conversations: conversations.map((c) => ({
+        _id: c._id,
+        otherUserId: c.otherUserId,
+        otherUserEmail: c.otherUserEmail,
+        lastMessage: c.lastMessage,
+        unreadCount: c.unreadCount,
+      })),
+      timestamp: new Date().toISOString(),
+    })
+  }, [conversations, loading, currentUserId])
+
   const getActiveSection = () => {
     if (!pathname) return "chats"
     if (pathname === "/chat") return "chats"
