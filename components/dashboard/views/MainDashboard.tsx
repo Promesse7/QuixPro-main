@@ -3,7 +3,7 @@ import { StatsGrid } from '@/components/dashboard/StatsGrid';
 import { AnalyticsSection } from '@/components/dashboard/AnalyticsSection';
 import { ActivityFeed } from '@/components/dashboard/ActivityFeed';
 import { RecommendedQuizzes } from '@/components/dashboard/recommended-quizzes';
-import { Leaderboard } from '@/components/dashboard/leaderboard';
+import { Leaderboard } from '@/components/dashboard/Leaderboard';
 import { Achievements } from '@/components/dashboard/Achievements';
 import { SocialSignals } from '@/components/dashboard/SocialSignals';
 
