@@ -173,7 +173,6 @@ export default function Ultimate2025Dashboard() {
         chatActivity: []
       },
       // Recommended quizzes component format (component handles its own data fetching)
-      recommendedQuizzes: recommendedQuizzes || [],
       // Activity feed component format
       activities: activities?.map((activity: any) => ({
         type: activity.type || 'general',
