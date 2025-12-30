@@ -14,7 +14,7 @@
     "test-db": "node scripts/test-db.js"
   },
   "dependencies": {
-    "@auth/core": "latest",
+    "@auth/core": "^0.41.1",
     "@aws-sdk/credential-providers": "3.699.0",
     "@edge-runtime/vm": "latest",
     "@emotion/is-prop-valid": "latest",
@@ -72,7 +72,7 @@
     "firebase-admin": "^13.6.0",
     "framer-motion": "^11.18.2",
     "gcp-metadata": "latest",
-    "geist": "1.3.0",
+    "geist": "^1.5.1",
     "happy-dom": "latest",
     "immer": "latest",
     "input-otp": "1.4.1",
@@ -81,7 +81,7 @@
     "lucide-react": "^0.562.0",
     "mongodb": "^6.10.0",
     "mongodb-client-encryption": "latest",
-    "next": "15.1.0",
+    "next": "^15.5.9",
     "next-auth": "^4.24.13",
     "next-pwa": "^5.6.0",
     "next-themes": "0.3.0",
@@ -122,14 +122,14 @@
     "@types/react-dom": "^19.0.0",
     "autoprefixer": "^10.4.21",
     "eslint": "8.57.1",
-    "eslint-config-next": "15.1.0",
+    "eslint-config-next": "^15.5.9",
     "jsdom": "^22.1.0",
     "lightningcss": "^1.30.2",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
     "tw-animate-css": "1.3.3",
     "typescript": "^5.6.3",
-    "vitest": "^0.34.5"
+    "vitest": "^4.0.16"
   },
   "engines": {
     "node": "22.x"
