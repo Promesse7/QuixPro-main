@@ -108,6 +108,9 @@
     "utf-8-validate": "latest",
     "uuid": "13.0.0",
     "vaul": "^0.9.9",
+    "vue-router": "latest",
+    "webdriverio": "latest",
+    "ws": "8.18.3",
     "zod": "3.25.67",
     "zustand": "5.0.9"
   },

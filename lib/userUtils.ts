@@ -1,118 +1,107 @@
-import { UserAccountManager } from './userAccount'
+import { type FirebaseUser, emailToUniqueId, isUniqueId, createChatId, getFirebaseId } from "./identifiers"
 
-// Get the current user's unique ID from session/localStorage
 export function getCurrentUserId(): string | null {
-  if (typeof window !== 'undefined') {
-    // Try to get from session first
-    const sessionData = sessionStorage.getItem('currentUser')
+  if (typeof window !== "undefined") {
+    const sessionData = sessionStorage.getItem("currentUser")
     if (sessionData) {
-      const user = JSON.parse(sessionData)
+      const user = JSON.parse(sessionData) as FirebaseUser
       return user.uniqueUserId || null
     }
 
-    // Fallback to localStorage
-    const localData = localStorage.getItem('currentUser')
+    const localData = localStorage.getItem("currentUser")
     if (localData) {
-      const user = JSON.parse(localData)
+      const user = JSON.parse(localData) as FirebaseUser
       return user.uniqueUserId || null
     }
   }
   return null
 }
 
-// Get current user with full details
-export function getCurrentUser(): any {
-  if (typeof window !== 'undefined') {
-    const sessionData = sessionStorage.getItem('currentUser')
+export function getCurrentUser(): FirebaseUser | null {
+  if (typeof window !== "undefined") {
+    const sessionData = sessionStorage.getItem("currentUser")
     if (sessionData) {
-      return JSON.parse(sessionData)
+      return JSON.parse(sessionData) as FirebaseUser
     }
 
-    const localData = localStorage.getItem('currentUser')
+    const localData = localStorage.getItem("currentUser")
     if (localData) {
-      return JSON.parse(localData)
+      return JSON.parse(localData) as FirebaseUser
     }
   }
   return null
 }
 
-// Get user by ID (for other users, not current user)
-export function getCurrentUserWithId(userId: string): any {
-  // This would typically fetch from API/database
-  // For now, return a basic structure
-  return {
-    uniqueUserId: userId,
-    name: 'Unknown User',
-    email: 'unknown@example.com',
-    role: 'student'
+export function getCurrentUserWithId(userId: string): FirebaseUser | null {
+  const currentUser = getCurrentUser()
+  if (currentUser && currentUser.uniqueUserId === userId) {
+    return currentUser
+  }
+  return null
+}
+
+export function setCurrentUser(user: Partial<FirebaseUser> & { email: string }): void {
+  if (typeof window !== "undefined") {
+    const firebaseUser: FirebaseUser = {
+      uniqueUserId: user.uniqueUserId || emailToUniqueId(user.email),
+      email: user.email,
+      name: user.name || user.email.split("@")[0],
+      role: user.role || "student",
+      profile: user.profile,
+    }
+
+    const userData = JSON.stringify(firebaseUser)
+    sessionStorage.setItem("currentUser", userData)
+    localStorage.setItem("currentUser", userData)
   }
 }
 
-// Set current user in session/localStorage
-export function setCurrentUser(user: { uniqueUserId: string; email: string; name: string; role: string }): void {
-  if (typeof window !== 'undefined') {
-    const userData = JSON.stringify(user)
-    sessionStorage.setItem('currentUser', userData)
-    localStorage.setItem('currentUser', userData)
-  }
-}
-
-// Ensure current user has unique ID (for legacy users)
 export function ensureCurrentUserUniqueId(email: string, name?: string): string {
-  if (typeof window !== 'undefined') {
+  if (typeof window !== "undefined") {
     const currentUserId = getCurrentUserId()
-    
+
     if (currentUserId) {
       return currentUserId
     }
-    
-    // Create a unique ID for legacy user
-    const uniqueUserId = `legacy_${email.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}`
-    
-    // Set the user with unique ID
+
+    const uniqueUserId = emailToUniqueId(email)
+
     setCurrentUser({
       uniqueUserId,
       email,
-      name: name || email.split('@')[0],
-      role: 'student'
+      name: name || email.split("@")[0],
+      role: "student",
     })
-    
+
     return uniqueUserId
   }
-  
-  return email // Fallback
+
+  return emailToUniqueId(email)
 }
 
-// Clear current user session
 export function clearCurrentUser(): void {
-  if (typeof window !== 'undefined') {
-    sessionStorage.removeItem('currentUser')
-    localStorage.removeItem('currentUser')
+  if (typeof window !== "undefined") {
+    sessionStorage.removeItem("currentUser")
+    localStorage.removeItem("currentUser")
   }
 }
 
-// Convert email to Firebase-safe ID (for backward compatibility)
 export function emailToFirebaseId(email: string): string {
-  return email.replace(/[.@]/g, '_')
+  return emailToUniqueId(email)
 }
 
-// Get Firebase-safe ID from user ID or email
-export function getFirebaseId(identifier: string): string {
-  // If it's already a Firebase-safe ID, return as-is
-  if (identifier.includes('_') && !identifier.includes('@')) {
+export function getFirebaseIdFromIdentifier(identifier: string): string {
+  if (isUniqueId(identifier)) {
     return identifier
   }
-  
-  // If it's an email, convert to Firebase-safe ID
-  if (identifier.includes('@')) {
-    return emailToFirebaseId(identifier)
+  if (identifier.includes("@")) {
+    return emailToUniqueId(identifier)
   }
-  
-  // If it's a unique user ID, use it directly
   return identifier
 }
 
-// Legacy function for backward compatibility
 export function emailToId(email: string): string {
-  return emailToFirebaseId(email)
+  return emailToUniqueId(email)
 }
+
+export { createChatId, getFirebaseId }

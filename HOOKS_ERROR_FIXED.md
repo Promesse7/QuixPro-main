@@ -3,16 +3,16 @@
 ## ✅ **ISSUE RESOLVED**
 
 ### **🐛 Problem: Invalid Hook Call Error**
-```
+\`\`\`
 Error: Invalid hook call. Hooks can only be called inside of the body of a function component.
-```
+\`\`\`
 
 **Root Cause**: Nested `useEffect` inside another `useEffect` in `useRealtimeMessages.ts`
 
 ### **🔧 Solution Applied**
 
 **Before (Broken):**
-```typescript
+\`\`\`typescript
 useEffect(() => {
   // Firebase setup...
   
@@ -21,10 +21,10 @@ useEffect(() => {
     // WebSocket setup...
   }, [dependencies]);
 }, [dependencies]);
-```
+\`\`\`
 
 **After (Fixed):**
-```typescript
+\`\`\`typescript
 // ✅ SEPARATE useEffect hooks - FOLLOWS RULES
 useEffect(() => {
   // WebSocket setup...
@@ -33,7 +33,7 @@ useEffect(() => {
 useEffect(() => {
   // Firebase setup...
 }, [dependencies]);
-```
+\`\`\`
 
 ### **🎯 Changes Made**
 

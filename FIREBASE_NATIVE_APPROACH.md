@@ -13,7 +13,7 @@
 ### **🔧 Implementation Approach**
 
 #### **1. Firebase Real-time Database Structure**
-```javascript
+\`\`\`javascript
 // Users Collection
 /users/{uniqueUserId}
 {
@@ -52,10 +52,10 @@
   isTyping: true,
   lastUpdated: "..."
 }
-```
+\`\`\`
 
 #### **2. Simplified useRealtimeMessages Hook**
-```typescript
+\`\`\`typescript
 import { ref, onValue, push, serverTimestamp, off } from 'firebase/database'
 import { database } from '@/lib/firebaseClient'
 import { getCurrentUserId } from '@/lib/userUtils'
@@ -109,10 +109,10 @@ export function useRealtimeMessages(otherUserId: string) {
   
   return { messages, sendMessage }
 }
-```
+\`\`\`
 
 #### **3. Built-in Typing Indicators**
-```typescript
+\`\`\`typescript
 export function useTypingIndicator(conversationId: string, userId: string) {
   const typingRef = ref(database, `typing/${conversationId}/${userId}`)
   
@@ -151,10 +151,10 @@ export function useTypingIndicator(conversationId: string, userId: string) {
   
   return { setTyping }
 }
-```
+\`\`\`
 
 #### **4. Firebase Security Rules**
-```json
+\`\`\`json
 {
   "rules": {
     "users": {
@@ -185,7 +185,7 @@ export function useTypingIndicator(conversationId: string, userId: string) {
     }
   }
 }
-```
+\`\`\`
 
 ## 🚀 **Benefits of This Approach**
 

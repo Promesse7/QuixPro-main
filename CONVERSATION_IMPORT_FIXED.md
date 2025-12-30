@@ -3,34 +3,34 @@
 ## ✅ **ISSUE RESOLVED**
 
 ### **🐛 Problem:**
-```
+\`\`\`
 Attempted import error: 'useConversations' is not exported from '@/hooks/useConversationsNative'
-```
+\`\`\`
 
 **Root Cause**: The `useConversationsNative` hook only exported `useConversationsNative`, but the component was trying to import `useConversations`.
 
 ### **🔧 Solution Applied**
 
 #### **1. Added Export Alias**
-```typescript
+\`\`\`typescript
 // In useConversationsNative.ts
 export { useConversationsNative as useConversations };
-```
+\`\`\`
 
 #### **2. Fixed Component Import**
-```typescript
+\`\`\`typescript
 // Before (broken)
 const { conversations, isLoading } = useConversations(currentUserId || "")
 
 // After (fixed)
 const { conversations, loading } = useConversations()
-```
+\`\`\`
 
 #### **3. Updated Property Names**
-```typescript
+\`\`\`typescript
 // Before: isLoading (didn't exist)
 // After: loading (correct property name)
-```
+\`\`\`
 
 ## 🎯 **What's Fixed:**
 

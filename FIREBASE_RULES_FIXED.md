@@ -3,27 +3,27 @@
 ## ✅ **ISSUE RESOLVED**
 
 ### **🐛 Problem:**
-```
+\`\`\`
 Error: permission_denied at /conversations: Client doesn't have permission to access the desired data.
-```
+\`\`\`
 
 **Root Cause**: The Firebase security rules only allowed reading from specific conversation IDs (`/conversations/$conversationId`), but the `useConversationsNative` hook needed to read the entire `/conversations` collection to find conversations where the current user is a participant.
 
 ### **🔧 Solution Applied:**
 
 #### **Before (Restrictive Rules):**
-```json
+\`\`\`json
 "conversations": {
   "$conversationId": {
     ".read": true,
     ".write": true
   }
 }
-```
+\`\`\`
 ❌ **Problem**: Could only read specific conversation IDs, not the entire collection
 
 #### **After (Fixed Rules):**
-```json
+\`\`\`json
 "conversations": {
   ".read": true,
   ".write": true,
@@ -38,7 +38,7 @@ Error: permission_denied at /conversations: Client doesn't have permission to ac
     }
   }
 }
-```
+\`\`\`
 ✅ **Solution**: Added `.read: true` and `.write: true` to the main `/conversations` path
 
 ## 🎯 **What This Fixes:**

@@ -3,27 +3,27 @@
 ## ✅ **ISSUE RESOLVED**
 
 ### **🐛 Problem: TypeError in TypingIndicator**
-```
+\`\`\`
 ⨯ TypeError: typingUsers.join is not a function
    at join (components\chat\TypingIndicator.tsx:14:19)
-```
+\`\`\`
 
 **Root Cause**: `typingUsers` was an object (`Record<string, boolean>`) but the component expected an array.
 
 ### **🔧 Solution Applied**
 
 **Before (Broken):**
-```typescript
+\`\`\`typescript
 interface TypingIndicatorProps {
   typingUsers: string[]; // ❌ Expected array
 }
 
 // typingUsers was: { userEmail: true, otherEmail: true }
 // But .join() only works on arrays
-```
+\`\`\`
 
 **After (Fixed):**
-```typescript
+\`\`\`typescript
 interface TypingIndicatorProps {
   typingUsers: string[] | Record<string, boolean>; // ✅ Accepts both
 }
@@ -45,7 +45,7 @@ const TypingIndicator = ({ typingUsers }) => {
     </div>
   );
 };
-```
+\`\`\`
 
 ### **🎯 Changes Made**
 

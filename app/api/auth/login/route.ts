@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { authenticateUser } from "@/lib/auth-db"
-import { UserMigrationManager } from '@/lib/userMigration'
+import { UserMigrationManager } from "@/lib/userMigration"
+import { emailToUniqueId } from "@/lib/identifiers"
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,20 +11,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 })
     }
 
-    // Try to authenticate with existing system first
     let user: any = await authenticateUser(email, password)
 
     if (!user) {
-      // Try to find user in new userAccounts collection
       const newUser = await UserMigrationManager.getUserByEmail(email)
       if (newUser) {
-        // For testing, accept any password
         user = {
-          uniqueUserId: newUser.uniqueUserId,
+          uniqueUserId: newUser.uniqueUserId || emailToUniqueId(email),
           email: newUser.email,
           name: newUser.name,
           role: newUser.role,
-          profile: newUser.profile
+          profile: newUser.profile,
         }
       }
     }
@@ -32,9 +30,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
     }
 
-    // If user doesn't have uniqueUserId, create one from legacy data
-    if (!user.uniqueUserId && user._id) {
-      user.uniqueUserId = `legacy_${user._id.toString()}`
+    if (!user.uniqueUserId) {
+      user.uniqueUserId = emailToUniqueId(user.email)
     }
 
     return NextResponse.json({ user })

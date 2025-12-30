@@ -5,7 +5,7 @@
 ### **🔥 Firebase-Native System Status:**
 
 **✅ Messages are being stored correctly in Firebase:**
-```
+\`\`\`
 messages/legacy_rukundopromesse_gmail_com_1767078797683_promesserukundo_gmail_com/
 ├── -Ohi9sZTayOsa3aun45x
 │   ├── content: "hey"
@@ -21,7 +21,7 @@ messages/legacy_rukundopromesse_gmail_com_1767078797683_promesserukundo_gmail_co
     ├── senderName: "RUKUNDO Prom2"
     ├── createdAt: 1767079942386
     └── type: "text"
-```
+\`\`\`
 
 ### **🔧 Components Updated:**
 
@@ -77,13 +77,13 @@ messages/legacy_rukundopromesse_gmail_com_1767078797683_promesserukundo_gmail_co
 
 ### **📊 Current System Architecture:**
 
-```
+\`\`\`
 User Action → Firebase Native Hook → Firebase Database → Real-time Update → UI
      ↓
 useRealtimeMessages → onValue(ref('messages/...')) → setMessages() → MessageList
      ↓
 sendMessage() → push(ref('messages/...')) → serverTimestamp() → Real-time sync
-```
+\`\`\`
 
 ### **🎊 Ready for Full Testing:**
 

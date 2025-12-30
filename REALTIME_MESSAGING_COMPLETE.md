@@ -40,33 +40,33 @@
 
 ### **🔄 Message Flow**
 
-```
+\`\`\`
 User sends message → WebSocket → Firebase → Other users (Firebase + WebSocket)
                     ↓
 Message stored → Real-time sync → Chat windows update
-```
+\`\`\`
 
 ## 🚀 **TESTING INSTRUCTIONS**
 
 ### **Test with Legacy User:**
-```bash
+\`\`\`bash
 # Login (gets legacy_690c57427b26c8223533d622)
 curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"promesserukundo@gmail.com","password":"test"}'
 
 # Chat should work with real-time messaging
-```
+\`\`\`
 
 ### **Test with New User:**
-```bash
+\`\`\`bash
 # Create account (gets user_mjs6p9vg_28ann6)
 curl -X POST http://localhost:3000/api/user-accounts \
   -H "Content-Type: application/json" \
   -d '{"email":"new@test.com","name":"Test User","role":"student"}'
 
 # Login and test real-time messaging
-```
+\`\`\`
 
 ## 🎊 **PROBLEMS COMPLETELY SOLVED**
 

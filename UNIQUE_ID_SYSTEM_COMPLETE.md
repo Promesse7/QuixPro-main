@@ -71,20 +71,20 @@ The core problems you identified are now **completely solved**:
 ## 💡 **TESTING INSTRUCTIONS**
 
 ### **Test Legacy User:**
-```bash
+\`\`\`bash
 curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"promesserukundo@gmail.com","password":"any"}'
-```
+\`\`\`
 - Returns: `uniqueUserId: legacy_690c57427b26c8223533d622`
 - Chat: `/chat/direct/promesserukundo@gmail.com`
 
 ### **Test New User:**
-```bash
+\`\`\`bash
 curl -X POST http://localhost:3000/api/user-accounts \
   -H "Content-Type: application/json" \
   -d '{"email":"newuser@test.com","name":"Test User","role":"student"}'
-```
+\`\`\`
 - Returns: `uniqueUserId: user_mjs6p9vg_28ann6`
 - Chat: Works immediately with stable ID
 

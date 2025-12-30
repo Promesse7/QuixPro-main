@@ -53,31 +53,28 @@ export const useConversations = (userId: string) => {
           return
         }
 
-        const conversationList: Conversation[] = Object.entries(data).map(
-          ([firebaseId, convData]: [string, any]) => {
-            const email = convData.otherUserEmail || firebaseId
-            const name = convData.otherUserName || email.split("@")[0] || "User"
+        const conversationList: Conversation[] = Object.entries(data).map(([firebaseId, convData]: [string, any]) => {
+          const email = convData.otherUserEmail || firebaseId
+          const name = convData.otherUserName || email.split("@")[0] || "User"
 
-            return {
-              _id: firebaseId,
-              otherUserId: firebaseId,
-              otherUserEmail: email,
-              lastMessage: convData.lastMessage || "No messages yet",
-              lastMessageTime: convData.lastMessageTime || new Date().toISOString(),
-              unreadCount: convData.unreadCount || 0,
-              otherUser: {
-                name: name,
-                email: email,
-                image: convData.otherUserImage,
-                isOnline: convData.isOnline || false,
-                school: convData.school,
-                level: convData.level,
-              },
-            }
-          },
-        )
+          return {
+            _id: firebaseId,
+            otherUserId: firebaseId,
+            otherUserEmail: email,
+            lastMessage: convData.lastMessage || "No messages yet",
+            lastMessageTime: convData.lastMessageTime || new Date().toISOString(),
+            unreadCount: convData.unreadCount || 0,
+            otherUser: {
+              name: name,
+              email: email,
+              image: convData.otherUserImage,
+              isOnline: convData.isOnline || false,
+              school: convData.school,
+              level: convData.level,
+            },
+          }
+        })
 
-        // Sort by last message time
         conversationList.sort((a, b) => new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime())
 
         setConversations(conversationList)

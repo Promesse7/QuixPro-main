@@ -5,36 +5,36 @@
 ### **🔥 Firebase-Native Hooks Created:**
 
 #### **1. useRealtimeMessagesNative.ts**
-```typescript
+\`\`\`typescript
 // ✅ Firebase-native real-time messaging
 - Uses Firebase `ref()`, `onValue()`, `push()`, `serverTimestamp()`
 - No custom WebSocket needed
 - Automatic real-time updates
 - Built-in offline support
 - Conversation metadata tracking
-```
+\`\`\`
 
 #### **2. useTypingIndicatorNative.ts**
-```typescript
+\`\`\`typescript
 // ✅ Firebase-native typing indicators
 - Uses Firebase `ref()`, `set()`, `onValue()`
 - Auto-clears after 3 seconds
 - Real-time typing status
 - Multiple user typing support
-```
+\`\`\`
 
 #### **3. useConversationsNative.ts**
-```typescript
+\`\`\`typescript
 // ✅ Firebase-native conversation list
 - Uses Firebase `ref()`, `onValue()`
 - Real-time conversation updates
 - Participant management
 - Last message tracking
-```
+\`\`\`
 
 ### **🔧 Firebase Database Structure:**
 
-```javascript
+\`\`\`javascript
 // Messages Collection
 /messages/{conversationId}/{messageId}
 {
@@ -68,11 +68,11 @@
   lastUpdated: serverTimestamp(),
   userName: "User Name"
 }
-```
+\`\`\`
 
 ### **🎯 Updated Chat Direct Page:**
 
-```typescript
+\`\`\`typescript
 // ✅ Firebase-native hooks integration
 import { useRealtimeMessages } from '@/hooks/useRealtimeMessagesNative'
 import { useTypingIndicator } from '@/hooks/useTypingIndicatorNative'
@@ -92,7 +92,7 @@ const handleTypingChange = (value: string) => {
     setTyping(false)
   }
 }
-```
+\`\`\`
 
 ## 🚀 **BENEFITS ACHIEVED**
 

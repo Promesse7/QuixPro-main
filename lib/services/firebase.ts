@@ -1,5 +1,5 @@
 import type { Message } from "@/models/Chat"
-import { getFirebaseId } from "@/lib/userUtils"
+import { getFirebaseId, createChatId } from "@/lib/identifiers"
 
 let firebaseApp: any = null
 let auth: any = null
@@ -90,30 +90,16 @@ export const firebaseAdmin = {
     ensureFirebaseInitialized()
     if (!realtimeDb) throw new Error("Firebase Realtime DB not initialized")
 
-    // Use unique IDs directly - they're already Firebase-safe
+    const conversationId = createChatId(senderId, recipientId)
     const senderFirebaseId = getFirebaseId(senderId)
     const recipientFirebaseId = getFirebaseId(recipientId)
-    const conversationId = [senderFirebaseId, recipientFirebaseId].sort().join("_")
-
-    const signal = {
-      type: "message.new",
-      payload: {
-        _id: message._id.toString(),
-        content: message.content,
-        senderId: senderFirebaseId,
-        recipientId: recipientFirebaseId,
-        createdAt: message.createdAt.toISOString(),
-        type: message.type || "text",
-      },
-      timestamp: Date.now(),
-    }
 
     const messagesRef = realtimeDb.ref(`chats/${conversationId}/messages`).push()
     await messagesRef.set({
       ...message,
       senderId: senderFirebaseId,
       recipientId: recipientFirebaseId,
-      senderName: message.senderName || senderId.split("_")[0], // Fallback for unique IDs
+      senderName: message.senderName || senderFirebaseId.split("_")[0],
       createdAt: message.createdAt.toISOString ? message.createdAt.toISOString() : message.createdAt,
       _id: messagesRef.key,
     })
@@ -125,8 +111,8 @@ export const firebaseAdmin = {
         lastMessageTime: message.createdAt.toISOString ? message.createdAt.toISOString() : message.createdAt,
         unreadCount: firebaseAdmin.increment(unreadInc),
         otherUserId: otherUid,
-        otherUserEmail: recipientId.includes('@') ? recipientId : 'unknown@example.com', // Fallback for unique IDs
-        otherUserName: message.senderName || senderId.split("_")[0],
+        otherUserEmail: message.senderEmail || `${senderFirebaseId}@example.com`,
+        otherUserName: message.senderName || senderFirebaseId.split("_")[0],
       })
     }
 

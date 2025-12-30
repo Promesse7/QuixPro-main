@@ -10,7 +10,7 @@
 ### **🔧 Solutions Applied**
 
 #### **1. Enhanced User Utils**
-```typescript
+\`\`\`typescript
 // NEW: Ensure current user has unique ID
 export function ensureCurrentUserUniqueId(email: string, name?: string): string {
   const currentUserId = getCurrentUserId()
@@ -32,31 +32,31 @@ export function ensureCurrentUserUniqueId(email: string, name?: string): string 
   
   return uniqueUserId
 }
-```
+\`\`\`
 
 #### **2. Updated Chat Direct Page**
-```typescript
+\`\`\`typescript
 // Ensure current user has unique ID
 const currentUserEmail = getCurrentUser()?.email || 'unknown@example.com'
 const currentUserId = ensureCurrentUserUniqueId(currentUserEmail, getCurrentUser()?.name)
-```
+\`\`\`
 
 #### **3. Fixed useRealtimeMessages Hook**
-```typescript
+\`\`\`typescript
 // Before: Used currentUser object (email-based)
 const currentUser = getCurrentUser();
 
 // After: Uses unique ID from session
 const currentUserId = getCurrentUserId(); // Gets uniqueUserId from localStorage/sessionStorage
-```
+\`\`\`
 
 #### **4. Firebase Path Consistency**
-```typescript
+\`\`\`typescript
 // Now uses unique IDs for all Firebase operations
 const currentFirebaseId = getFirebaseId(currentUserId);
 const otherFirebaseId = getFirebaseId(otherUserId);
 const firebaseChatId = [currentFirebaseId, otherFirebaseId].sort().join('_');
-```
+\`\`\`
 
 ## 🎯 **HOW IT WORKS NOW**
 
@@ -66,23 +66,23 @@ const firebaseChatId = [currentFirebaseId, otherFirebaseId].sort().join('_');
 3. **Session Storage**: `{ uniqueUserId, email, name, role }`
 
 ### **Message Flow:**
-```
+\`\`\`
 User sends message → useRealtimeMessages (with unique ID) → Firebase path with unique IDs → Real-time display
-```
+\`\`\`
 
 ### **Firebase Path Structure:**
-```
+\`\`\`
 /chats/{currentFirebaseId}_{otherFirebaseId}/messages
-```
+\`\`\`
 
 ## 🚀 **TESTING INSTRUCTIONS**
 
 ### **1. Clear Browser Storage:**
-```javascript
+\`\`\`javascript
 // In browser console
 localStorage.clear();
 sessionStorage.clear();
-```
+\`\`\`
 
 ### **2. Navigate to Chat:**
 - Go to `/chat/direct/promesserukundo@gmail.com`
