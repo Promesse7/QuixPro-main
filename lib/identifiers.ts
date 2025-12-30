@@ -33,6 +33,7 @@ export function isUniqueId(str: string): boolean {
 
 /**
  * Create Firebase chat ID from two user IDs (sorted for consistency)
+ * Ensures both users always reference the same conversation ID
  */
 export function createChatId(userId1: string, userId2: string): string {
   const id1 = isUniqueId(userId1) ? userId1 : emailToUniqueId(userId1)

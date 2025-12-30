@@ -2,7 +2,11 @@
 import { StatsGrid } from '@/components/dashboard/StatsGrid';
 import { AnalyticsSection } from '@/components/dashboard/AnalyticsSection';
 import { ActivityFeed } from '@/components/dashboard/ActivityFeed';
+<<<<<<< HEAD
 import { RecommendedQuizzes } from '@/components/dashboard/recommended-quizzes';
+=======
+import { RecommendedQuizzes } from '@/components/dashboard/RecommendedQuizzes';
+>>>>>>> 96aefe6904b74844637118bea43c017a751bac41
 import { Leaderboard } from '@/components/dashboard/Leaderboard';
 import { Achievements } from '@/components/dashboard/Achievements';
 import { SocialSignals } from '@/components/dashboard/SocialSignals';
@@ -17,7 +21,7 @@ export function MainDashboard({ data }: { data: any }) {
   return (
     <div className="space-y-8">
       <StatsGrid stats={stats} />
-      <RecommendedQuizzes />
+      <RecommendedQuizzes quizzes={recommendedQuizzes} />
       <AnalyticsSection analytics={analytics} />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
@@ -25,7 +29,7 @@ export function MainDashboard({ data }: { data: any }) {
         </div>
         <div className="space-y-8">
           <SocialSignals data={socialSignals} />
-          <Leaderboard />
+          <Leaderboard data={leaderboard} />
           <Achievements achievements={achievements} />
         </div>
       </div>

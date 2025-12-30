@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
+import { motion, useScroll, useTransform } from 'framer-motion'
 import { ArrowRight, CheckCircle, Sparkles, BarChart3, Trophy, Users, Book, ChevronRight, Menu, X } from 'lucide-react'
 import { ThemeSwitcher } from '@/components/theme-switcher'
 import ParticleBackground from '@/components/landing/ParticleBackground'
@@ -82,39 +82,34 @@ export default function QuixLanding() {
         </div>
 
         {/* Mobile menu */}
-        <AnimatePresence>
-          {mobileMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="md:hidden bg-background/95 backdrop-blur-xl border-t border-border overflow-hidden"
-            >
-              <div className="px-6 py-8 space-y-6">
-                <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-medium text-foreground/80 hover:text-primary transition-colors">Features</a>
-                <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-medium text-foreground/80 hover:text-primary transition-colors">How it works</a>
-                <a href="#testimonials" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-medium text-foreground/80 hover:text-primary transition-colors">Testimonials</a>
-                <div className="pt-4 flex flex-col gap-4">
-                  <a href="/auth" className="flex items-center justify-center px-4 py-3 border border-border rounded-xl text-foreground font-medium">Sign in</a>
-                  <a href="/auth" className="flex items-center justify-center px-4 py-3 bg-primary text-primary-foreground font-bold rounded-xl shadow-lg shadow-primary/20">
-                    Get started
-                  </a>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="md:hidden bg-background border-t border-border"
+          >
+            <div className="px-6 py-4 space-y-3">
+              <a href="#features" className="block text-sm text-muted-foreground hover:text-foreground">Features</a>
+              <a href="#how-it-works" className="block text-sm text-muted-foreground hover:text-foreground">How it works</a>
+              <a href="#testimonials" className="block text-sm text-muted-foreground hover:text-foreground">Testimonials</a>
+              <a href="/auth" className="block w-full text-left text-sm text-muted-foreground hover:text-foreground">Sign in</a>
+              <a href="/auth" className="block w-full px-4 py-2 bg-foreground text-background text-sm rounded-lg">
+                Get started
+              </a>
+            </div>
+          </motion.div>
+        )}
       </nav>
 
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 px-6 overflow-hidden">
         <ParticleBackground />
 
-        {/* Floating Icons - Adjusted for responsiveness */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {/* Math Icon - Hidden on very small screens */}
+        {/* Floating Icons */}
+        <div className="absolute inset-0 pointer-events-none">
+          {/* Math Icon - Top Left */}
           <motion.div
-            className="absolute top-[10%] left-[5%] md:left-[10%] w-16 h-16 md:w-24 md:h-24 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl md:rounded-3xl shadow-xl flex items-center justify-center text-3xl md:text-4xl z-0 opacity-40 md:opacity-100"
+            className="absolute top-[15%] left-[10%] w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-blue-500 to-blue-600 rounded-3xl shadow-xl flex items-center justify-center text-4xl"
             animate={{
               y: [0, -20, 0],
               rotate: [0, 5, 0],
@@ -128,9 +123,9 @@ export default function QuixLanding() {
             📐
           </motion.div>
 
-          {/* Chemistry Icon */}
+          {/* Chemistry Icon - Top Right */}
           <motion.div
-            className="absolute top-[15%] right-[5%] md:right-[8%] w-14 h-14 md:w-20 md:h-20 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl md:rounded-2xl shadow-xl flex items-center justify-center text-2xl md:text-3xl z-0 opacity-40 md:opacity-100"
+            className="absolute top-[20%] right-[8%] w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-xl flex items-center justify-center text-3xl"
             animate={{
               y: [0, 15, 0],
               rotate: [0, -5, 0],
@@ -145,9 +140,9 @@ export default function QuixLanding() {
             🧪
           </motion.div>
 
-          {/* Trophy Icon - Hidden on mobile */}
+          {/* Trophy Icon - Middle Left */}
           <motion.div
-            className="absolute top-[40%] left-[-2%] md:left-[5%] w-14 h-14 md:w-22 md:h-22 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-xl md:rounded-3xl shadow-xl flex items-center justify-center text-2xl md:text-3xl z-0 hidden sm:flex"
+            className="absolute top-[45%] left-[5%] w-18 h-18 md:w-22 md:h-22 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-3xl shadow-xl flex items-center justify-center text-3xl"
             animate={{
               y: [0, -25, 0],
               x: [0, 10, 0],
@@ -162,9 +157,9 @@ export default function QuixLanding() {
             🏆
           </motion.div>
 
-          {/* Book Icon */}
+          {/* Book Icon - Middle Right */}
           <motion.div
-            className="absolute top-[45%] right-[-2%] md:right-[12%] w-16 h-16 md:w-24 md:h-24 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl md:rounded-3xl shadow-xl flex items-center justify-center text-3xl md:text-4xl z-0 opacity-50 md:opacity-100"
+            className="absolute top-[50%] right-[12%] w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-green-500 to-green-600 rounded-3xl shadow-xl flex items-center justify-center text-4xl"
             animate={{
               y: [0, 21, 0],
               rotate: [0, 8, 0],
@@ -179,9 +174,9 @@ export default function QuixLanding() {
             📚
           </motion.div>
 
-          {/* Brain Icon */}
+          {/* Brain Icon - Bottom Left */}
           <motion.div
-            className="absolute bottom-[15%] left-[5%] md:left-[15%] w-14 h-14 md:w-20 md:h-20 bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl md:rounded-2xl shadow-xl flex items-center justify-center text-2xl md:text-3xl z-0 opacity-40 md:opacity-100"
+            className="absolute bottom-[20%] left-[15%] w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-pink-500 to-pink-600 rounded-2xl shadow-xl flex items-center justify-center text-3xl"
             animate={{
               y: [0, -15, 0],
               x: [0, -8, 0],
@@ -196,9 +191,9 @@ export default function QuixLanding() {
             🧠
           </motion.div>
 
-          {/* Star Icon */}
+          {/* Star Icon - Bottom Right */}
           <motion.div
-            className="absolute bottom-[20%] right-[2%] md:right-[6%] w-14 h-14 md:w-22 md:h-22 bg-gradient-to-br from-orange-400 to-orange-500 rounded-xl md:rounded-3xl shadow-xl flex items-center justify-center text-2xl md:text-3xl z-0 opacity-40 md:opacity-100"
+            className="absolute bottom-[25%] right-[6%] w-18 h-18 md:w-22 md:h-22 bg-gradient-to-br from-orange-400 to-orange-500 rounded-3xl shadow-xl flex items-center justify-center text-3xl"
             animate={{
               y: [0, 18, 0],
               rotate: [0, -10, 0],
@@ -213,11 +208,11 @@ export default function QuixLanding() {
             ⭐
           </motion.div>
 
-          {/* Physics Icon - Center mobile */}
+          {/* Physics Icon - Top Center */}
           <motion.div
-            className="absolute top-[5%] left-[50%] -translate-x-1/2 w-12 h-12 md:w-20 md:h-20 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg md:rounded-2xl shadow-xl flex items-center justify-center text-xl md:text-3xl z-0"
+            className="absolute top-[12%] left-[45%] w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl shadow-xl flex items-center justify-center text-3xl"
             animate={{
-              y: [0, -10, 0],
+              y: [0, -18, 0],
               scale: [1, 1.05, 1],
             }}
             transition={{
@@ -228,6 +223,23 @@ export default function QuixLanding() {
             }}
           >
             ⚛️
+          </motion.div>
+
+          {/* Globe Icon - Bottom Center-ish */}
+          <motion.div
+            className="absolute bottom-[15%] left-[40%] w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl shadow-xl flex items-center justify-center text-3xl"
+            animate={{
+              y: [0, 22, 0],
+              rotate: [0, 15, 0],
+            }}
+            transition={{
+              duration: 7,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 1.2
+            }}
+          >
+            🌍
           </motion.div>
         </div>
         <div className="max-w-4xl mx-auto text-center relative z-10">
@@ -249,11 +261,11 @@ export default function QuixLanding() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black tracking-tight leading-[1.1]"
+              className="text-5xl md:text-7xl font-bold tracking-tight leading-tight"
             >
               Master your exams
               <br />
-              <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">with confidence</span>
+              <span className="text-muted-foreground/60">with confidence</span>
             </motion.h1>
 
             <motion.p
@@ -283,38 +295,35 @@ export default function QuixLanding() {
           </motion.div>
         </div>
 
-        {/* Hero Visual - Enhanced for responsiveness */}
+        {/* Hero Visual */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4 }}
-          className="max-w-5xl mx-auto mt-16 md:mt-24 px-4 sm:px-6"
+          className="max-w-5xl mx-auto mt-20"
         >
-          <div className="relative rounded-2xl md:rounded-3xl border border-border bg-gradient-to-b from-muted/50 to-card p-4 md:p-8 shadow-2xl">
-            <div className="space-y-4 md:space-y-6">
-              <div className="flex items-center gap-2 md:gap-3">
-                <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-red-400" />
-                <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-yellow-400" />
-                <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-green-400" />
+          <div className="relative rounded-2xl border border-border bg-gradient-to-b from-muted/50 to-card p-8 shadow-2xl">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 rounded-full bg-red-400" />
+                <div className="w-3 h-3 rounded-full bg-yellow-400" />
+                <div className="w-3 h-3 rounded-full bg-green-400" />
               </div>
-              <div className="bg-card rounded-xl p-4 md:p-8 border border-border/50 shadow-inner">
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between gap-4">
-                    <span className="text-xs md:text-sm text-muted-foreground bg-muted px-2 py-1 rounded">Question 3 of 10</span>
-                    <span className="text-xs md:text-sm font-semibold tracking-wide uppercase text-primary">Advanced Mathematics</span>
+              <div className="bg-card rounded-lg p-6 border border-border">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Question 3 of 10</span>
+                    <span className="text-sm font-medium">Advanced Mathematics</span>
                   </div>
-                  <div className="h-1.5 md:h-2.5 bg-muted rounded-full overflow-hidden">
-                    <div className="h-full w-1/3 bg-primary rounded-full shadow-[0_0_10px_rgba(var(--primary),0.5)]" />
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div className="h-full w-1/3 bg-primary rounded-full" />
                   </div>
-                  <div className="pt-2 md:pt-4">
-                    <h3 className="text-xl md:text-3xl font-bold mb-6 md:mb-8 text-foreground leading-tight">Solve for x: 2x² + 5x - 3 = 0</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                  <div className="pt-4">
+                    <h3 className="text-lg font-medium mb-4">Solve for x: 2x² + 5x - 3 = 0</h3>
+                    <div className="space-y-2">
                       {['x = 0.5 or x = -3', 'x = 1 or x = -3', 'x = -0.5 or x = 3', 'x = 2 or x = -1.5'].map((option, i) => (
-                        <div key={i} className="p-4 md:p-6 border border-border rounded-xl md:rounded-2xl hover:border-primary hover:bg-primary/5 transition-all cursor-pointer group flex items-center gap-4">
-                          <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-muted flex items-center justify-center text-xs md:text-sm font-bold group-hover:bg-primary group-hover:text-white transition-colors">
-                            {String.fromCharCode(65 + i)}
-                          </div>
-                          <span className="text-sm md:text-lg font-medium">{option}</span>
+                        <div key={i} className="p-3 border border-border rounded-lg hover:border-primary transition-colors cursor-pointer">
+                          <span className="text-sm">{option}</span>
                         </div>
                       ))}
                     </div>
@@ -322,10 +331,6 @@ export default function QuixLanding() {
                 </div>
               </div>
             </div>
-
-            {/* Decorative Elements for Desktop */}
-            <div className="hidden lg:block absolute -top-10 -right-10 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
-            <div className="hidden lg:block absolute -bottom-10 -left-10 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl" />
           </div>
         </motion.div>
       </section>
@@ -369,43 +374,37 @@ export default function QuixLanding() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+          <div className="grid md:grid-cols-3 gap-6">
             {[
               {
                 icon: <BarChart3 className="w-6 h-6" />,
                 title: 'Adaptive Learning',
-                description: 'AI-powered quizzes that adapt to your skill level in real-time, ensuring optimal challenge and growth.',
-                color: 'blue'
+                description: 'AI-powered quizzes that adapt to your skill level in real-time, ensuring optimal challenge and growth.'
               },
               {
                 icon: <Trophy className="w-6 h-6" />,
                 title: 'Gamified Progress',
-                description: 'Earn points, unlock achievements, and compete on leaderboards to stay motivated.',
-                color: 'yellow'
+                description: 'Earn points, unlock achievements, and compete on leaderboards to stay motivated.'
               },
               {
                 icon: <Book className="w-6 h-6" />,
                 title: 'Instant Feedback',
-                description: 'Get detailed explanations for every question, helping you learn from mistakes immediately.',
-                color: 'green'
+                description: 'Get detailed explanations for every question, helping you learn from mistakes immediately.'
               },
               {
                 icon: <Users className="w-6 h-6" />,
                 title: 'Peer Learning',
-                description: 'Join study groups, share progress, and learn together with students across Rwanda.',
-                color: 'purple'
+                description: 'Join study groups, share progress, and learn together with students across Rwanda.'
               },
               {
                 icon: <CheckCircle className="w-6 h-6" />,
                 title: 'Progress Tracking',
-                description: 'Comprehensive analytics showing your strengths, weaknesses, and improvement over time.',
-                color: 'indigo'
+                description: 'Comprehensive analytics showing your strengths, weaknesses, and improvement over time.'
               },
               {
                 icon: <Sparkles className="w-6 h-6" />,
                 title: 'Curriculum Aligned',
-                description: 'Content perfectly aligned with the Rwandan national curriculum and exam patterns.',
-                color: 'pink'
+                description: 'Content perfectly aligned with the Rwandan national curriculum and exam patterns.'
               }
             ].map((feature, i) => (
               <motion.div
@@ -414,13 +413,13 @@ export default function QuixLanding() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
                 viewport={{ once: true }}
-                className="group p-8 md:p-10 border border-border rounded-2xl hover:border-primary/50 transition-all hover:shadow-2xl hover:shadow-primary/5 bg-card/50 backdrop-blur-sm"
+                className="group p-8 border border-border rounded-2xl hover:border-primary transition-all hover:shadow-lg"
               >
-                <div className={`w-14 h-14 bg-muted rounded-2xl flex items-center justify-center mb-6 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300 transform group-hover:rotate-6 shadow-sm`}>
+                <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                   {feature.icon}
                 </div>
-                <h3 className="text-2xl font-bold mb-4">{feature.title}</h3>
-                <p className="text-muted-foreground leading-relaxed text-lg">{feature.description}</p>
+                <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
+                <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
               </motion.div>
             ))}
           </div>
@@ -437,10 +436,7 @@ export default function QuixLanding() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8 relative">
-            {/* Visual connector for desktop */}
-            <div className="hidden md:block absolute top-[2.5rem] left-[10%] right-[10%] h-0.5 bg-gradient-to-r from-transparent via-border to-transparent" />
-
+          <div className="grid md:grid-cols-3 gap-8">
             {[
               {
                 step: '01',
@@ -460,17 +456,18 @@ export default function QuixLanding() {
             ].map((item, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: i * 0.15 }}
                 viewport={{ once: true }}
-                className="relative text-center md:text-left pt-8 md:pt-0"
+                className="relative"
               >
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary text-primary-foreground text-2xl font-black mb-6 shadow-xl shadow-primary/20 relative z-10">
-                  {item.step}
-                </div>
-                <h3 className="text-2xl md:text-3xl font-bold mb-4">{item.title}</h3>
-                <p className="text-muted-foreground leading-relaxed text-lg">{item.description}</p>
+                <div className="text-6xl font-bold text-muted-foreground/20 mb-4">{item.step}</div>
+                <h3 className="text-2xl font-semibold mb-3">{item.title}</h3>
+                <p className="text-muted-foreground leading-relaxed">{item.description}</p>
+                {i < 2 && (
+                  <div className="hidden md:block absolute top-12 -right-4 w-8 h-0.5 bg-border" />
+                )}
               </motion.div>
             ))}
           </div>
@@ -485,68 +482,53 @@ export default function QuixLanding() {
             <p className="text-lg text-muted-foreground">Real results from real students</p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-10">
+          <div className="grid md:grid-cols-2 gap-6">
             {[
               {
                 quote: "Quix completely transformed how I prepare for exams. The adaptive quizzes identified my weak areas and helped me improve dramatically. I increased my math score by 25%!",
                 name: "Marie Claire Uwase",
                 role: "S6 Student, G.S. Kimisagara",
-                score: "78% → 95%",
-                avatar: "MC"
+                score: "78% → 95%"
               },
               {
                 quote: "The gamification aspect keeps me motivated every day. Competing with friends on the leaderboard turned studying from a chore into something I actually look forward to.",
                 name: "Jean Bosco Niyonzima",
                 role: "S5 Student, Lycée de Kigali",
-                score: "Top 5% nationally",
-                avatar: "JB"
+                score: "Top 5% nationally"
               },
               {
                 quote: "As a teacher, I've seen remarkable improvement in my students who use Quix. The instant feedback helps them learn from mistakes immediately, which is crucial for retention.",
                 name: "Claudine Mukamana",
                 role: "Mathematics Teacher, FAWE Girls School",
-                score: "Class avg +18%",
-                avatar: "CM"
+                score: "Class avg +18%"
               },
               {
                 quote: "Preparing for national exams was stressful until I found Quix. The curriculum-aligned content and detailed explanations gave me the confidence I needed to excel.",
                 name: "Eric Habimana",
                 role: "S6 Student, Lycée de Nyanza",
-                score: "National top 50",
-                avatar: "EH"
+                score: "National top 50"
               }
             ].map((testimonial, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, x: i % 2 === 0 ? -20 : 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: i * 0.1 }}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
                 viewport={{ once: true }}
-                className="relative p-10 md:p-12 border border-border rounded-[2.5rem] bg-card/30 backdrop-blur-sm hover:border-primary/50 transition-all duration-500 hover:shadow-2xl group"
+                className="p-8 border border-border rounded-2xl hover:border-primary/50 transition-colors"
               >
-                <div className="absolute top-8 right-10 text-6xl text-primary/10 font-serif leading-none group-hover:text-primary/20 transition-colors">"</div>
-
-                <div className="flex items-center gap-1.5 mb-8">
+                <div className="flex items-center gap-1 mb-4">
                   {[...Array(5)].map((_, i) => (
-                    <div key={i} className="w-5 h-5 text-yellow-400 fill-yellow-400">★</div>
+                    <div key={i} className="w-5 h-5 text-yellow-400">★</div>
                   ))}
                 </div>
-
-                <p className="text-xl md:text-2xl font-medium leading-[1.6] mb-10 text-foreground/90 italic">
-                  "{testimonial.quote}"
-                </p>
-
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pt-8 border-t border-border/50">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center font-bold text-primary text-xl shadow-inner">
-                      {testimonial.avatar}
-                    </div>
-                    <div>
-                      <div className="font-bold text-lg">{testimonial.name}</div>
-                      <div className="text-sm text-muted-foreground font-medium uppercase tracking-wider">{testimonial.role}</div>
-                    </div>
+                <p className="text-foreground leading-relaxed mb-6 italic">"{testimonial.quote}"</p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-semibold">{testimonial.name}</div>
+                    <div className="text-sm text-muted-foreground">{testimonial.role}</div>
                   </div>
-                  <div className="inline-flex px-4 py-2 bg-green-500/10 text-green-600 dark:text-green-400 text-base font-bold rounded-2xl border border-green-500/20 shadow-sm">
+                  <div className="px-3 py-1 bg-green-500/10 text-green-600 dark:text-green-400 text-sm font-medium rounded-full">
                     {testimonial.score}
                   </div>
                 </div>
@@ -564,29 +546,28 @@ export default function QuixLanding() {
             <p className="text-lg text-muted-foreground">Comprehensive coverage across all major exam topics</p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { subject: 'Mathematics', icon: '📐', quizzes: 450, color: 'blue' },
-              { subject: 'Physics', icon: '⚡', quizzes: 320, color: 'indigo' },
-              { subject: 'Chemistry', icon: '🧪', quizzes: 280, color: 'purple' },
-              { subject: 'Biology', icon: '🧬', quizzes: 340, color: 'green' },
-              { subject: 'English', icon: '📚', quizzes: 290, color: 'pink' },
-              { subject: 'Kinyarwanda', icon: '🗣️', quizzes: 180, color: 'orange' },
-              { subject: 'History', icon: '🏛️', quizzes: 210, color: 'yellow' },
-              { subject: 'Geography', icon: '🌍', quizzes: 190, color: 'teal' }
+              { subject: 'Mathematics', icon: '📐', quizzes: 450 },
+              { subject: 'Physics', icon: '⚡', quizzes: 320 },
+              { subject: 'Chemistry', icon: '🧪', quizzes: 280 },
+              { subject: 'Biology', icon: '🧬', quizzes: 340 },
+              { subject: 'English', icon: '📚', quizzes: 290 },
+              { subject: 'Kinyarwanda', icon: '🗣️', quizzes: 180 },
+              { subject: 'History', icon: '🏛️', quizzes: 210 },
+              { subject: 'Geography', icon: '🌍', quizzes: 190 }
             ].map((item, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.9 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.4, delay: i * 0.05 }}
-                whileHover={{ y: -8, scale: 1.02 }}
                 viewport={{ once: true }}
-                className="p-8 bg-card border border-border/50 rounded-2xl hover:border-primary transition-all cursor-pointer group shadow-sm hover:shadow-xl hover:shadow-primary/5"
+                className="p-6 bg-card border border-border rounded-xl hover:border-primary transition-all cursor-pointer group"
               >
-                <div className="text-5xl mb-6 transform group-hover:scale-110 transition-transform duration-300">{item.icon}</div>
-                <div className="font-bold text-xl mb-2">{item.subject}</div>
-                <div className="text-sm font-medium text-muted-foreground bg-muted/50 inline-block px-3 py-1 rounded-full">{item.quizzes} quizzes</div>
+                <div className="text-4xl mb-3">{item.icon}</div>
+                <div className="font-semibold mb-1">{item.subject}</div>
+                <div className="text-sm text-muted-foreground">{item.quizzes} quizzes</div>
               </motion.div>
             ))}
           </div>
