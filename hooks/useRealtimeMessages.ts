@@ -104,11 +104,15 @@ export function useRealtimeMessages(otherUserId: string) {
       return
     }
 
-    const chatId = createChatId(currentUserId, otherUserId)
+    const normalizedCurrentUserId = getFirebaseId(currentUserId)
+    const normalizedOtherUserId = getFirebaseId(otherUserId)
+    const chatId = createChatId(normalizedCurrentUserId, normalizedOtherUserId)
 
     console.log("[v0] useRealtimeMessages setup:", {
-      otherUserId,
-      currentUserId,
+      originalCurrentUserId: currentUserId,
+      originalOtherUserId: otherUserId,
+      normalizedCurrentUserId,
+      normalizedOtherUserId,
       chatId,
       firebasePath: `chats/${chatId}/messages`,
       timestamp: new Date().toISOString(),
@@ -125,6 +129,7 @@ export function useRealtimeMessages(otherUserId: string) {
           exists: snapshot.exists(),
           size: snapshot.size,
           key: snapshot.key,
+          chatId,
           timestamp: new Date().toISOString(),
         })
 
@@ -140,6 +145,8 @@ export function useRealtimeMessages(otherUserId: string) {
           console.log("[v0] Messages loaded and transformed:", {
             count: messageList.length,
             chatId,
+            normalizedCurrentUserId,
+            normalizedOtherUserId,
             messages: messageList.map((m) => ({
               _id: m._id,
               senderId: m.senderId,
@@ -162,6 +169,8 @@ export function useRealtimeMessages(otherUserId: string) {
           chatId,
           currentUserId,
           otherUserId,
+          normalizedCurrentUserId,
+          normalizedOtherUserId,
         })
         setLoading(false)
       },
@@ -176,13 +185,16 @@ export function useRealtimeMessages(otherUserId: string) {
     if (!content.trim() || !otherUserId || !database || !currentUserId) return
 
     try {
-      const chatId = createChatId(currentUserId, otherUserId)
+      const normalizedCurrentUserId = getFirebaseId(currentUserId)
+      const normalizedOtherUserId = getFirebaseId(otherUserId)
+      const chatId = createChatId(normalizedCurrentUserId, normalizedOtherUserId)
+
       const chatRef = ref(database, `chats/${chatId}/messages`)
       const currentUser = getCurrentUser()
 
       const newMessage = {
-        senderId: currentUserId,
-        recipientId: getFirebaseId(otherUserId),
+        senderId: normalizedCurrentUserId,
+        recipientId: normalizedOtherUserId,
         senderEmail: currentUser?.email || "unknown@example.com",
         senderName: currentUser?.name || "Unknown User",
         recipientEmail: otherUserId.includes("@") ? otherUserId : "unknown@example.com",
@@ -192,12 +204,20 @@ export function useRealtimeMessages(otherUserId: string) {
         read: false,
       }
 
+      console.log("[v0] Sending message:", {
+        chatId,
+        normalizedCurrentUserId,
+        normalizedOtherUserId,
+        senderId: newMessage.senderId,
+        recipientId: newMessage.recipientId,
+      })
+
       // Send via WebSocket
       if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
         socketRef.current.send(
           JSON.stringify({
             type: "sendDirectMessage",
-            recipientId: otherUserId,
+            recipientId: normalizedOtherUserId,
             content: content.trim(),
             messageType: "text",
           }),
