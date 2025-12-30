@@ -37,17 +37,17 @@ export const useConversations = (userId: string) => {
       return
     }
 
-    const firebaseId = getFirebaseId(userId)
+    const normalizedUserId = getFirebaseId(userId)
     console.log("[v0] useConversations setup:", {
-      userId,
-      firebaseId,
+      originalUserId: userId,
+      normalizedUserId,
       dbInitialized: !!database,
       timestamp: new Date().toISOString(),
     })
 
-    const conversationsRef = ref(database, `user_conversations/${firebaseId}`)
+    const conversationsRef = ref(database, `user_conversations/${normalizedUserId}`)
 
-    console.log("[v0] Firebase path being used:", `user_conversations/${firebaseId}`)
+    console.log("[v0] Firebase path being used:", `user_conversations/${normalizedUserId}`)
 
     const unsubscribe = onValue(
       conversationsRef,
@@ -56,6 +56,7 @@ export const useConversations = (userId: string) => {
           exists: snapshot.exists(),
           key: snapshot.key,
           size: snapshot.size,
+          path: `user_conversations/${normalizedUserId}`,
           timestamp: new Date().toISOString(),
         })
 
@@ -63,6 +64,7 @@ export const useConversations = (userId: string) => {
         console.log("[v0] Raw conversations data:", {
           data,
           dataKeys: data ? Object.keys(data) : [],
+          normalizedUserId,
         })
 
         if (!data) {
@@ -104,6 +106,7 @@ export const useConversations = (userId: string) => {
 
         console.log("[v0] Conversations transformed:", {
           count: conversationList.length,
+          normalizedUserId,
           conversations: conversationList.map((c) => ({
             _id: c._id,
             otherUserEmail: c.otherUserEmail,
@@ -118,8 +121,9 @@ export const useConversations = (userId: string) => {
         console.error("[v0] Conversations Firebase error:", {
           code: err.code,
           message: err.message,
-          firebaseId,
-          path: `user_conversations/${firebaseId}`,
+          normalizedUserId,
+          originalUserId: userId,
+          path: `user_conversations/${normalizedUserId}`,
         })
         setError(err.message)
         setIsLoading(false)
