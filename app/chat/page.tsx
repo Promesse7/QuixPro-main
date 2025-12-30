@@ -8,7 +8,7 @@ import { motion } from 'framer-motion'
 
 export default function ChatIndexPage() {
   return (
-    <div className="flex-1 flex items-center justify-center p-4 sm:p-6 md:p-8 bg-gradient-to-br from-background via-muted/20 to-primary/5 min-h-0 overflow-y-auto">
+    <div className="flex-1 items-center justify-center p-6 bg-gradient-to-br from-background via-muted/20 to-primary/5 hidden md:flex">
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -20,39 +20,39 @@ export default function ChatIndexPage() {
           <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-background" />
         </div>
 
-        <div className="space-y-4">
-          <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-none italic bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-            Quix Chat
+        <div className="space-y-3">
+          <h1 className="text-3xl font-bold tracking-tight glow-text">
+            Welcome to Quix Chat
           </h1>
-          <p className="text-base md:text-xl text-muted-foreground max-w-lg mx-auto leading-relaxed font-medium">
+          <p className="text-lg text-muted-foreground max-w-lg mx-auto leading-relaxed">
             Connect with classmates, join study groups, and collaborate on your learning journey.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-md mx-auto">
           <Link href="/chat/discover" className="group">
-            <div className="p-6 rounded-2xl bg-card border border-border/50 hover:border-primary/40 transition-all hover:shadow-2xl hover:-translate-y-1 text-left shadow-sm">
-              <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300">
-                <Search className="w-5 h-5" />
+            <div className="p-4 rounded-xl bg-card border border-border/50 hover:border-primary/30 transition-all hover:shadow-lg hover:-translate-y-1 text-left">
+              <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <Search className="w-4 h-4 text-blue-500" />
               </div>
-              <h3 className="font-bold text-base flex items-center mb-1">
+              <h3 className="font-semibold text-sm flex items-center">
                 Find People
-                <ArrowRight className="w-4 h-4 ml-1 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                <ArrowRight className="w-3 h-3 ml-1 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
               </h3>
-              <p className="text-sm text-muted-foreground leading-snug">Search for students by school or level</p>
+              <p className="text-xs text-muted-foreground mt-1">Search for students by school or level</p>
             </div>
           </Link>
 
           <Link href="/chat/groups" className="group">
-            <div className="p-6 rounded-2xl bg-card border border-border/50 hover:border-primary/40 transition-all hover:shadow-2xl hover:-translate-y-1 text-left shadow-sm">
-              <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-green-500 group-hover:text-white transition-all duration-300">
-                <Users className="w-5 h-5" />
+            <div className="p-4 rounded-xl bg-card border border-border/50 hover:border-primary/30 transition-all hover:shadow-lg hover:-translate-y-1 text-left">
+              <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <Users className="w-4 h-4 text-green-500" />
               </div>
-              <h3 className="font-bold text-base flex items-center mb-1">
+              <h3 className="font-semibold text-sm flex items-center">
                 Join Groups
-                <ArrowRight className="w-4 h-4 ml-1 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                <ArrowRight className="w-3 h-3 ml-1 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
               </h3>
-              <p className="text-sm text-muted-foreground leading-snug">Participate in public study groups</p>
+              <p className="text-xs text-muted-foreground mt-1">Participate in public study groups</p>
             </div>
           </Link>
         </div>

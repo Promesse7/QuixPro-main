@@ -114,11 +114,11 @@ export function useRealtimeMessages(otherUserId: string) {
       normalizedCurrentUserId,
       normalizedOtherUserId,
       chatId,
-      firebasePath: `chats/${chatId}/messages`,
+      firebasePath: `messages/${chatId}`,
       timestamp: new Date().toISOString(),
     })
 
-    const chatRef = ref(database, `chats/${chatId}/messages`)
+    const chatRef = ref(database, `messages/${chatId}`)
 
     setLoading(true)
 
@@ -189,7 +189,7 @@ export function useRealtimeMessages(otherUserId: string) {
       const normalizedOtherUserId = getFirebaseId(otherUserId)
       const chatId = createChatId(normalizedCurrentUserId, normalizedOtherUserId)
 
-      const chatRef = ref(database, `chats/${chatId}/messages`)
+      const chatRef = ref(database, `messages/${chatId}`)
       const currentUser = getCurrentUser()
 
       const newMessage = {

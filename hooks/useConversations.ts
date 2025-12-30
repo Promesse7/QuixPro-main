@@ -45,9 +45,9 @@ export const useConversations = (userId: string) => {
       timestamp: new Date().toISOString(),
     })
 
-    const conversationsRef = ref(database, `user_conversations/${normalizedUserId}`)
+    const conversationsRef = ref(database, `conversations/${normalizedUserId}`)
 
-    console.log("[v0] Firebase path being used:", `user_conversations/${normalizedUserId}`)
+    console.log("[v0] Firebase path being used:", `conversations/${normalizedUserId}`)
 
     const unsubscribe = onValue(
       conversationsRef,
@@ -56,7 +56,7 @@ export const useConversations = (userId: string) => {
           exists: snapshot.exists(),
           key: snapshot.key,
           size: snapshot.size,
-          path: `user_conversations/${normalizedUserId}`,
+          path: `conversations/${normalizedUserId}`,
           timestamp: new Date().toISOString(),
         })
 
@@ -123,7 +123,7 @@ export const useConversations = (userId: string) => {
           message: err.message,
           normalizedUserId,
           originalUserId: userId,
-          path: `user_conversations/${normalizedUserId}`,
+          path: `conversations/${normalizedUserId}`,
         })
         setError(err.message)
         setIsLoading(false)

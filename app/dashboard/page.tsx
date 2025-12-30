@@ -173,6 +173,7 @@ export default function Ultimate2025Dashboard() {
         chatActivity: []
       },
       // Recommended quizzes component format (component handles its own data fetching)
+      recommendedQuizzes: recommendedQuizzes || [],
       // Activity feed component format
       activities: activities?.map((activity: any) => ({
         type: activity.type || 'general',
@@ -310,101 +311,95 @@ export default function Ultimate2025Dashboard() {
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
 
-      {/* Mobile Header - Improved shadow and blur */}
-      <div className="lg:hidden flex items-center justify-between p-4 border-b border-border bg-background/80 backdrop-blur-xl sticky top-0 z-50 shadow-sm">
+      {/* Mobile Header */}
+      <div className="lg:hidden flex items-center justify-between p-4 border-b border-border bg-background/80 backdrop-blur-md sticky top-0 z-50">
         <div className="flex items-center gap-3">
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="hover:bg-muted font-bold">
-                <Menu className="w-6 h-6 text-foreground" />
+              <Button variant="ghost" size="icon">
+                <Menu className="w-5 h-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-[85%] sm:w-80 border-r border-border shadow-2xl">
+            <SheetContent side="left" className="p-0 w-80">
               <SidebarContent />
             </SheetContent>
           </Sheet>
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
-              <Brain className="w-6 h-6 text-white" />
-            </div>
-            <span className="font-bold text-xl tracking-tight">Quix</span>
+            <Brain className="w-6 h-6 text-primary" />
+            <span className="font-bold text-lg">Quix</span>
           </Link>
         </div>
-        <Button variant="ghost" size="icon" className="relative hover:bg-muted">
+        <Button variant="ghost" size="icon" className="relative">
           <Bell className="w-5 h-5" />
-          <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-background animate-pulse" />
+          <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
         </Button>
       </div>
 
       {/* Desktop Sidebar (hidden on mobile) */}
-      <aside className="hidden lg:block fixed left-4 top-4 bottom-4 w-72 z-40">
-        <div className="h-full rounded-[2.5rem] overflow-hidden shadow-2xl shadow-primary/5">
-          <SidebarContent />
-        </div>
+      <aside className="hidden lg:block fixed left-0 top-0 h-full w-72 z-40">
+        <SidebarContent />
       </aside>
 
-      {/* Main Content - Adjusted margins and padding */}
-      <main className="lg:ml-80 min-h-screen p-4 sm:p-6 md:p-10 space-y-8 md:space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* Main Content */}
+      <main className="lg:ml-72 min-h-screen p-4 md:p-8 space-y-8 animate-in fade-in duration-500">
 
-        {/* Header Section - Better stack on mobile */}
-        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-          <div className="space-y-2 text-center sm:text-left">
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-black tracking-tight leading-none italic">Welcome back! 👋</h2>
-            <p className="text-muted-foreground text-lg md:text-xl font-medium">Here's your learning progress today</p>
+        {/* Header Section */}
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h2 className="text-3xl font-bold tracking-tight">Welcome back! 👋</h2>
+            <p className="text-muted-foreground">Here's your learning progress today</p>
           </div>
 
-          <div className="flex items-center gap-4 justify-center sm:justify-start">
-            <div className="hidden sm:block">
+          <div className="flex items-center gap-3 self-end md:self-auto">
+            <div className="hidden md:block">
               <QuickStartCTA />
             </div>
-            <Button variant="outline" size="icon" className="rounded-2xl hidden lg:flex relative h-12 w-12 shadow-sm border-border/50 hover:bg-muted hover:border-primary/20 transition-all">
-              <Bell className="w-6 h-6" />
-              <span className="absolute top-3 right-3 w-3 h-3 bg-red-500 rounded-full border-2 border-background" />
+            <Button variant="outline" size="icon" className="rounded-2xl hidden md:flex relative shadow-sm border-border/50">
+              <Bell className="w-5 h-5" />
+              <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-background" />
             </Button>
           </div>
         </header>
 
-        {/* Mobile-only CTA - Adjusted padding */}
-        <div className="sm:hidden -mx-4">
-          <div className="px-4">
-            <QuickStartCTA />
-          </div>
+        {/* Mobile-only CTA */}
+        <div className="md:hidden">
+          <QuickStartCTA />
         </div>
 
-        <div className="space-y-10 md:space-y-14">
+        <div className="space-y-8">
           {/* Stats Grid */}
           <section>
             <ProgressStats stats={transformedData.progressStats} />
           </section>
 
-          {/* Recommended Section - Improved grid */}
+          {/* Recommended Section */}
           <section>
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-black flex items-center gap-3">
-                <Sparkles className="w-6 h-6 text-yellow-500 fill-yellow-500" />
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-yellow-500" />
                 Recommended for you
               </h3>
-              <Button variant="link" size="sm" className="text-primary font-bold text-base hover:no-underline px-0 group">
-                View All <ChevronRight className="w-5 h-5 ml-1 transition-transform group-hover:translate-x-1" />
+              <Button variant="ghost" size="sm" className="text-primary hover:text-primary/80">
+                View All <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
             <RecommendedQuizzes />
           </section>
 
-          {/* Analytics & Activity Grid - Better responsiveness */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 md:gap-12">
-            <div className="xl:col-span-2 space-y-10 md:space-y-14">
+          {/* Analytics & Activity Grid */}
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            <div className="xl:col-span-2 space-y-8">
               <section ref={analyticsRef}>
                 <AnalyticsSection analytics={transformedData.analytics} />
               </section>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <Leaderboard />
                 <ActivityFeed activities={transformedData.activities} />
               </div>
             </div>
 
-            <div className="space-y-10 md:space-y-14 xl:sticky xl:top-28 xl:self-start">
+            <div className="space-y-8">
               <Achievements achievements={transformedData.achievements} />
               <SocialSignals data={transformedData.socialSignals} />
             </div>
