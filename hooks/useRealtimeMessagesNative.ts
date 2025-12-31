@@ -3,7 +3,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { ref, onValue, push, serverTimestamp, off, update, set } from 'firebase/database';
 import { database } from '@/lib/firebaseClient';
-import { getCurrentUserId } from '@/lib/userUtils';
+import { getCurrentUserId, getFirebaseId } from '@/lib/userUtils';
+import { normalizeId } from '@/lib/identifiers';
+import { get } from 'firebase/database';
 
 interface Message {
   _id: string;
@@ -17,16 +19,57 @@ interface Message {
   read: boolean;
 }
 
-export function useRealtimeMessages(otherUserId: string) {
+export function useRealtimeMessages(otherUserIdInput: string) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const currentUserId = getCurrentUserId();
+  const otherUserId = getFirebaseId(otherUserIdInput);
   const messagesRef = useRef<any>(null);
 
-  // Create conversation ID using unique IDs
-  const conversationId = currentUserId && otherUserId 
-    ? [currentUserId, otherUserId].sort().join('_')
-    : null;
+  // Discover actual conversation ID (handles legacy nodes)
+  useEffect(() => {
+    if (!currentUserId || !otherUserId || !database) return;
+
+    const discoverConversationId = async () => {
+      const defaultId = [currentUserId, otherUserId].sort().join('_');
+      const normalizedCurrentId = normalizeId(currentUserId);
+      const normalizedOtherId = normalizeId(otherUserId);
+
+      try {
+        const conversationsRef = ref(database, 'conversations');
+        const snapshot = await get(conversationsRef);
+        const data = snapshot.val();
+
+        if (data) {
+          // Find any conversation node where these two are participants (fuzzy matched)
+          const match = Object.entries(data).find(([id, conv]: [string, any]) => {
+            const pIds = Object.keys(conv.participants || {});
+            if (pIds.length !== 2) return false;
+
+            const normalizedPIds = pIds.map(pid => normalizeId(pid));
+            return normalizedPIds.includes(normalizedCurrentId) &&
+              normalizedPIds.includes(normalizedOtherId);
+          });
+
+          if (match) {
+            console.log('Discovered existing conversation node:', match[0]);
+            setConversationId(match[0]);
+          } else {
+            console.log('No existing conversation node found, using default:', defaultId);
+            setConversationId(defaultId);
+          }
+        } else {
+          setConversationId(defaultId);
+        }
+      } catch (error) {
+        console.error('Error discovering conversation ID:', error);
+        setConversationId(defaultId);
+      }
+    };
+
+    discoverConversationId();
+  }, [currentUserId, otherUserId]);
 
   // Firebase messages effect - simplified and native
   useEffect(() => {
@@ -50,11 +93,11 @@ export function useRealtimeMessages(otherUserId: string) {
 
     // Listen for messages using Firebase native real-time
     const messagesRef = ref(database, `messages/${conversationId}`);
-    
+
     const unsubscribe = onValue(messagesRef, (snapshot) => {
       console.log('Firebase native messages snapshot received:', snapshot.exists());
       const data = snapshot.val();
-      
+
       if (data) {
         const messageList = Object.entries(data).map(([key, value]: [string, any]) => ({
           _id: key,
@@ -96,11 +139,11 @@ export function useRealtimeMessages(otherUserId: string) {
 
       // Get current user info
       const currentUserData = JSON.parse(localStorage.getItem('currentUser') || '{}');
-      
+
       // Add message to Firebase
       const messagesRef = ref(database, `messages/${conversationId}`);
       const newMessageRef = push(messagesRef);
-      
+
       await set(newMessageRef, {
         senderId: currentUserId,
         recipientId: otherUserId,
@@ -148,9 +191,9 @@ export function useRealtimeMessages(otherUserId: string) {
     }
   };
 
-  return { 
-    messages, 
-    loading, 
+  return {
+    messages,
+    loading,
     sendMessage,
     markAsRead,
     conversationId

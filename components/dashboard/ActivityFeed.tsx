@@ -5,6 +5,7 @@ import {
   MegaphoneIcon, QuestionMarkCircleIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 // Component for a single activity item
 interface ActivityItemProps {
@@ -93,13 +94,15 @@ export function ActivityFeed({ activities }: { activities: ActivityItemProps[] }
       <h2 className="text-xl font-semibold text-foreground">Learning Timeline</h2>
       <Card className="border border-border/50 shadow-xl p-4">
         <CardContent className="p-0">
-          <ul className="divide-y divide-border -mx-3"> {/* Added negative margin to counteract Card padding */}
-            {activities.map((activity, index) => (
-              <li key={index} className="py-2 first:pt-0 last:pb-0">
-                <ActivityItem {...activity} />
-              </li>
-            ))}
-          </ul>
+          <ScrollArea className="h-[400px] pr-4">
+            <ul className="divide-y divide-border -mx-3"> {/* Added negative margin to counteract Card padding */}
+              {activities.map((activity, index) => (
+                <li key={index} className="py-2 first:pt-0 last:pb-0">
+                  <ActivityItem {...activity} />
+                </li>
+              ))}
+            </ul>
+          </ScrollArea>
           {/* Optional: "View All" link */}
           <div className="mt-4 text-center">
             <Link href="/activity" className="text-primary hover:underline text-sm">

@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Trophy, Medal, Award, Crown, Star, TrendingUp, Loader2 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { getCurrentUser } from "@/lib/auth"
 import { getBaseUrl } from "@/lib/getBaseUrl"
 
@@ -178,45 +179,47 @@ export function Leaderboard() {
               </Badge>
             </div>
 
-            <div className="space-y-3">
-              {leaderboardData.length > 0 ? (
-                leaderboardData.map((student) => (
-                  <div
-                    key={student.id}
-                    className={`flex items-center space-x-3 p-3 rounded-2xl transition-all ${student.id === currentUser?.id
-                      ? "bg-primary/20 border border-primary/30 glow-effect"
-                      : "bg-muted/50 hover:bg-muted/80"
-                      }`}
-                  >
-                    <div className="flex items-center space-x-2">
-                      {getRankIcon(student.rank)}
-                      <span className="font-bold text-sm w-6">#{student.rank}</span>
+            <ScrollArea className="h-[400px] pr-4">
+              <div className="space-y-3">
+                {leaderboardData.length > 0 ? (
+                  leaderboardData.map((student) => (
+                    <div
+                      key={student.id}
+                      className={`flex items-center space-x-3 p-3 rounded-2xl transition-all ${student.id === currentUser?.id
+                        ? "bg-primary/20 border border-primary/30 glow-effect"
+                        : "bg-muted/50 hover:bg-muted/80"
+                        }`}
+                    >
+                      <div className="flex items-center space-x-2">
+                        {getRankIcon(student.rank)}
+                        <span className="font-bold text-sm w-6">#{student.rank}</span>
+                      </div>
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={student.avatar || "/placeholder.svg"} />
+                        <AvatarFallback>
+                          {student.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{student.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {student.completedQuizzes} quizzes • {student.averageScore}% avg
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-sm">{student.totalPoints}</p>
+                        <div className="flex items-center space-x-1">{getTrendIcon("up")}</div>
+                      </div>
                     </div>
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={student.avatar || "/placeholder.svg"} />
-                      <AvatarFallback>
-                        {student.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{student.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {student.completedQuizzes} quizzes • {student.averageScore}% avg
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold text-sm">{student.totalPoints}</p>
-                      <div className="flex items-center space-x-1">{getTrendIcon("up")}</div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">No students found for {selectedLevel}</div>
-              )}
-            </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">No students found for {selectedLevel}</div>
+                )}
+              </div>
+            </ScrollArea>
           </TabsContent>
 
           <TabsContent value="exam" className="space-y-4">
@@ -243,41 +246,43 @@ export function Leaderboard() {
               <p className="text-sm text-muted-foreground">Out of all students</p>
             </div>
 
-            <div className="space-y-3">
-              {overallData.slice(0, 10).map((student) => (
-                <div
-                  key={student.id}
-                  className={`flex items-center space-x-3 p-3 rounded-2xl transition-all ${student.id === currentUser?.id
-                    ? "bg-primary/20 border border-primary/30 glow-effect"
-                    : "bg-muted/50 hover:bg-muted/80"
-                    }`}
-                >
-                  <div className="flex items-center space-x-2">
-                    {getRankIcon(student.rank)}
-                    <span className="font-bold text-sm w-6">#{student.rank}</span>
+            <ScrollArea className="h-[400px] pr-4">
+              <div className="space-y-3">
+                {overallData.slice(0, 10).map((student) => (
+                  <div
+                    key={student.id}
+                    className={`flex items-center space-x-3 p-3 rounded-2xl transition-all ${student.id === currentUser?.id
+                      ? "bg-primary/20 border border-primary/30 glow-effect"
+                      : "bg-muted/50 hover:bg-muted/80"
+                      }`}
+                  >
+                    <div className="flex items-center space-x-2">
+                      {getRankIcon(student.rank)}
+                      <span className="font-bold text-sm w-6">#{student.rank}</span>
+                    </div>
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={student.avatar || "/placeholder.svg"} />
+                      <AvatarFallback>
+                        {student.name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">{student.name}</p>
+                      <Badge variant="secondary" className="text-xs">
+                        {student.level}
+                      </Badge>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-sm">{student.totalPoints}</p>
+                      <div className="flex items-center space-x-1">{getTrendIcon("up")}</div>
+                    </div>
                   </div>
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={student.avatar || "/placeholder.svg"} />
-                    <AvatarFallback>
-                      {student.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <p className="font-medium text-sm">{student.name}</p>
-                    <Badge variant="secondary" className="text-xs">
-                      {student.level}
-                    </Badge>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-sm">{student.totalPoints}</p>
-                    <div className="flex items-center space-x-1">{getTrendIcon("up")}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </ScrollArea>
           </TabsContent>
         </Tabs>
       </CardContent>

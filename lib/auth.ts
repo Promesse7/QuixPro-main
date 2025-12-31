@@ -1,5 +1,6 @@
 export interface User {
   id: string
+  uniqueUserId?: string // Standardized Firebase ID
   email: string
   name: string
   role: "student" | "teacher" | "admin"
@@ -192,6 +193,11 @@ export const getCurrentUser = (): User | null => {
 export const setCurrentUser = (user: User | null) => {
   if (typeof window !== "undefined") {
     if (user) {
+      // Ensure uniqueUserId is set
+      if (!user.uniqueUserId) {
+        // Fallback to email-based ID if missing
+        user.uniqueUserId = user.email.replace(/[.@]/g, "_").toLowerCase()
+      }
       localStorage.setItem("qouta_user", JSON.stringify(user))
     } else {
       localStorage.removeItem("qouta_user")
@@ -202,11 +208,11 @@ export const setCurrentUser = (user: User | null) => {
 export const logout = () => {
   // Clear localStorage
   setCurrentUser(null)
-  
+
   // Clear cookies
   document.cookie = 'qouta_token=; path=/; max-age=0'
   document.cookie = 'qouta_role=; path=/; max-age=0'
-  
+
   // Redirect to home
   window.location.href = '/'
 }

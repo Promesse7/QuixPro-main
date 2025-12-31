@@ -15,7 +15,7 @@ export default function ChatLayout({
     const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen)
 
     return (
-        <div className="flex h-screen bg-background overflow-hidden">
+        <div className="flex h-[100dvh] bg-background overflow-hidden font-sans">
             {/* Mobile Sidebar Overlay */}
             {isSidebarOpen && (
                 <div

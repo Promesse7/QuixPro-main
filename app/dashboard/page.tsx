@@ -226,27 +226,29 @@ export default function Ultimate2025Dashboard() {
           </div>
         </Link>
 
-        <nav className="space-y-1.5">
-          {navigation.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.id}
-                href={item.href}
-                className={cn(
-                  "w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 font-medium group",
-                  isActive
-                    ? "bg-primary/10 text-primary border border-primary/20 shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                )}
-              >
-                <item.icon className={cn("w-5 h-5 transition-colors", isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground")} />
-                <span>{item.label}</span>
-                {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
-              </Link>
-            );
-          })}
-        </nav>
+        <ScrollArea className="flex-1 -mx-6 px-6">
+          <nav className="space-y-1.5 pb-6">
+            {navigation.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 font-medium group",
+                    isActive
+                      ? "bg-primary/10 text-primary border border-primary/20 shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  )}
+                >
+                  <item.icon className={cn("w-5 h-5 transition-colors", isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground")} />
+                  <span>{item.label}</span>
+                  {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
+                </Link>
+              );
+            })}
+          </nav>
+        </ScrollArea>
       </div>
 
       <div className="mt-auto p-6 border-t border-border/50">

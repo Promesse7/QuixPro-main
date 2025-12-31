@@ -1,35 +1,15 @@
 import { type FirebaseUser, emailToUniqueId, isUniqueId, createChatId, getFirebaseId } from "./identifiers"
 
-export function getCurrentUserId(): string | null {
-  if (typeof window !== "undefined") {
-    const sessionData = sessionStorage.getItem("currentUser")
-    if (sessionData) {
-      const user = JSON.parse(sessionData) as FirebaseUser
-      return user.uniqueUserId || null
-    }
+import { getCurrentUser as getAuthUser, setCurrentUser as setAuthUser } from "./auth"
 
-    const localData = localStorage.getItem("currentUser")
-    if (localData) {
-      const user = JSON.parse(localData) as FirebaseUser
-      return user.uniqueUserId || null
-    }
-  }
-  return null
+export function getCurrentUserId(): string | null {
+  const user = getAuthUser()
+  // Prioritize explicit uniqueUserId, then derive from email, then null
+  return user?.uniqueUserId || (user?.email ? emailToUniqueId(user.email) : null)
 }
 
-export function getCurrentUser(): FirebaseUser | null {
-  if (typeof window !== "undefined") {
-    const sessionData = sessionStorage.getItem("currentUser")
-    if (sessionData) {
-      return JSON.parse(sessionData) as FirebaseUser
-    }
-
-    const localData = localStorage.getItem("currentUser")
-    if (localData) {
-      return JSON.parse(localData) as FirebaseUser
-    }
-  }
-  return null
+export function getCurrentUser(): any {
+  return getAuthUser()
 }
 
 export function getCurrentUserWithId(userId: string): FirebaseUser | null {
@@ -40,29 +20,13 @@ export function getCurrentUserWithId(userId: string): FirebaseUser | null {
   return null
 }
 
-export function setCurrentUser(user: Partial<FirebaseUser> & { email: string }): void {
-  if (typeof window !== "undefined") {
-    const firebaseUser: FirebaseUser = {
-      uniqueUserId: user.uniqueUserId || emailToUniqueId(user.email),
-      email: user.email,
-      name: user.name || user.email.split("@")[0],
-      role: user.role || "student",
-      profile: user.profile,
-    }
-
-    const userData = JSON.stringify(firebaseUser)
-    sessionStorage.setItem("currentUser", userData)
-    localStorage.setItem("currentUser", userData)
-  }
+export function setCurrentUser(user: any): void {
+  setAuthUser(user)
 }
 
 export function ensureCurrentUserUniqueId(email: string, name?: string): string {
   if (typeof window !== "undefined") {
     const currentUserId = getCurrentUserId()
-
-    if (currentUserId) {
-      return currentUserId
-    }
 
     const uniqueUserId = emailToUniqueId(email)
 

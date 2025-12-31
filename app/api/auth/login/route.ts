@@ -30,9 +30,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
     }
 
-    if (!user.uniqueUserId) {
-      user.uniqueUserId = emailToUniqueId(user.email)
-    }
+    // Always enforce standardized uniqueUserId
+    user.uniqueUserId = emailToUniqueId(user.email)
 
     return NextResponse.json({ user })
   } catch (error) {

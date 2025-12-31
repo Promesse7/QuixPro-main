@@ -86,7 +86,7 @@ export default function QuixLanding() {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="md:hidden bg-background border-t border-border"
+            className="md:hidden bg-background border-t border-border overflow-y-auto max-h-[calc(100vh-4rem)]"
           >
             <div className="px-6 py-4 space-y-3">
               <a href="#features" className="block text-sm text-muted-foreground hover:text-foreground">Features</a>

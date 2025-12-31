@@ -57,3 +57,29 @@ export function getFirebaseId(identifier: string): string {
   }
   return identifier
 }
+
+/**
+ * Normalize an ID by removing legacy prefixes and suffixes
+ * Example: legacy_user_gmail_com_123456789 -> user_gmail_com
+ */
+export function normalizeId(id: string): string {
+  if (!id) return id;
+  let cleanId = id.replace(/^legacy_/, "");
+  // Remove timestamp suffix if present (e.g., _1767081216302)
+  cleanId = cleanId.replace(/_\d{10,15}$/, "");
+  return cleanId;
+}
+
+/**
+ * Extract a clean display name from an ID
+ * Example: user_gmail_com -> user
+ */
+export function getDisplayName(id: string): string {
+  const cleanId = normalizeId(id);
+  // Split by _ and take first part, or handle common email formats
+  const parts = cleanId.split("_");
+  if (parts.length > 1 && (parts.includes("gmail") || parts.includes("yahoo") || parts.includes("outlook"))) {
+    return parts[0];
+  }
+  return parts[0] || cleanId;
+}
