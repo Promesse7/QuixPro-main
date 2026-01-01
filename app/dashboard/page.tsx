@@ -376,15 +376,6 @@ export default function Ultimate2025Dashboard() {
 
           {/* Recommended Section */}
           <section>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-yellow-500" />
-                Recommended for you
-              </h3>
-              <Button variant="ghost" size="sm" className="text-primary hover:text-primary/80">
-                View All <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
             <RecommendedQuizzes />
           </section>
 

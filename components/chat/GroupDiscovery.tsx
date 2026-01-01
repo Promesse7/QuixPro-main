@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import { Search, Users, Hash, Loader2, ArrowRight } from 'lucide-react'
+import { Search, Users, Hash, Loader2, ArrowRight, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -65,9 +65,9 @@ export default function GroupDiscovery() {
                     <h1 className="text-3xl font-bold tracking-tight">Discover Groups</h1>
                     <p className="text-muted-foreground mt-1">Join public study groups and communities.</p>
                 </div>
-                <Button asChild className="bg-primary text-primary-foreground shadow-lg hover:shadow-primary/25 transition-all hover:scale-105">
+                <Button asChild className="bg-primary text-primary-foreground shadow-lg hover:shadow-primary/25 transition-all hover:scale-105 rounded-xl px-5 h-11">
                     <Link href="/chat/groups/create">
-                        <Hash className="w-4 h-4 mr-2" />
+                        <Plus className="w-4 h-4 mr-2" />
                         Create Group
                     </Link>
                 </Button>

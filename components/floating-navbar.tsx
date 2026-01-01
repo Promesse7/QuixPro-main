@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { BookOpen, Zap, BookMarked, Home, Menu, X, BarChart3, Users, Settings, MessageCircle, Video, Heart } from 'lucide-react'
 import { SimpleThemeToggle } from './simple-theme-toggle'
 import { getCurrentUser } from '@/lib/auth'
+import { cn } from '@/lib/utils'
 
 interface NavItem {
   label: string
@@ -49,15 +50,15 @@ export function FloatingNavbar() {
     setMounted(true)
 
     let mountedFlag = true
-    // Try to resolve the current user client-side (the auth helper used elsewhere)
-    ;(async () => {
-      try {
-        const u = await getCurrentUser()
-        if (mountedFlag) setUser(u)
-      } catch (err) {
-        // ignore — user remains null if not logged in
-      }
-    })()
+      // Try to resolve the current user client-side (the auth helper used elsewhere)
+      ; (async () => {
+        try {
+          const u = await getCurrentUser()
+          if (mountedFlag) setUser(u)
+        } catch (err) {
+          // ignore — user remains null if not logged in
+        }
+      })()
 
     return () => {
       mountedFlag = false
@@ -75,8 +76,8 @@ export function FloatingNavbar() {
   }
 
   // Choose navigation items based on user role
-  const currentNavItems = user?.role === 'teacher' && pathname?.startsWith('/teacher') 
-    ? teacherNavItems 
+  const currentNavItems = user?.role === 'teacher' && pathname?.startsWith('/teacher')
+    ? teacherNavItems
     : navItems
 
   const isActive = (href: string) => {
@@ -156,11 +157,10 @@ export function FloatingNavbar() {
                     return (
                       <Link key={item.href} href={item.href}>
                         <motion.div
-                          className={`relative flex items-center justify-start gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 cursor-pointer ${
-                            active
+                          className={`relative flex items-center justify-start gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 cursor-pointer ${active
                               ? 'bg-primary/10 text-primary font-medium'
                               : 'text-foreground/70 hover:bg-muted/50 hover:text-foreground'
-                          }`}
+                            }`}
                           whileHover={{ x: 6 }}
                         >
                           {active && (
@@ -227,21 +227,27 @@ export function FloatingNavbar() {
         )}
       </AnimatePresence>
 
-      {/* Mobile bottom bar (unchanged) */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border/50 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-        <div className="mx-auto max-w-3xl">
-          <ul className="grid grid-cols-5">
+      {/* Mobile bottom bar - Enhanced "Dock" Style */}
+      <nav className="md:hidden fixed bottom-4 inset-x-4 z-40">
+        <div className="mx-auto max-w-sm bg-card/80 backdrop-blur-xl border border-border/40 rounded-2xl shadow-2xl px-1">
+          <ul className="flex items-center justify-between h-14">
             {currentNavItems.slice(0, 5).map((item) => {
               const Icon = item.icon
               const active = isActive(item.href)
               return (
-                <li key={item.href} className="flex">
+                <li key={item.href} className="flex-1">
                   <Link
                     href={item.href}
-                    className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 text-xs ${active ? 'text-primary' : 'text-foreground/70'}`}
+                    className={`flex flex-col items-center justify-center gap-0.5 h-full transition-all duration-300 ${active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+                      }`}
                   >
-                    <Icon className="h-5 w-5" />
-                    <span>{item.label}</span>
+                    <div className={cn(
+                      "p-1.5 rounded-xl transition-all",
+                      active ? "bg-primary/10" : ""
+                    )}>
+                      <Icon className={cn("h-5 w-5", active ? "stroke-[2.5px]" : "stroke-[2px]")} />
+                    </div>
+                    <span className="text-[10px] font-bold tracking-tight">{item.label}</span>
                   </Link>
                 </li>
               )

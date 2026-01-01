@@ -134,28 +134,39 @@ export function RecommendedQuizzes() {
 				) : error ? (
 					<div className="text-center py-4 text-red-500">{error}</div>
 				) : (
-					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 						{quizzes.map((quiz) => (
-							<Card key={quiz.id || quiz._id} className="p-0">
+							<Card key={quiz.id || quiz._id} className="group relative overflow-hidden border-border/40 hover:border-primary/40 transition-all hover:shadow-md bg-card/40 backdrop-blur-sm">
 								<div className="flex flex-col h-full">
-									<div className="p-4 flex-1">
+									<div className="p-3.5 flex-1">
 										<div className="flex items-start gap-3">
-											<div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
-												<Brain className="h-6 w-6 text-white" />
+											<div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+												<Brain className="h-5 w-5 text-primary" />
 											</div>
-											<div className="flex-1">
-												<h4 className="font-semibold">{quiz.title}</h4>
-												<p className="text-sm text-muted-foreground mt-1">{quiz.description}</p>
-												<div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
-													<div className="flex items-center gap-1"><Brain className="h-3 w-3" /> <span>{Array.isArray(quiz.questions) ? quiz.questions.length : quiz.questions || 0} questions</span></div>
-													<div className="flex items-center gap-1"><Clock className="h-3 w-3" /> <span>{quiz.duration || 0} min</span></div>
-													<Badge variant="outline" className="text-xs">{quiz.subject}</Badge>
-												</div>
+											<div className="flex-1 min-w-0">
+												<h4 className="font-bold text-sm leading-tight truncate group-hover:text-primary transition-colors">{quiz.title}</h4>
+												<p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">{quiz.description}</p>
 											</div>
 										</div>
+
+										<div className="flex flex-wrap items-center gap-2 mt-4">
+											<div className="flex items-center gap-1 text-[10px] text-muted-foreground bg-muted/30 px-2 py-0.5 rounded-full">
+												<Brain className="h-3 w-3" />
+												<span>{Array.isArray(quiz.questions) ? quiz.questions.length : quiz.questions || 0} Qs</span>
+											</div>
+											<div className="flex items-center gap-1 text-[10px] text-muted-foreground bg-muted/30 px-2 py-0.5 rounded-full">
+												<Clock className="h-3 w-3" />
+												<span>{quiz.duration || 0}m</span>
+											</div>
+											<Badge variant="secondary" className="text-[10px] px-2 py-0 h-4 font-normal bg-primary/5 text-primary-foreground/80 border-none truncate max-w-[80px]">
+												{quiz.subject}
+											</Badge>
+										</div>
 									</div>
-									<div className="p-4 border-t">
-										<Button size="sm" className="w-full">Start <Play className="ml-2 h-4 w-4" /></Button>
+									<div className="p-3 border-t border-border/40 bg-muted/5">
+										<Button size="sm" className="w-full h-8 text-xs font-medium rounded-lg shadow-sm hover:shadow-primary/20">
+											Start Quiz <Play className="ml-1.5 h-3 w-3" />
+										</Button>
 									</div>
 								</div>
 							</Card>
