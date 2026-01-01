@@ -15,7 +15,7 @@
 - **✅ Result**: npm will auto-select correct platform binaries during build
 
 #### **2. Platform-Agnostic Approach**
-```json
+\`\`\`json
 {
   "name": "my-v0-project",
   "version": "0.1.0",
@@ -27,14 +27,14 @@
     }
   }
 }
-```
+\`\`\`
 
 #### **3. Git Commit & Push**
-```bash
+\`\`\`bash
 git add package-lock.json
 git commit -m "Fix Vercel deployment: Remove platform-specific SWC binaries"
 git push origin main
-```
+\`\`\`
 - **✅ Commit**: `b992a4e` - Platform-specific binaries removed
 - **✅ Pushed**: Successfully deployed to main branch
 
@@ -47,12 +47,12 @@ git push origin main
 - **✅ Deployment**: Will succeed without platform errors
 
 #### **Expected Build Flow:**
-```
+\`\`\`
 1. npm ci --omit=optional --legacy-peer-deps ✅
 2. Auto-select @next/swc-linux-x64-gnu ✅
 3. npm run build ✅
 4. Deploy to Vercel ✅
-```
+\`\`\`
 
 ### **📊 Technical Details:**
 

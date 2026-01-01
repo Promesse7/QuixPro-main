@@ -34,11 +34,11 @@ Successfully replaced all hardcoded data in the 3-panel chat layout with real da
 - **Fixed TypeScript errors** with null checks
 
 #### Data Flow
-```
+\`\`\`
 ChatContextPanel → API Call → MongoDB → Real Data → UI Display
      ↓
 Error Handling & Loading States
-```
+\`\`\`
 
 ### ✅ **Error Handling & UX**
 
@@ -70,7 +70,7 @@ Error Handling & Loading States
 ## Database Schema Alignment
 
 ### User Profile Data
-```typescript
+\`\`\`typescript
 interface UserProfile {
   _id: string
   name: string
@@ -88,10 +88,10 @@ interface UserProfile {
   }
   preferences?: {...}
 }
-```
+\`\`\`
 
 ### Group Data
-```typescript
+\`\`\`typescript
 interface GroupInfo {
   _id: string
   name: string
@@ -105,12 +105,12 @@ interface GroupInfo {
   createdAt: Date
   updatedAt: Date
 }
-```
+\`\`\`
 
 ## API Response Examples
 
 ### User Profile Response
-```json
+\`\`\`json
 {
   "user": {
     "_id": "user123",
@@ -128,10 +128,10 @@ interface GroupInfo {
     }
   }
 }
-```
+\`\`\`
 
 ### Group Details Response
-```json
+\`\`\`json
 {
   "group": {
     "_id": "group456",
@@ -157,7 +157,7 @@ interface GroupInfo {
     "isPublic": false
   }
 }
-```
+\`\`\`
 
 ## Current Status
 

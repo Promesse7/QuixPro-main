@@ -10,19 +10,19 @@
 ### **✅ Solution Applied:**
 
 #### **1. Generated package-lock.json**
-```bash
+\`\`\`bash
 npm install --legacy-peer-deps
-```
+\`\`\`
 - **✅ Created**: Fresh `package-lock.json` (430KB)
 - **✅ Dependencies**: All 1298 packages locked
 - **✅ Versions**: Next.js 14.2.16 with matching SWC
 
 #### **2. Committed to Repository**
-```bash
+\`\`\`bash
 git add package-lock.json
 git commit -m "Add package-lock.json for Vercel deployment"
 git push origin main
-```
+\`\`\`
 - **✅ Added**: 15,710 lines of dependency lock
 - **✅ Pushed**: Successfully pushed to main branch
 - **✅ Commit**: `cceb4c8` - package-lock.json added
@@ -36,11 +36,11 @@ git push origin main
 - **✅ Build Process**: Ready to execute
 
 #### **Expected Result:**
-```
+\`\`\`
 ✅ npm ci --omit=optional --legacy-peer-deps - SUCCESS
 ✅ npm run build - SUCCESS
 ✅ Deployment - COMPLETE
-```
+\`\`\`
 
 ### **📊 Current Repository State:**
 
