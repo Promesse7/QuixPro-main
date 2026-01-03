@@ -6,13 +6,13 @@ Successfully implemented the professional 3-panel chat layout as specified, tran
 ## Architecture
 
 ### Panel Structure
-```
+\`\`\`
 ┌─────────────────┬────────────────────────┬─────────────────────┐
 │ Left Panel      │ Middle Panel           │ Right Panel         │
 │ (Navigation)    │ (Conversation)         │ (Context / Tools)   │
 │ 20-25% width    │ 50-55% width           │ 20-25% width        │
 └─────────────────┴────────────────────────┴─────────────────────┘
-```
+\`\`\`
 
 ### Panel Responsibilities
 
@@ -51,7 +51,7 @@ Successfully implemented the professional 3-panel chat layout as specified, tran
 - MongoDB-focused data fetching (no Firebase heavy lifting)
 
 ### 2. State Management
-```typescript
+\`\`\`typescript
 interface ChatContextType {
   activeChatId: string | null
   activeChatType: 'direct' | 'group' | null
@@ -59,7 +59,7 @@ interface ChatContextType {
   isRightPanelOpen: boolean
   setRightPanelOpen: (open: boolean) => void
 }
-```
+\`\`\`
 
 ### 3. Responsive Behavior
 
