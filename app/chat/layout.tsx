@@ -8,8 +8,13 @@ export default function ChatLayout({
 }: {
     children: React.ReactNode
 }) {
+    const handleEmojiSelect = (emoji: string) => {
+        // This will be passed down to the ChatWindow component
+        console.log('Emoji selected in layout:', emoji);
+    };
+
     return (
-        <ChatLayoutProvider>
+        <ChatLayoutProvider onEmojiSelect={handleEmojiSelect}>
             <ThreePanelChatLayout>{children}</ThreePanelChatLayout>
         </ChatLayoutProvider>
     )

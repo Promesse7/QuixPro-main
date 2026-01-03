@@ -6,9 +6,11 @@ import Link from 'next/link';
 import {
   Trophy, TrendingUp, Users, Award, Clock, Target, Zap, Star,
   ChevronRight, Play, BookOpen, MessageSquare, Settings, Activity,
-  Brain, Bell, Menu, X, BarChart3, Calendar, Home, Crown, Medal,
+  Brain, Menu, X, BarChart3, Calendar, Home, Crown, Medal,
   CheckCircle, ArrowUp, Sparkles, Video, FileText, Globe, LogOut
 } from 'lucide-react';
+import { Notifications } from '@/components/notifications/Notifications';
+import { UserBadges } from '@/components/badges/UserBadges';
 
 import { ProgressStats } from '@/components/dashboard/progress-stats';
 import { AnalyticsSection } from '@/components/dashboard/AnalyticsSection';
@@ -61,7 +63,7 @@ export default function Ultimate2025Dashboard() {
 
         // Only try API if we have a user
         try {
-          const response = await fetch('/api/dashboard-data');
+          const response = await fetch(`/api/dashboard-data?userId=${currentUser.id}`);
 
           if (!response.ok) {
             if (response.status === 401) {
@@ -105,6 +107,8 @@ export default function Ultimate2025Dashboard() {
       certificates: 0,
       streak: 0
     },
+    weeklyPoints: 0,
+    subjectProgress: {} as Record<string, { quizzesTaken: number; averageScore: number; bestScore: number }>,
     analytics: {
       weeklyActivity: [],
       subjectDistribution: [],
@@ -153,7 +157,7 @@ export default function Ultimate2025Dashboard() {
   const getTransformedData = () => {
     if (!dashboardData) return getFallbackData();
 
-    const { stats, analytics, activities, recommendedQuizzes, leaderboard, achievements, socialSignals } = dashboardData;
+    const { stats, analytics, activities, recommendedQuizzes, leaderboard, achievements, socialSignals, weeklyPoints = 0, subjectProgress = {} } = dashboardData;
 
     return {
       // Progress stats component format
@@ -165,6 +169,8 @@ export default function Ultimate2025Dashboard() {
         certificates: stats?.certificates || 0,
         streak: stats?.streak || 0
       },
+      weeklyPoints,
+      subjectProgress,
       // Analytics component format
       analytics: analytics || {
         weeklyActivity: [],
@@ -214,7 +220,7 @@ export default function Ultimate2025Dashboard() {
   ];
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full bg-card/50 backdrop-blur-xl border-r border-border">
+    <div className="flex flex-col h-full bg-background border-r border-border/50">
       <div className="p-6">
         <Link href="/" className="flex items-center gap-3 mb-8 hover:opacity-80 transition-opacity">
           <div className="w-12 h-12 rounded-[22px] bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-lg shadow-primary/20 transition-transform duration-300 group-hover:rotate-6">
@@ -235,14 +241,14 @@ export default function Ultimate2025Dashboard() {
                   key={item.id}
                   href={item.href}
                   className={cn(
-                    "w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 font-medium group",
+                    "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 font-medium group",
                     isActive
                       ? "bg-primary/10 text-primary border border-primary/20 shadow-sm"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                   )}
                 >
                   <item.icon className={cn("w-5 h-5 transition-colors", isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground")} />
-                  <span>{item.label}</span>
+                  <span className="flex-1">{item.label}</span>
                   {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
                 </Link>
               );
@@ -252,7 +258,7 @@ export default function Ultimate2025Dashboard() {
       </div>
 
       <div className="mt-auto p-6 border-t border-border/50">
-        <div className="p-4 rounded-3xl bg-gradient-to-br from-card to-muted border border-border/50 shadow-inner group/user relative overflow-hidden">
+        <div className="p-4 rounded-2xl bg-gradient-to-br from-card to-muted border border-border/50 shadow-inner group/user relative overflow-hidden">
           <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover/user:opacity-100 transition-opacity duration-300" />
           <div className="flex items-center gap-3 relative z-10">
             <Avatar className="h-10 w-10 border-2 border-background shadow-md">
@@ -314,15 +320,15 @@ export default function Ultimate2025Dashboard() {
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
 
       {/* Mobile Header */}
-      <div className="lg:hidden flex items-center justify-between p-4 border-b border-border bg-background/80 backdrop-blur-md sticky top-0 z-50">
+      <div className="lg:hidden flex items-center justify-between p-4 border-b border-border bg-background/95 backdrop-blur-md sticky top-0 z-50">
         <div className="flex items-center gap-3">
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="h-10 w-10">
                 <Menu className="w-5 h-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-80">
+            <SheetContent side="left" className="p-0 w-80 border-r border-border/50">
               <SidebarContent />
             </SheetContent>
           </Sheet>
@@ -331,14 +337,18 @@ export default function Ultimate2025Dashboard() {
             <span className="font-bold text-lg">Quix</span>
           </Link>
         </div>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-        </Button>
+        <div className="flex items-center gap-3 self-end md:self-auto">
+          <div className="hidden md:block">
+            <QuickStartCTA />
+          </div>
+          <div className="relative">
+            <Notifications />
+          </div>
+        </div>
       </div>
 
       {/* Desktop Sidebar (hidden on mobile) */}
-      <aside className="hidden lg:block fixed left-0 top-0 h-full w-72 z-40">
+      <aside className="hidden lg:block fixed left-0 top-0 h-full w-72 z-40 border-r border-border/50 bg-background/95 backdrop-blur-xl">
         <SidebarContent />
       </aside>
 
@@ -346,9 +356,9 @@ export default function Ultimate2025Dashboard() {
       <main className="lg:ml-72 min-h-screen p-4 md:p-8 space-y-8 animate-in fade-in duration-500">
 
         {/* Header Section */}
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <h2 className="text-3xl font-bold tracking-tight">Welcome back! 👋</h2>
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold tracking-tight">Welcome back! 👋</h1>
             <p className="text-muted-foreground">Here's your learning progress today</p>
           </div>
 
@@ -356,27 +366,38 @@ export default function Ultimate2025Dashboard() {
             <div className="hidden md:block">
               <QuickStartCTA />
             </div>
-            <Button variant="outline" size="icon" className="rounded-2xl hidden md:flex relative shadow-sm border-border/50">
-              <Bell className="w-5 h-5" />
-              <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-background" />
-            </Button>
+            <div className="relative">
+              <Notifications />
+            </div>
           </div>
         </header>
-
-        {/* Mobile-only CTA */}
-        <div className="md:hidden">
-          <QuickStartCTA />
-        </div>
 
         <div className="space-y-8">
           {/* Stats Grid */}
           <section>
-            <ProgressStats stats={transformedData.progressStats} />
+            <ProgressStats 
+            stats={transformedData.progressStats} 
+            weeklyPoints={transformedData.weeklyPoints}
+            subjectProgress={transformedData.subjectProgress}
+          />
           </section>
 
           {/* Recommended Section */}
           <section>
             <RecommendedQuizzes />
+          </section>
+
+          {/* User Badges Section */}
+          <section>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold">Your Badges 🏆</h2>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/profile/badges">View All</Link>
+                </Button>
+              </div>
+              <UserBadges maxDisplay={6} />
+            </div>
           </section>
 
           {/* Analytics & Activity Grid */}

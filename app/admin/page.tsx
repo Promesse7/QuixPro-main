@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -18,7 +19,7 @@ import {
   Globe,
   Database,
 } from "lucide-react"
-import { getCurrentUser } from "@/lib/auth"
+import { getCurrentUser } from "@/lib/auth-db"
 import { getBaseUrl } from '@/lib/getBaseUrl';
 
 interface AdminStats {
@@ -73,38 +74,29 @@ export default function AdminPage() {
       try {
         setLoading(true)
 
-        // Fetch leaderboard data to get user stats
-        const baseUrlForLeaderboard = getBaseUrl();
-        const response = await fetch(`${baseUrlForLeaderboard}/api/leaderboard?limit=100`);
-        const data = await response.json()
+        // Fetch real admin stats
+        const baseUrl = getBaseUrl();
+        const [statsResponse, usersResponse] = await Promise.all([
+          fetch(`${baseUrl}/api/admin/stats`),
+          fetch(`${baseUrl}/api/admin/users?limit=5`)
+        ]);
 
-        if (response.ok && data.leaderboard) {
-          const users = data.leaderboard
-
-          // Calculate stats from real data
-          const totalUsers = users.length
-          const totalQuizzes = users.reduce((sum: number, user: any) => sum + (user.completedQuizzes || 0), 0)
-          const totalCertificates = users.reduce((sum: number, user: any) => sum + (user.certificates || 0), 0)
-          const averageScore = users.reduce((sum: number, user: any) => sum + (user.averageScore || 0), 0) / totalUsers
+        if (statsResponse.ok && usersResponse.ok) {
+          const [statsData, usersData] = await Promise.all([
+            statsResponse.json(),
+            usersResponse.json()
+          ]);
 
           setStats({
-            totalUsers,
-            totalQuizzes,
-            totalCertificates,
-            activeUsers: Math.floor(totalUsers * 0.3), // Estimate 30% active
-            completionRate: 78.5, // Mock for now
-            averageScore: Math.round(averageScore),
-          })
+            totalUsers: statsData.stats.totalUsers,
+            totalQuizzes: statsData.stats.totalQuizzes,
+            totalCertificates: statsData.stats.totalCertificates,
+            activeUsers: statsData.stats.activeUsers,
+            completionRate: statsData.stats.completionRate,
+            averageScore: statsData.stats.averageScore,
+          });
 
-          // Set recent users (first 3)
-          setRecentUsers(
-            users.slice(0, 3).map((user: any) => ({
-              id: user.id,
-              name: user.name,
-              email: `${user.name.toLowerCase().replace(" ", ".")}@student.rw`,
-              role: "student",
-            })),
-          )
+          setRecentUsers(usersData.users || []);
         }
       } catch (error) {
         console.error("Error fetching admin data:", error)
@@ -272,6 +264,18 @@ useEffect(() => {
                 <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0">
                   Add New User
                 </Button>
+              </div>
+
+              <div className="mb-4">
+                <input
+                  type="text"
+                  placeholder="Search users..."
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400"
+                  onChange={(e) => {
+                    // Implement search functionality
+                    console.log('Search:', e.target.value);
+                  }}
+                />
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -458,19 +462,19 @@ useEffect(() => {
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <span className="text-gray-400">Quiz Completion Rate</span>
-                        <span className="text-white font-semibold">{stats.completionRate}%</span>
+                        <span className="text-2xl font-bold text-white">{stats.completionRate}%</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-gray-400">Average Score</span>
-                        <span className="text-white font-semibold">{stats.averageScore}%</span>
+                        <span className="text-2xl font-bold text-white">{stats.averageScore}%</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-gray-400">Daily Active Users</span>
-                        <span className="text-white font-semibold">{stats.activeUsers}</span>
+                        <span className="text-2xl font-bold text-white">{stats.activeUsers}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-gray-400">Stories Read Today</span>
-                        <span className="text-white font-semibold">127</span>
+                        <span className="text-2xl font-bold text-white">127</span>
                       </div>
                     </div>
                   </CardContent>
@@ -484,19 +488,19 @@ useEffect(() => {
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <span className="text-gray-400">Mathematics</span>
-                        <span className="text-white font-semibold">87.2%</span>
+                        <span className="text-2xl font-bold text-white">87.2%</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-gray-400">English</span>
-                        <span className="text-white font-semibold">84.1%</span>
+                        <span className="text-2xl font-bold text-white">84.1%</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-gray-400">Science</span>
-                        <span className="text-white font-semibold">79.8%</span>
+                        <span className="text-2xl font-bold text-white">79.8%</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-gray-400">Kinyarwanda</span>
-                        <span className="text-white font-semibold">91.5%</span>
+                        <span className="text-2xl font-bold text-white">91.5%</span>
                       </div>
                     </div>
                   </CardContent>

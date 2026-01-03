@@ -6,6 +6,7 @@ import { Menu, X, Info } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ConversationListPanel } from '@/components/chat/ConversationListPanel'
 import { ChatContextPanel } from '@/components/chat/ChatContextPanel'
+import { EmojiButton } from './EmojiPicker'
 
 // Chat context for managing active chat state
 interface ChatContextType {
@@ -14,6 +15,7 @@ interface ChatContextType {
   setActiveChat: (id: string | null, type: 'direct' | 'group' | null) => void
   isRightPanelOpen: boolean
   setRightPanelOpen: (open: boolean) => void
+  onEmojiSelect?: (emoji: string) => void
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined)
@@ -28,9 +30,10 @@ export function useChatContext() {
 
 interface ChatLayoutProviderProps {
   children: React.ReactNode
+  onEmojiSelect?: (emoji: string) => void
 }
 
-export function ChatLayoutProvider({ children }: ChatLayoutProviderProps) {
+export function ChatLayoutProvider({ children, onEmojiSelect }: ChatLayoutProviderProps) {
   const [activeChatId, setActiveChatId] = useState<string | null>(null)
   const [activeChatType, setActiveChatType] = useState<'direct' | 'group' | null>(null)
   const [isRightPanelOpen, setRightPanelOpen] = useState(true)
@@ -46,7 +49,8 @@ export function ChatLayoutProvider({ children }: ChatLayoutProviderProps) {
       activeChatType,
       setActiveChat,
       isRightPanelOpen,
-      setRightPanelOpen
+      setRightPanelOpen,
+      onEmojiSelect
     }}>
       {children}
     </ChatContext.Provider>
@@ -59,9 +63,9 @@ interface ThreePanelChatLayoutProps {
 }
 
 export function ThreePanelChatLayout({ children, className = "" }: ThreePanelChatLayoutProps) {
-  const { activeChatId, setActiveChat, isRightPanelOpen, setRightPanelOpen } = useChatContext()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isMobileRightPanelOpen, setIsMobileRightPanelOpen] = useState(false)
+  const { activeChatId, setActiveChat, isRightPanelOpen, setRightPanelOpen, onEmojiSelect } = useChatContext()
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen)
@@ -98,7 +102,7 @@ export function ThreePanelChatLayout({ children, className = "" }: ThreePanelCha
       {/* Left Panel - Conversations */}
       <aside
         className={cn(
-          "fixed lg:static inset-y-0 left-0 z-50 w-80 bg-white border-r border-gray-200",
+          "fixed lg:static inset-y-0 left-0 z-50 w-80 bg-white border-lg border-gray-200",
           "transform transition-transform duration-300 ease-in-out lg:transform-none",
           isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
@@ -125,14 +129,20 @@ export function ThreePanelChatLayout({ children, className = "" }: ThreePanelCha
 
           <h1 className="font-semibold text-lg truncate">Quix Chat Messages</h1>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleMobileRightPanel}
-            className="shrink-0"
-          >
-            {isMobileRightPanelOpen ? <X className="h-5 w-5" /> : <Info className="h-5 w-5" />}
-          </Button>
+          <div className="flex items-center gap-1">
+            {onEmojiSelect && (
+              <EmojiButton onEmojiSelect={onEmojiSelect} />
+            )}
+            
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleMobileRightPanel}
+              className="shrink-0"
+            >
+              {isMobileRightPanelOpen ? <X className="h-5 w-5" /> : <Info className="h-5 w-5" />}
+            </Button>
+          </div>
         </header>
 
         {/* Chat Content */}
@@ -141,29 +151,18 @@ export function ThreePanelChatLayout({ children, className = "" }: ThreePanelCha
         </div>
       </main>
 
+
       {/* Right Panel - Context/Tools */}
       <aside
         className={cn(
-          "fixed lg:static inset-y-0 right-0 z-50 w-80 bg-white border-l border-gray-200",
+          "fixed lg:static inset-y-0 right-0 z-50 w-80 bg-white border-lg border-gray-200",
           "transform transition-transform duration-300 ease-in-out",
           isMobileRightPanelOpen ? "translate-x-0" : "translate-x-full",
           "lg:translate-x-0",
           !isRightPanelOpen && "lg:hidden"
         )}
       >
-        {/* Desktop close button */}
-        <div className="hidden lg:flex items-center justify-between p-4 border-b">
-          <h2 className="font-semibold">Details</h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleDesktopRightPanel}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-
-        <ChatContextPanel
+          <ChatContextPanel
           isMobile={!isMobileRightPanelOpen}
           onCloseMobile={() => setIsMobileRightPanelOpen(false)}
         />
@@ -184,52 +183,3 @@ export function ThreePanelChatLayout({ children, className = "" }: ThreePanelCha
   )
 }
 
-// Demo Component
-export default function ChatDemo() {
-  return (
-    <ChatLayoutProvider>
-      <ThreePanelChatLayout>
-        <div className="h-full flex flex-col bg-white">
-          {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-blue-500 shrink-0" />
-              <div className="bg-gray-100 rounded-lg p-3 max-w-[70%]">
-                <p className="text-sm">Hey! How's the project going?</p>
-                <span className="text-xs text-gray-500 mt-1 block">10:30 AM</span>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 justify-end">
-              <div className="bg-blue-500 text-white rounded-lg p-3 max-w-[70%]">
-                <p className="text-sm">Going great! Just finished the layout.</p>
-                <span className="text-xs text-blue-100 mt-1 block">10:32 AM</span>
-              </div>
-              <div className="w-8 h-8 rounded-full bg-purple-500 shrink-0" />
-            </div>
-
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-blue-500 shrink-0" />
-              <div className="bg-gray-100 rounded-lg p-3 max-w-[70%]">
-                <p className="text-sm">Awesome! Can you show me?</p>
-                <span className="text-xs text-gray-500 mt-1 block">10:33 AM</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Message Input */}
-          <div className="border-t border-gray-200 p-4">
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                placeholder="Type a message..."
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <Button className="shrink-0">Send</Button>
-            </div>
-          </div>
-        </div>
-      </ThreePanelChatLayout>
-    </ChatLayoutProvider>
-  )
-}

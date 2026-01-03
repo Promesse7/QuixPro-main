@@ -14,6 +14,8 @@ import { getCurrentUserWithId, getCurrentUserId, getFirebaseId, ensureCurrentUse
 import { database } from '@/lib/firebaseClient'
 import { MathInput } from '@/components/math/MathInput'
 import { useChatContext } from '@/components/chat/ThreePanelChatLayout'
+import { EmojiButton } from '@/components/chat/EmojiPicker'
+import { updateFrequentEmojis } from '@/lib/emojiUtils'
 
 interface Message {
   _id: string
@@ -118,6 +120,11 @@ const DirectChatPage = () => {
     } finally {
       setSending(false)
     }
+  }
+
+  const handleEmojiSelect = (emoji: string) => {
+    setNewMessage(prev => prev + emoji)
+    updateFrequentEmojis(emoji)
   }
 
   const handleTypingChange = (value: string) => {
@@ -241,6 +248,7 @@ const DirectChatPage = () => {
           </div>
         ) : (
           <div className="flex gap-2 items-center max-w-4xl mx-auto w-full">
+            <EmojiButton onEmojiSelect={handleEmojiSelect} />
             <Input
               placeholder="Type a message..."
               value={newMessage}

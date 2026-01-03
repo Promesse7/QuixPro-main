@@ -9,7 +9,7 @@ export interface BreadcrumbStep {
   active?: boolean
 }
 
-interface QuizBreadcrumbProps {
+export interface QuizBreadcrumbProps {
   steps: BreadcrumbStep[]
 }
 

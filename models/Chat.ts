@@ -37,6 +37,7 @@ export interface Group {
   _id?: ObjectId
   name: string
   description?: string
+  subject?: string // Subject area (Math, Physics, CS, etc.)
   createdBy: string // User ID of the creator
   createdAt: Date
   updatedAt: Date
@@ -51,6 +52,13 @@ export interface Group {
     readReceipts: boolean
     messageEditWindow: number // in minutes
   }
+  // Enhanced features for ChatContextPanel
+  rules?: {
+    purpose?: string
+    postingGuidelines?: string
+    academicIntegrity?: string
+  }
+  pinnedMessageIds?: string[] // IDs of pinned messages
 }
 
 export interface UserGroup {

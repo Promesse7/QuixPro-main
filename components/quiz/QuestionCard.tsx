@@ -67,7 +67,7 @@ export function QuestionCard({
   )
 
   const handleAnswerSelect = (value: string) => {
-    if (!submitted || !showFeedback) {
+    if (!showFeedback) {
       if (isMathQuestion) {
         // For math questions, pass the value directly
         onAnswerSelect(value)
@@ -130,6 +130,7 @@ export function QuestionCard({
                 value={selectedAnswer as string || ''}
                 onChange={onAnswerSelect}
                 placeholder="Enter your mathematical answer..."
+                disabled={showFeedback}
               />
             ) : (
               <Input
@@ -137,6 +138,7 @@ export function QuestionCard({
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => onAnswerSelect(e.target.value)}
                 placeholder="Type your answer..."
                 className="w-full"
+                disabled={showFeedback}
               />
             )}
           </div>
@@ -145,40 +147,41 @@ export function QuestionCard({
           <RadioGroup
             value={selectedAnswer !== null && selectedAnswer !== undefined ? String(selectedAnswer) : ''}
             onValueChange={handleAnswerSelect}
+            disabled={showFeedback}
           >
             <div className="space-y-3">
               {question.options.map((option, index) => {
                 const isSelected = String(selectedAnswer) === String(index)
                 const optionIsCorrect = String(question.correctAnswer) === String(index)
-                const shouldShowCorrect = submitted && showFeedback && optionIsCorrect
-                const shouldShowIncorrect = submitted && showFeedback && isSelected && !isCorrect
+                const shouldShowCorrect = showFeedback && optionIsCorrect
+                const shouldShowIncorrect = showFeedback && isSelected && !isCorrect
 
                 return (
                   <div
                     key={index}
-                    className={`flex items-center space-x-3 p-4 rounded-lg border-2 transition-all cursor-pointer ${
-                      submitted && showFeedback
+                    className={`flex items-center space-x-3 p-4 rounded-lg border-2 transition-all ${
+                      showFeedback
                         ? shouldShowCorrect
                           ? 'border-green-500 bg-green-500/10'
                           : shouldShowIncorrect
                           ? 'border-red-500 bg-red-500/10'
-                          : 'border-border/50 bg-background'
+                          : 'border-border/50 bg-muted/30'
                         : isSelected
                           ? 'border-primary bg-primary/10'
                           : 'border-border/50 hover:border-border'
                     }`}
                   >
-                    <RadioGroupItem value={String(index)} id={`option-${index}`} />
+                    <RadioGroupItem value={String(index)} id={`option-${index}`} disabled={showFeedback} />
                     <Label
                       htmlFor={`option-${index}`}
                       className="flex-grow cursor-pointer font-medium"
                     >
                       {option}
                     </Label>
-                    {submitted && showFeedback && shouldShowCorrect && (
+                    {showFeedback && shouldShowCorrect && (
                       <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
                     )}
-                    {submitted && showFeedback && shouldShowIncorrect && (
+                    {showFeedback && shouldShowIncorrect && (
                       <XCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
                     )}
                   </div>
@@ -188,7 +191,7 @@ export function QuestionCard({
           </RadioGroup>
         )}
 
-        {submitted && showFeedback && question.explanation && (
+        {showFeedback && question.explanation && (
           <div className={`p-4 rounded-lg border-l-4 ${
             isCorrect
               ? 'border-green-500 bg-green-500/10'
@@ -204,6 +207,17 @@ export function QuestionCard({
           </div>
         )}
 
+        {showFeedback && !isCorrect && (
+          <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/50">
+            <p className="text-sm text-blue-600 font-medium">
+              Correct Answer: {isMathQuestion 
+                ? question.correctAnswer 
+                : question.options[Number(question.correctAnswer)]
+              }
+            </p>
+          </div>
+        )}
+
         {!submitted && isAnswered && !showFeedback && (
           <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/50">
             <p className="text-sm text-blue-600 font-medium">
@@ -214,7 +228,7 @@ export function QuestionCard({
       </CardContent>
 
       <div className="border-t border-border/50 p-6 space-y-3">
-        {!submitted ? (
+        {!showFeedback ? (
           <Button
             onClick={handleSubmit}
             disabled={!isAnswered}
@@ -234,7 +248,7 @@ export function QuestionCard({
           </Button>
         )}
 
-        {canGoBack && (
+        {canGoBack && !showFeedback && (
           <Button
             onClick={onPrevious}
             variant="outline"

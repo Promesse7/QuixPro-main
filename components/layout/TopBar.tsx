@@ -1,6 +1,7 @@
 // components/layout/TopBar.tsx
-import { MagnifyingGlassIcon, BellIcon, PlusCircleIcon } from '@heroicons/react/24/outline'; // Changed SearchIcon to MagnifyingGlassIcon for consistency
+import { MagnifyingGlassIcon, PlusCircleIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
+import { Notifications } from '@/components/notifications/Notifications';
 
 export function TopBar() {
   return (
@@ -28,11 +29,9 @@ export function TopBar() {
         </div>
 
         {/* Notifications */}
-        <button className="relative p-2 rounded-full hover:bg-accent transition-colors text-muted-foreground hover:text-accent-foreground">
-          <BellIcon className="h-6 w-6" />
-          {/* Example notification count - replace with dynamic data */}
-          <span className="absolute -top-0.5 -right-0.5 h-4 w-4 flex items-center justify-center rounded-full bg-red-500 text-xs text-white">3</span>
-        </button>
+        <div className="relative">
+          <Notifications />
+        </div>
 
         {/* Primary Action Button */}
         <Link href="/create" className="hidden sm:flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors whitespace-nowrap">

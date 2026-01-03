@@ -14,6 +14,16 @@ export interface User {
     quizzesPassed: number;
     averageScore: number;
     totalPoints: number;
+    // Enhanced tracking
+    quizzesCompleted: ObjectId[];
+    currentStreak: number;
+    longestStreak: number;
+    lastQuizDate?: Date;
+    subjectProgress: Record<string, {
+      quizzesTaken: number;
+      averageScore: number;
+      bestScore: number;
+    }>;
   };
   createdAt: Date;
   updatedAt: Date;

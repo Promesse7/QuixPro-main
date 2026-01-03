@@ -1,0 +1,9 @@
+// Context panel components barrel export
+export { CollapsibleSection } from './CollapsibleSection'
+export { ChatIdentityHeader } from './ChatIdentityHeader'
+export { MembersSection } from './MembersSection'
+export { PinnedMessagesSection } from './PinnedMessagesSection'
+export { SharedResourcesHub } from './SharedResourcesHub'
+export { LearningToolsSection } from './LearningToolsSection'
+export { ActivitySection } from './ActivitySection'
+export { GroupRulesSection } from './GroupRulesSection'
