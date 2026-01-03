@@ -1,12 +1,11 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Brain, Clock, Star, Play, ChevronRight } from "lucide-react"
+import { Brain, Clock, Play, ChevronRight } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { Quiz } from "@/models"
 
 interface QuizData {
 	_id?: string
@@ -18,6 +17,10 @@ interface QuizData {
 	questions: any[] | number
 	duration: number
 	difficulty: string
+	unit?: {
+		_id: string
+		name: string
+	}
 	rating?: number
 	reason?: string
 }
@@ -145,6 +148,9 @@ export function RecommendedQuizzes() {
 											</div>
 											<div className="flex-1 min-w-0">
 												<h4 className="font-bold text-sm leading-tight truncate group-hover:text-primary transition-colors">{quiz.title}</h4>
+												{quiz.unit?.name && (
+													<p className="text-[11px] text-muted-foreground mt-0.5 truncate">{quiz.unit.name}</p>
+												)}
 												<p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">{quiz.description}</p>
 											</div>
 										</div>

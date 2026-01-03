@@ -42,6 +42,10 @@ interface Quiz {
   difficulty: string
   duration: number
   questions: any[]
+  unit?: {
+    _id: string
+    name: string
+  }
 }
 
 export default function QuizSelectionPage() {
@@ -376,6 +380,9 @@ export default function QuizSelectionPage() {
                 <Card key={quiz._id} className="glass-effect border-border/50 hover:glow-effect transition-all duration-300">
                   <CardHeader>
                     <CardTitle className="text-lg glow-text">{quiz.title}</CardTitle>
+                    {quiz.unit?.name && (
+                      <p className="text-sm text-muted-foreground">{quiz.unit.name}</p>
+                    )}
                     <CardDescription>{quiz.description}</CardDescription>
                   </CardHeader>
                   <CardContent>

@@ -160,6 +160,11 @@ function QuizCard({
                     <h5 className="text-sm font-semibold truncate mb-1">
                         {quiz.title}
                     </h5>
+                    {quiz.unit && (
+                        <p className="text-xs text-muted-foreground truncate mb-2">
+                            {quiz.unit}
+                        </p>
+                    )}
                     <div className="flex flex-wrap items-center gap-1.5">
                         <Badge
                             variant="outline"

@@ -16,6 +16,8 @@ interface RelatedQuiz {
     difficulty: string;
     questions: number;
     duration: number;
+    unit?: string;
+    unitId?: string;
 }
 
 // GET /api/groups/{id}/related-quizzes - Get quizzes related to group's subject
@@ -52,21 +54,43 @@ export async function GET(request: NextRequest, { params }: { params: Params }) 
             ]
         };
 
-        // Fetch related quizzes
-        const quizzes = await quizzesCollection.find(query)
-            .sort({ rating: -1, createdAt: -1 })
-            .limit(limit)
-            .toArray();
+        // Fetch related quizzes with unit information
+        const quizzes = await quizzesCollection.aggregate([
+            { $match: query },
+            {
+                $lookup: {
+                    from: "units",
+                    localField: "unitId",
+                    foreignField: "_id",
+                    as: "unit"
+                }
+            },
+            { $unwind: { path: "$unit", preserveNullAndEmptyArrays: true } },
+            { $sort: { rating: -1, createdAt: -1 } },
+            { $limit: limit }
+        ]).toArray();
 
         // If not enough quizzes found, fetch any public quizzes
         if (quizzes.length < limit && groupSubject !== 'General') {
-            const additionalQuizzes = await quizzesCollection.find({
-                isPublic: true,
-                _id: { $nin: quizzes.map(q => q._id) }
-            })
-                .sort({ rating: -1, createdAt: -1 })
-                .limit(limit - quizzes.length)
-                .toArray();
+            const additionalQuizzes = await quizzesCollection.aggregate([
+                {
+                    $match: {
+                        isPublic: true,
+                        _id: { $nin: quizzes.map(q => q._id) }
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "units",
+                        localField: "unitId",
+                        foreignField: "_id",
+                        as: "unit"
+                    }
+                },
+                { $unwind: { path: "$unit", preserveNullAndEmptyArrays: true } },
+                { $sort: { rating: -1, createdAt: -1 } },
+                { $limit: limit - quizzes.length }
+            ]).toArray();
 
             quizzes.push(...additionalQuizzes);
         }
@@ -79,7 +103,9 @@ export async function GET(request: NextRequest, { params }: { params: Params }) 
             subject: quiz.subject || 'General',
             difficulty: quiz.difficulty || 'Medium',
             questions: quiz.questions || quiz.questionIds?.length || 0,
-            duration: quiz.duration || 10
+            duration: quiz.duration || 10,
+            unit: quiz.unit?.name || undefined,
+            unitId: quiz.unitId?.toString() || undefined
         }));
 
         return NextResponse.json({

@@ -44,6 +44,8 @@ export interface RelatedQuiz {
     difficulty: string
     questions: number
     duration: number
+    unit?: string
+    unitId?: string
 }
 
 export interface ActivitySummary {
