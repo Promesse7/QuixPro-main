@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { ObjectId } from 'mongodb'
 import { getDatabase } from '@/lib/mongodb'
 
+export const dynamic = "force-dynamic"
+
 // GET /api/quiz-attempts/[attemptId] - Get a specific quiz attempt
 export async function GET(
   request: NextRequest,
@@ -12,6 +14,10 @@ export async function GET(
 
     if (!attemptId) {
       return NextResponse.json({ error: "Attempt ID is required" }, { status: 400 })
+    }
+
+    if (!ObjectId.isValid(attemptId)) {
+      return NextResponse.json({ error: "Invalid attempt ID" }, { status: 400 })
     }
 
     const db = await getDatabase()

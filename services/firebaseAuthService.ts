@@ -1,9 +1,9 @@
 import { getAuth } from 'firebase-admin/auth'
-import { app } from '@/lib/firebaseClient'
+import { getFirebaseAdminApp } from '@/lib/firebaseAdmin'
 import { User } from '@/models/User'
 
 export class FirebaseAuthService {
-  private auth = getAuth(app)
+  private auth = getAuth(getFirebaseAdminApp())
 
   // Generate custom Firebase token for authenticated user
   async generateCustomToken(user: User): Promise<string> {

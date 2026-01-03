@@ -19,7 +19,7 @@ import {
   Globe,
   Database,
 } from "lucide-react"
-import { getCurrentUser } from "@/lib/auth-db"
+import { getCurrentUser } from "@/lib/auth-client"
 import { getBaseUrl } from '@/lib/getBaseUrl';
 
 interface AdminStats {

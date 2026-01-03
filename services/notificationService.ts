@@ -1,5 +1,6 @@
 import { Db, ObjectId } from 'mongodb'
-import { NotificationService, INotification, NotificationType, NotificationEvent, categorizeNotification } from '@/models/Notification'
+import { NotificationService, NotificationType, NotificationEvent } from '@/models/Notification'
+import { INotification, categorizeNotification } from '@/types/notification'
 import { notificationFirebase } from '@/lib/notificationFirebase'
 
 // Notification creation service - handles event-driven notification creation

@@ -5,7 +5,7 @@ import { Bell, BellRing } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import { useNotificationBadgeCount } from '@/lib/notificationFirebase'
+import { useNotificationBadgeCount } from '@/lib/notificationFirebase.client'
 
 interface NotificationBellProps {
   onClick: () => void

@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
-import { INotification, getTimeAgo } from '@/models/Notification'
+import { INotification, getTimeAgo } from '@/types/notification'
 
 interface NotificationDropdownProps {
   isOpen: boolean

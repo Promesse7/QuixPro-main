@@ -1,6 +1,5 @@
 import { getDatabase, ref, set, onValue, increment, remove } from 'firebase/database'
 import { app } from '@/lib/firebaseClient'
-import { useState, useEffect } from 'react'
 
 // Firebase Realtime Database service for notification badge counts
 export class NotificationFirebaseService {
@@ -157,30 +156,4 @@ export function categorizeNotification(type: string): 'chat' | 'academic' | 'soc
     default:
       return 'system'
   }
-}
-
-// Hook for React components to listen to badge counts
-export function useNotificationBadgeCount(userId: string) {
-  const [counts, setCounts] = useState({
-    total: 0,
-    chat: 0,
-    academic: 0,
-    social: 0,
-    system: 0
-  })
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    if (!userId) return
-
-    setLoading(true)
-    const unsubscribe = notificationFirebase.onBadgeCountChange(userId, (newCounts) => {
-      setCounts(newCounts)
-      setLoading(false)
-    })
-
-    return () => unsubscribe()
-  }, [userId])
-
-  return { counts, loading }
 }

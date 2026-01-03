@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from 'react'
-import { useNotificationBadgeCount } from '@/lib/notificationFirebase'
+import { useNotificationBadgeCount } from '@/lib/notificationFirebase.client'
 
 interface Notification {
   id: string

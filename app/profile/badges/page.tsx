@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { getCurrentUser } from '@/lib/auth-db'
+import { getCurrentUser } from '@/lib/auth-client'
 import { UserBadges } from '@/components/badges/UserBadges'
 import { Loader2, ArrowLeft, Trophy, Star } from 'lucide-react'
 import { motion } from 'framer-motion'

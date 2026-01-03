@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { getBaseUrl } from '@/lib/getBaseUrl'
-import { getCurrentUser } from '@/lib/auth-db'
+import { getCurrentUser } from '@/lib/auth-client'
 
 interface UserBadge {
   badgeId: string
