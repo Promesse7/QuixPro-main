@@ -1,7 +1,6 @@
 import { getDatabase } from "./mongodb"
 import { ObjectId } from "mongodb"
 import bcrypt from "bcryptjs"
-import { badgeService } from "@/services/badgeService"
 
 export interface User {
   _id?: ObjectId
@@ -185,13 +184,10 @@ export const authenticateUser = async (email: string, password: string): Promise
 
     // Convert ObjectId to string for frontend compatibility
     const userForFrontend: User = {
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      level: user.level,
-      stage: user.stage,
-      avatar: user.avatar,
+      ...user,
       id: user._id.toString(),
+      _id: undefined,
+      passwordHash: undefined,
     }
 
     return userForFrontend
@@ -266,22 +262,12 @@ export const registerUser = async (userData: {
 
     const result = await usersCol.insertOne(newUser)
 
-    // Award account creation badge
-    try {
-      await badgeService.awardBadgeToUser(result.insertedId.toString(), 'account_creator')
-    } catch (badgeError) {
-      console.error('Failed to award account creation badge:', badgeError)
-      // Don't fail registration if badge awarding fails
-    }
-
     // Return user without sensitive data
     const userForFrontend: User = {
-      email: newUser.email,
-      name: newUser.name,
-      role: newUser.role,
-      level: newUser.level,
-      stage: newUser.stage as "Primary" | "Lower Secondary" | "Upper Secondary" | undefined,
+      ...newUser,
       id: result.insertedId.toString(),
+      _id: undefined,
+      passwordHash: undefined,
     }
 
     return userForFrontend

@@ -7,7 +7,6 @@ import { Menu, X, Info } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ConversationListPanel } from "@/components/chat/ConversationListPanel"
 import { ChatContextPanel } from "@/components/chat/ChatContextPanel"
-import { EmojiButton } from './EmojiPicker'
 
 // Chat context for managing active chat state
 interface ChatContextType {
@@ -16,7 +15,6 @@ interface ChatContextType {
   setActiveChat: (id: string | null, type: "direct" | "group" | null) => void
   isRightPanelOpen: boolean
   setRightPanelOpen: (open: boolean) => void
-  onEmojiSelect?: (emoji: string) => void
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined)
@@ -31,10 +29,9 @@ export function useChatContext() {
 
 interface ChatLayoutProviderProps {
   children: React.ReactNode
-  onEmojiSelect?: (emoji: string) => void
 }
 
-export function ChatLayoutProvider({ children, onEmojiSelect }: ChatLayoutProviderProps) {
+export function ChatLayoutProvider({ children }: ChatLayoutProviderProps) {
   const [activeChatId, setActiveChatId] = useState<string | null>(null)
   const [activeChatType, setActiveChatType] = useState<"direct" | "group" | null>(null)
   const [isRightPanelOpen, setRightPanelOpen] = useState(true)
@@ -45,13 +42,15 @@ export function ChatLayoutProvider({ children, onEmojiSelect }: ChatLayoutProvid
   }
 
   return (
-    <ChatContext.Provider value={{
-      activeChatId,
-      activeChatType,
-      setActiveChat,
-      isRightPanelOpen,
-      setRightPanelOpen
-    }}>
+    <ChatContext.Provider
+      value={{
+        activeChatId,
+        activeChatType,
+        setActiveChat,
+        isRightPanelOpen,
+        setRightPanelOpen,
+      }}
+    >
       {children}
     </ChatContext.Provider>
   )
@@ -63,9 +62,9 @@ interface ThreePanelChatLayoutProps {
 }
 
 export function ThreePanelChatLayout({ children, className = "" }: ThreePanelChatLayoutProps) {
+  const { activeChatId, setActiveChat, isRightPanelOpen, setRightPanelOpen } = useChatContext()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isMobileRightPanelOpen, setIsMobileRightPanelOpen] = useState(false)
-  const { activeChatId, setActiveChat, isRightPanelOpen, setRightPanelOpen, onEmojiSelect } = useChatContext()
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen)
@@ -96,7 +95,7 @@ export function ThreePanelChatLayout({ children, className = "" }: ThreePanelCha
       {/* Left Panel - Conversations */}
       <aside
         className={cn(
-          "fixed lg:static inset-y-0 left-0 z-50 w-80 bg-white border-lg border-gray-200",
+          "fixed lg:static inset-y-0 left-0 z-50 w-80 bg-white border-r border-gray-200",
           "transform transition-transform duration-300 ease-in-out lg:transform-none",
           isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
@@ -118,12 +117,7 @@ export function ThreePanelChatLayout({ children, className = "" }: ThreePanelCha
 
           <h1 className="font-semibold text-lg truncate">Quix Chat Messages</h1>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleMobileRightPanel}
-            className="shrink-0"
-          >
+          <Button variant="ghost" size="icon" onClick={toggleMobileRightPanel} className="shrink-0">
             {isMobileRightPanelOpen ? <X className="h-5 w-5" /> : <Info className="h-5 w-5" />}
           </Button>
         </header>
@@ -132,11 +126,10 @@ export function ThreePanelChatLayout({ children, className = "" }: ThreePanelCha
         <div className="flex-1 overflow-hidden">{children}</div>
       </main>
 
-
       {/* Right Panel - Context/Tools */}
       <aside
         className={cn(
-          "fixed lg:static inset-y-0 right-0 z-50 w-80 bg-white border-lg border-gray-200",
+          "fixed lg:static inset-y-0 right-0 z-50 w-80 bg-white border-l border-gray-200",
           "transform transition-transform duration-300 ease-in-out",
           isMobileRightPanelOpen ? "translate-x-0" : "translate-x-full",
           "lg:translate-x-0",
@@ -146,19 +139,12 @@ export function ThreePanelChatLayout({ children, className = "" }: ThreePanelCha
         {/* Desktop close button */}
         <div className="hidden lg:flex items-center justify-between p-4 border-b">
           <h2 className="font-semibold">Details</h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleDesktopRightPanel}
-          >
+          <Button variant="ghost" size="icon" onClick={toggleDesktopRightPanel}>
             <X className="h-4 w-4" />
           </Button>
         </div>
 
-        <ChatContextPanel
-          isMobile={!isMobileRightPanelOpen}
-          onCloseMobile={() => setIsMobileRightPanelOpen(false)}
-        />
+        <ChatContextPanel isMobile={!isMobileRightPanelOpen} onCloseMobile={() => setIsMobileRightPanelOpen(false)} />
       </aside>
 
       {/* Desktop Right Panel Toggle (when closed) */}

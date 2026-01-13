@@ -1,5 +1,0 @@
-export { default as PeerDiscovery } from './PeerDiscovery'
-export { default as PeerActivityFeed } from './PeerActivityFeed'
-export { default as PeerSettings } from './PeerSettings'
-export { default as PeerCard } from './PeerCard'
-export { default as PeerSearch } from './PeerSearch'

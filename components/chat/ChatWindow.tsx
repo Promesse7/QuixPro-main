@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input"
 import { MathInput } from "@/components/math/MathInput"
 import { Button } from "@/components/ui/button"
 import { Send, Loader, ImageIcon, Paperclip, Heart } from "lucide-react"
-import { EmojiButton } from "./EmojiPicker"
 import { LovedOnesManager } from "@/lib/lovedOnes"
 import { getCurrentUserId } from "@/lib/userUtils"
 import { cn } from "@/lib/utils"
@@ -167,10 +166,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ groupId, className = "" }) => {
     }
   }, [])
 
-  const handleEmojiSelect = (emoji: string) => {
-    setMessage(prev => prev + emoji)
-  }
-
   const getTypingText = () => {
     const typingUserIds = Object.entries(typingUsers)
       .filter(([_, isTyping]) => isTyping)
@@ -208,7 +203,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ groupId, className = "" }) => {
 
   return (
     <div className={`flex flex-col h-full ${className}`}>
-      <div className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar p-4 space-y-4" role="log" aria-live="polite" aria-atomic="false">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4" role="log" aria-live="polite" aria-atomic="false">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full text-muted-foreground">
             No messages yet. Say hello!

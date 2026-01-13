@@ -75,24 +75,6 @@ export function FloatingNavbar() {
     return null
   }
 
-  // On chat pages, show only a simple back button for better UX
-  const isChatPage = pathname?.startsWith('/chat')
-  if (isChatPage && user) {
-    return (
-      <div className="fixed top-4 left-4 z-50">
-        <Link href="/dashboard">
-          <button
-            type="button"
-            className="flex items-center gap-2 px-4 py-2 bg-card border border-border/50 rounded-lg shadow-lg backdrop-blur-md hover:bg-muted/50 transition-colors"
-          >
-            <Menu className="h-5 w-5" />
-            <span className="text-sm font-medium">Back to Dashboard</span>
-          </button>
-        </Link>
-      </div>
-    )
-  }
-
   // Choose navigation items based on user role
   const currentNavItems = user?.role === 'teacher' && pathname?.startsWith('/teacher')
     ? teacherNavItems

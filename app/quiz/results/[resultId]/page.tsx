@@ -2,51 +2,33 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { AlertCircle, CheckCircle2, XCircle, BarChart3, Clock, Zap, Home, RotateCcw, Award } from 'lucide-react'
+import { AlertCircle, CheckCircle2, XCircle, BarChart3, Clock, Zap, Home, RotateCcw } from 'lucide-react'
 import { getBaseUrl } from '@/lib/getBaseUrl'
 import { QuizBreadcrumb } from '@/components/quiz/QuizBreadcrumb'
 
-interface QuizAttempt {
+interface Result {
   _id: string
-  userId: string
   quizId: string
-  answers: Array<{
-    questionId: string
-    selectedAnswer: number | string
-    isCorrect: boolean
-    timeSpent?: number
-    answeredAt?: string
-  }>
-  score: {
-    correct: number
-    total: number
-    percentage: number
-  }
+  score: number
+  accuracy: number
   timeSpent: number
-  status: "in_progress" | "completed" | "abandoned"
-  startedAt: string
-  completedAt?: string
-  createdAt: string
-  updatedAt: string
-  difficulty?: string
-  subject?: string
-  level?: string
-  certificateEarned?: boolean
-  certificateId?: string
-}
-
-interface Quiz {
-  _id: string
-  title: string
-  description: string
-  duration: number
   difficulty: string
-  subject?: string
-  level?: string
+  totalQuestions: number
+  correctAnswers: number
+  wrongAnswers: number
+  skipped: number
+  answers: Record<string, any>
+  quiz: {
+    title: string
+    subject: string
+    level: string
+    duration: number
+  }
+  createdAt: string
 }
 
 interface PageProps {
@@ -55,78 +37,26 @@ interface PageProps {
 
 export default function ResultPage({ params }: PageProps) {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const [attempt, setAttempt] = useState<QuizAttempt | null>(null)
-  const [quiz, setQuiz] = useState<Quiz | null>(null)
+  const [result, setResult] = useState<Result | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const resultId = decodeURIComponent(params.resultId)
-  const quizId = searchParams.get('quizId')
 
   useEffect(() => {
     fetchResult()
-  }, [resultId, quizId])
-
-  useEffect(() => {
-    if (attempt && quiz) {
-      const triggerNotifications = async () => {
-        try {
-          // Trigger quiz completion notification
-          const response = await fetch('/api/notifications/trigger', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              type: 'quiz_completed',
-              quizId: quiz._id,
-              score: attempt.score.percentage,
-              quizTitle: quiz.title
-            })
-          })
-
-          // Trigger certificate notification if earned
-          if (attempt.certificateEarned && attempt.certificateId) {
-            await fetch('/api/notifications/trigger', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                type: 'certificate_earned',
-                certificateId: attempt.certificateId,
-                quizTitle: quiz.title
-              })
-            })
-          }
-        } catch (error) {
-          console.error('Failed to trigger notifications:', error)
-        }
-      }
-
-      triggerNotifications()
-    }
-  }, [attempt, quiz])
+  }, [resultId])
 
   const fetchResult = async () => {
     try {
       setLoading(true)
       const baseUrl = getBaseUrl()
-      const quizId = searchParams.get('quizId')
-      
-      // Fetch the attempt data
-      const attemptRes = await fetch(`${baseUrl}/api/quiz-attempts/${encodeURIComponent(resultId)}`)
-      if (!attemptRes.ok) {
-        setError('Quiz attempt not found')
-        return
-      }
-      const attemptData = await attemptRes.json()
-      setAttempt(attemptData.attempt)
-      
-      // Fetch quiz data if quizId is provided
-      if (quizId) {
-        const quizRes = await fetch(`${baseUrl}/api/quiz/${encodeURIComponent(quizId)}?fields=meta`)
-        if (quizRes.ok) {
-          const quizData = await quizRes.json()
-          setQuiz(quizData.quiz)
-        }
+      const res = await fetch(`${baseUrl}/api/progress/result/${encodeURIComponent(resultId)}`)
+      if (res.ok) {
+        const data = await res.json()
+        setResult(data.result)
+      } else {
+        setError('Result not found')
       }
     } catch (err) {
       console.error('Failed to load result:', err)
@@ -161,7 +91,7 @@ export default function ResultPage({ params }: PageProps) {
     )
   }
 
-  if (error || !attempt) {
+  if (error || !result) {
     return (
       <div className="min-h-screen gradient-bg flex items-center justify-center">
         <Card className="glass-effect border-border/50 max-w-md">
@@ -178,11 +108,10 @@ export default function ResultPage({ params }: PageProps) {
     )
   }
 
-  const performance = getPerformanceLevel(attempt.score.percentage)
-  const xpReward = getXPReward(attempt.score.percentage)
-  const timeTakenMinutes = Math.floor(attempt.timeSpent / 60)
-  const timeTakenSeconds = attempt.timeSpent % 60
-  const wrongAnswers = attempt.score.total - attempt.score.correct
+  const performance = getPerformanceLevel(result.accuracy)
+  const xpReward = getXPReward(result.accuracy)
+  const timeTakenMinutes = Math.floor(result.timeSpent / 60)
+  const timeTakenSeconds = result.timeSpent % 60
 
   return (
     <div className="min-h-screen gradient-bg">
@@ -206,7 +135,7 @@ export default function ResultPage({ params }: PageProps) {
                 <span className="text-6xl">{performance.icon}</span>
               </div>
               <CardTitle className="text-5xl glow-text mb-2">
-                {Math.round(attempt.score.percentage)}%
+                {Math.round(result.accuracy)}%
               </CardTitle>
               <CardDescription className="text-xl">
                 <span className={`font-bold ${performance.color}`}>{performance.level}</span>
@@ -214,7 +143,7 @@ export default function ResultPage({ params }: PageProps) {
             </CardHeader>
             <CardContent className="text-center pb-8">
               <p className="text-muted-foreground mb-6">
-                You scored <span className="font-bold text-foreground">{attempt.score.correct}/{attempt.score.total}</span> correct
+                You scored <span className="font-bold text-foreground">{result.correctAnswers}/{result.totalQuestions}</span> correct
               </p>
               
               {/* XP Reward */}
@@ -223,19 +152,11 @@ export default function ResultPage({ params }: PageProps) {
                 <span className="font-bold text-yellow-600">+{xpReward} XP Earned</span>
               </div>
 
-              {/* Certificate Badge */}
-              {attempt.certificateEarned && (
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-500/20 border border-green-500/50 mb-6">
-                  <Award className="h-5 w-5 text-green-500" />
-                  <span className="font-bold text-green-600">Certificate Earned!</span>
-                </div>
-              )}
-
               {/* Quiz Info */}
               <div className="space-y-2 text-sm text-muted-foreground">
-                <p>📚 <span className="font-medium text-foreground">{quiz?.title || 'Quiz'}</span></p>
-                <p>📍 {attempt.subject || 'Unknown'} • {attempt.level || 'Unknown'}</p>
-                <p>⚡ Difficulty: <Badge className="ml-2" variant="secondary">{attempt.difficulty || 'Unknown'}</Badge></p>
+                <p>📚 <span className="font-medium text-foreground">{result.quiz.title}</span></p>
+                <p>📍 {result.quiz.subject} • {result.quiz.level}</p>
+                <p>⚡ Difficulty: <Badge className="ml-2" variant="secondary">{result.difficulty}</Badge></p>
               </div>
             </CardContent>
           </Card>
@@ -246,7 +167,7 @@ export default function ResultPage({ params }: PageProps) {
               <CardContent className="pt-6">
                 <div className="text-center">
                   <CheckCircle2 className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-green-500">{attempt.score.correct}</p>
+                  <p className="text-2xl font-bold text-green-500">{result.correctAnswers}</p>
                   <p className="text-xs text-muted-foreground mt-1">Correct Answers</p>
                 </div>
               </CardContent>
@@ -256,7 +177,7 @@ export default function ResultPage({ params }: PageProps) {
               <CardContent className="pt-6">
                 <div className="text-center">
                   <XCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-red-500">{wrongAnswers}</p>
+                  <p className="text-2xl font-bold text-red-500">{result.wrongAnswers}</p>
                   <p className="text-xs text-muted-foreground mt-1">Wrong Answers</p>
                 </div>
               </CardContent>
@@ -276,7 +197,7 @@ export default function ResultPage({ params }: PageProps) {
               <CardContent className="pt-6">
                 <div className="text-center">
                   <BarChart3 className="h-8 w-8 text-purple-500 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-purple-500">{attempt.score.percentage}%</p>
+                  <p className="text-2xl font-bold text-purple-500">{result.score}</p>
                   <p className="text-xs text-muted-foreground mt-1">Final Score</p>
                 </div>
               </CardContent>
@@ -285,7 +206,7 @@ export default function ResultPage({ params }: PageProps) {
 
           {/* Feedback Cards */}
           <div className="space-y-4 mb-8">
-            {attempt.score.percentage >= 90 && (
+            {result.accuracy >= 90 && (
               <Card className="glass-effect border-border/50 bg-gradient-to-r from-green-500/10 to-transparent">
                 <CardContent className="py-4">
                   <p className="text-sm font-medium text-green-600">
@@ -295,7 +216,7 @@ export default function ResultPage({ params }: PageProps) {
               </Card>
             )}
 
-            {attempt.score.percentage >= 75 && attempt.score.percentage < 90 && (
+            {result.accuracy >= 75 && result.accuracy < 90 && (
               <Card className="glass-effect border-border/50 bg-gradient-to-r from-blue-500/10 to-transparent">
                 <CardContent className="py-4">
                   <p className="text-sm font-medium text-blue-600">
@@ -305,7 +226,7 @@ export default function ResultPage({ params }: PageProps) {
               </Card>
             )}
 
-            {attempt.score.percentage >= 60 && attempt.score.percentage < 75 && (
+            {result.accuracy >= 60 && result.accuracy < 75 && (
               <Card className="glass-effect border-border/50 bg-gradient-to-r from-yellow-500/10 to-transparent">
                 <CardContent className="py-4">
                   <p className="text-sm font-medium text-yellow-600">
@@ -315,7 +236,7 @@ export default function ResultPage({ params }: PageProps) {
               </Card>
             )}
 
-            {attempt.score.percentage < 60 && (
+            {result.accuracy < 60 && (
               <Card className="glass-effect border-border/50 bg-gradient-to-r from-orange-500/10 to-transparent">
                 <CardContent className="py-4">
                   <p className="text-sm font-medium text-orange-600">

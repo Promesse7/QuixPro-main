@@ -9,11 +9,10 @@ import Link from 'next/link'
 import { getBaseUrl } from '@/lib/getBaseUrl'
 import { QuizTimer } from '@/components/quiz/QuizTimer'
 import { QuizProgressBar } from '@/components/quiz/QuizProgressBar'
-import { QuestionCard } from '@/components/quiz/QuestionCard'
+import { QuestionCard, type Question } from '@/components/quiz/QuestionCard'
 import { QuizBreadcrumb } from '@/components/quiz/QuizBreadcrumb'
 import { AppBreadcrumb } from '@/components/app/AppBreadcrumb'
 import { QuickStartCTA } from '@/components/app/QuickStartCTA'
-import { getCurrentUser } from '@/lib/auth'
 
 interface Quiz {
   _id: string
@@ -24,15 +23,6 @@ interface Quiz {
   questions: Question[]
   subject?: string
   level?: string
-}
-
-interface Question {
-  id: string
-  _id?: string
-  question: string
-  options: string[]
-  correctAnswer: number
-  explanation?: string
 }
 
 interface PageProps {
@@ -49,8 +39,6 @@ export default function PlayQuizPage({ params }: PageProps) {
   const [timeUp, setTimeUp] = useState(false)
   const [quizStarted, setQuizStarted] = useState(false)
   const [showFeedback, setShowFeedback] = useState(false)
-  const [timeElapsed, setTimeElapsed] = useState(0)
-  const [quizStartTime, setQuizStartTime] = useState<Date | null>(null)
 
   const quizId = decodeURIComponent(params.quizId)
 
@@ -59,21 +47,6 @@ export default function PlayQuizPage({ params }: PageProps) {
   useEffect(() => {
     fetchQuizMeta()
   }, [quizId])
-
-  // Timer effect to track time elapsed
-  useEffect(() => {
-    let interval: NodeJS.Timeout
-    
-    if (quizStarted && !timeUp) {
-      interval = setInterval(() => {
-        setTimeElapsed(prev => prev + 1)
-      }, 1000)
-    }
-
-    return () => {
-      if (interval) clearInterval(interval)
-    }
-  }, [quizStarted, timeUp])
 
   const fetchQuizMeta = async () => {
     try {
@@ -142,50 +115,32 @@ export default function PlayQuizPage({ params }: PageProps) {
 
     try {
       const baseUrl = getBaseUrl()
-      const currentUser = getCurrentUser()
-      
-      if (!currentUser) {
-        setError('You must be logged in to submit a quiz')
-        return
-      }
+      const score = calculateScore()
 
-      // Calculate score and prepare answers for API
-      const answersForAPI = quiz.questions.map((q, index) => {
+      // Transform answers to match format expected by API
+      const answersForAPI: Record<number, boolean> = {}
+      quiz.questions.forEach((q, index) => {
         const userAnswer = answers[index]
-        const isCorrect = userAnswer !== undefined && String(userAnswer) === String(q.correctAnswer)
-        
-        return {
-          questionId: q._id?.toString() || q.id || index.toString(),
-          selectedAnswer: userAnswer,
-          isCorrect: isCorrect,
-          timeSpent: 0, // Could be enhanced with per-question timing
-          answeredAt: new Date()
-        }
+        answersForAPI[index] = userAnswer !== undefined && String(userAnswer) === String(q.correctAnswer)
       })
 
-      const score = {
-        correct: answersForAPI.filter(a => a.isCorrect).length,
-        total: quiz.questions.length,
-        percentage: Math.round((answersForAPI.filter(a => a.isCorrect).length / quiz.questions.length) * 100)
-      }
-
-      const res = await fetch(`${baseUrl}/api/quiz-attempts`, {
+      const res = await fetch(`${baseUrl}/api/progress/results`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: currentUser.id,
           quizId: quiz._id,
           answers: answersForAPI,
-          timeElapsed: timeElapsed,
-          status: "completed",
-          startedAt: quizStartTime || new Date(Date.now() - timeElapsed * 1000)
+          score,
+          accuracy: score,
+          timeSpent: quiz.duration * 60,
+          difficulty: quiz.difficulty,
+          totalQuestions: questionsLength,
         }),
       })
 
       if (res.ok) {
         const data = await res.json()
-        // Navigate to results page with attempt data
-        router.push(`/quiz/results/${data.attempt._id}?quizId=${quiz._id}`)
+        router.push(`/quiz/results/${data.resultId}`)
       } else {
         const error = await res.json()
         setError(error.error || 'Failed to submit quiz')
@@ -313,12 +268,7 @@ export default function PlayQuizPage({ params }: PageProps) {
                 <Button
                   size="lg"
                   className="w-full glow-effect"
-                  onClick={async () => { 
-                    await fetchFullQuiz(); 
-                    setQuizStarted(true);
-                    setQuizStartTime(new Date());
-                    setTimeElapsed(0);
-                  }}
+                  onClick={async () => { await fetchFullQuiz(); setQuizStarted(true) }}
                 >
                   Start Quiz
                 </Button>
@@ -338,14 +288,8 @@ export default function PlayQuizPage({ params }: PageProps) {
   return (
     <div className="min-h-screen gradient-bg">
       <div className="container mx-auto px-4 py-6">
-        <div className="mb-6">
-          <QuizBreadcrumb 
-            items={[
-              { label: 'Quiz Selection', href: '/quiz' },
-              { label: quiz?.subject || 'Quiz', href: '/quiz' },
-              { label: quiz?.title || 'Quiz', href: `/quiz/play/${quizId}`, active: true }
-            ]} 
-          />
+        <div className="mb-4">
+          <AppBreadcrumb items={[{ label: 'Quiz', href: '/quiz' }, { label: quiz.title }]} />
         </div>
         <div className="max-w-4xl mx-auto">
           {/* Header Bar */}
@@ -354,7 +298,7 @@ export default function PlayQuizPage({ params }: PageProps) {
               <h2 className="font-semibold text-foreground">{quiz.title}</h2>
               <p className="text-xs text-muted-foreground mt-1">Question {currentQuestion + 1} of {questionsLength}</p>
             </div>
-            <QuizTimer
+              <QuizTimer
               totalSeconds={totalSeconds}
               paused={false}
               onTimeUp={() => {

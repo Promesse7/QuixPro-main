@@ -2,14 +2,15 @@
 
 import { useParams } from 'next/navigation';
 import { useChat } from '@/lib/hooks/useChat';
-import ChatWindow from '@/components/chat/ChatWindow';
-import { ChatLayoutProvider } from '@/components/chat/ThreePanelChatLayout';
+import MessageList from '@/components/chat/MessageList';
+import MessageInput from '@/components/chat/MessageInput';
+import TypingIndicator from '@/components/chat/TypingIndicator';
 
 export default function ChatPage() {
   const params = useParams();
   const groupId = params ? (params.groupId as string) : null;
 
-  const { messages, typingUsers, sendMessage, error } = useChat(groupId || '');
+  const { messages, typingUsers, sendMessage, sendTypingNotification, error } = useChat(groupId || '');
 
   const handleSendMessage = (content: string) => {
     if (content.trim()) {
@@ -17,9 +18,8 @@ export default function ChatPage() {
     }
   };
 
-  const handleEmojiSelect = (emoji: string) => {
-    // This will be handled by the ChatWindow component
-    console.log('Emoji selected:', emoji);
+  const handleTypingChange = (isTyping: boolean) => {
+    sendTypingNotification(isTyping);
   };
 
   if (!groupId) {
@@ -31,8 +31,17 @@ export default function ChatPage() {
   }
 
   return (
-    <ChatLayoutProvider onEmojiSelect={handleEmojiSelect}>
-      <ChatWindow groupId={groupId} />
-    </ChatLayoutProvider>
+    <div className="flex flex-col h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
+      <div className="mb-4">
+        <h1 className="text-2xl font-bold">Group Chat</h1>
+      </div>
+      <div className="flex-grow bg-white border rounded-lg p-4 overflow-y-auto">
+        <MessageList messages={messages} />
+      </div>
+      <div className="mt-4">
+        <TypingIndicator typingUsers={typingUsers} />
+        <MessageInput onSendMessage={handleSendMessage} onTyping={handleTypingChange} />
+      </div>
+    </div>
   );
 }

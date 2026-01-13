@@ -2,13 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { getCurrentUser } from '@/lib/auth-client'
-import { UserBadges } from '@/components/badges/UserBadges'
-import { Loader2, ArrowLeft, Trophy, Star } from 'lucide-react'
+import { getCurrentUser } from '@/lib/auth'
+import { BadgeShowcase } from '@/components/gamification/BadgeShowcase' // Corrected: Named import
+import { Loader2, ArrowLeft } from 'lucide-react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 
 export default function BadgesPage() {
   const router = useRouter()
@@ -28,16 +27,16 @@ export default function BadgesPage() {
   }, [router])
 
   useEffect(() => {
-    if (user?.id) {
+    if (user?._id) {
       const fetchBadges = async () => {
         try {
           setLoading(true)
-          const response = await fetch(`/api/badges/${user.id}`)
+          const response = await fetch(`/api/badges?userId=${user._id}`)
           if (!response.ok) {
             throw new Error('Failed to fetch your badge collection.')
           }
           const data = await response.json()
-          setBadges(data.badges || [])
+          setBadges(data.badges)
         } catch (err: any) {
           setError(err.message)
         } finally {
@@ -51,7 +50,7 @@ export default function BadgesPage() {
     }
   }, [user])
 
-  const earnedCount = badges.length
+  const earnedCount = badges.filter(b => b.isEarned).length
 
   const renderContent = () => {
     if (loading) {
@@ -84,49 +83,7 @@ export default function BadgesPage() {
         )
     }
 
-    return (
-      <div className="space-y-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <Trophy className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold">{badges.length}</div>
-                <div className="text-sm text-muted-foreground">Badges Earned</div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <Star className="h-8 w-8 text-purple-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold">
-                  {badges.reduce((sum, badge) => sum + badge.points, 0)}
-                </div>
-                <div className="text-sm text-muted-foreground">Total XP</div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <div className="h-8 w-8 mx-auto mb-2">🏆</div>
-                <div className="text-2xl font-bold">
-                  {badges.filter(b => b.rarity === 'rare' || b.rarity === 'epic' || b.rarity === 'legendary').length}
-                </div>
-                <div className="text-sm text-muted-foreground">Rare+ Badges</div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* All Badges */}
-        <UserBadges showAll={true} />
-      </div>
-    )
+    return <BadgeShowcase badges={badges} earnedCount={earnedCount} />
   }
 
   return (
@@ -148,7 +105,7 @@ export default function BadgesPage() {
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Your Badge Collection</h1>
         {!loading && !error && user && (
             <p className="mt-4 text-lg text-muted-foreground">
-            You've earned <span className="font-bold text-primary">{badges.length}</span> badges. Keep up the great work!
+            You've earned <span className="font-bold text-primary">{earnedCount}</span> out of {badges.length} possible badges. Keep up the great work!
             </p>
         )}
       </div>

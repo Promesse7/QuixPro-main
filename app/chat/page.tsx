@@ -8,7 +8,7 @@ import { motion } from 'framer-motion'
 
 export default function ChatIndexPage() {
   return (
-    <div className="flex-1 h-full flex flex-col items-center justify-center p-6 md:p-12 bg-black via-muted/20 to-primary/5 relative overflow-hidden">
+    <div className="flex-1 h-full flex flex-col items-center justify-center p-6 md:p-12 bg-gradient-to-br from-background via-muted/20 to-primary/5 relative overflow-hidden">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 -left-32 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse" />

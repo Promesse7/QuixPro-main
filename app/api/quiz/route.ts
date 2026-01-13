@@ -24,7 +24,6 @@ export async function GET(request: NextRequest) {
     const levelId = searchParams.get("levelId");
     const course = searchParams.get("course");
     const courseId = searchParams.get("courseId");
-    const limit = parseInt(searchParams.get("limit") || "0");
 
     const db = await getDatabase();
     const collection = db.collection("quizzes");
@@ -66,25 +65,10 @@ export async function GET(request: NextRequest) {
       query.difficulty = { $regex: `^${difficulty}$`, $options: 'i' };
     }
 
-    const pipeline: any[] = [
-      { $match: query },
-      {
-        $lookup: {
-          from: "units",
-          localField: "unitId",
-          foreignField: "_id",
-          as: "unit"
-        }
-      },
-      { $unwind: { path: "$unit", preserveNullAndEmptyArrays: true } },
-      { $sort: { createdAt: -1 } }
-    ];
-
-    if (!Number.isNaN(limit) && limit > 0) {
-      pipeline.push({ $limit: limit });
-    }
-
-    const quizzes = await collection.aggregate(pipeline).toArray();
+    const quizzes = await collection
+      .find(query)
+      .sort({ createdAt: -1 })
+      .toArray();
 
     return NextResponse.json({ quizzes });
   } catch (error) {
