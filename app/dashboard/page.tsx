@@ -60,7 +60,7 @@ export default function Ultimate2025Dashboard() {
           setLoading(false)
           return
         }
-
+ 
         // Only try API if we have a user
         try {
           const response = await fetch("/api/dashboard-data")
@@ -96,7 +96,7 @@ export default function Ultimate2025Dashboard() {
 
     fetchData()
   }, [])
-
+ 
   // Fallback data function
   const getFallbackData = () => ({
     progressStats: {
