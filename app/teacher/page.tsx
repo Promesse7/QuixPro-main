@@ -10,6 +10,7 @@ import { TeacherStats } from "@/components/teacher/teacher-stats"
 import { QuizManagement } from "@/components/teacher/quiz-management"
 import { StudentAnalytics } from "@/components/teacher/student-analytics"
 import { ClassOverview } from "@/components/teacher/class-overview"
+import { QuickNavigation } from "@/components/navigation/quick-navigation"
 import { getCurrentUser } from "@/lib/auth"
 import { getBaseUrl } from "@/lib/getBaseUrl"
 
@@ -71,6 +72,8 @@ export default function TeacherDashboard() {
   const [quizzes, setQuizzes] = useState<QuizSummary[]>([])
   const [students, setStudents] = useState<StudentSummary[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
 
   // Auth guard and basic teacher info from client auth
   useEffect(() => {
@@ -102,15 +105,120 @@ export default function TeacherDashboard() {
     })
   }, [router])
 
-  // Fetch real data for teacher dashboard & students on board
+  // Refresh data function
+  const refreshData = async () => {
+    if (!teacher) return
+    setError(null)
+    setLoading(true)
+    try {
+      // 1) Fetch full teacher record (for school, etc.)
+      // 2) Fetch teacher analytics
+      // 3) Fetch students 
+      // 4) Fetch teacher's quizzes
+      const [teacherRes, analyticsRes, studentsRes, quizzesRes] = await Promise.all([
+        fetch(`${baseUrl}/api/user?userId=${encodeURIComponent(teacher.id)}`),
+        fetch(`${baseUrl}/api/teacher/analytics?teacherId=${encodeURIComponent(teacher.id)}`),
+        fetch(`${baseUrl}/api/teacher/students?teacherId=${encodeURIComponent(teacher.id)}`),
+        fetch(`${baseUrl}/api/teacher/quizzes?teacherId=${encodeURIComponent(teacher.id)}`),
+      ])
+
+      if (teacherRes.ok) {
+        const data = await teacherRes.json()
+        const t = data.user as any
+        setTeacher((prev) =>
+          prev
+            ? {
+                ...prev,
+                school: t?.school || prev.school,
+                subject: prev.subject || t?.level || 'Teacher',
+              }
+            : prev,
+        )
+      }
+
+      // Fetch real analytics
+      if (analyticsRes.ok) {
+        const data = await analyticsRes.json()
+        setStats(data.stats)
+      }
+
+      let studentSummaries: StudentSummary[] = []
+      if (studentsRes.ok) {
+        const data = await studentsRes.json()
+        const allStudents = (data.students || []) as any[]
+        studentSummaries = allStudents.map((u) => ({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          level: u.level,
+          averageScore: u.averageScore ?? 0,
+        }))
+        setStudents(studentSummaries)
+      }
+
+      if (quizzesRes.ok) {
+        const data = await quizzesRes.json()
+        const items = (data.quizzes || []) as any[]
+        const teacherQuizzes: QuizSummary[] = items.map((q) => ({
+          id: q.id,
+          title: q.title,
+          subject: q.subject,
+          level: q.level,
+          students: q.students,
+          avgScore: q.avgScore,
+          created: q.created,
+          status: q.status,
+        }))
+        setQuizzes(teacherQuizzes)
+      }
+
+      // Derive pseudo class/group overview from student levels
+      const classMap = new Map<string, ClassData>()
+      for (const s of studentSummaries) {
+        const lvl = s.level || 'Unknown'
+        if (!classMap.has(lvl)) {
+          classMap.set(lvl, {
+            id: lvl,
+            name: `${lvl} Class`,
+            students: 0,
+            level: lvl,
+            subject: teacher?.subject || 'General',
+            avgScore: 0,
+            activeQuizzes: 0,
+          })
+        }
+        const entry = classMap.get(lvl)!
+        entry.students += 1
+        entry.avgScore += s.averageScore || 0
+      }
+      const classList: ClassData[] = Array.from(classMap.values()).map((c) => ({
+        ...c,
+        avgScore: c.students > 0 ? Math.round(c.avgScore / c.students) : 0,
+      }))
+      setClasses(classList)
+      setLastRefresh(new Date())
+    } catch (err) {
+      setError("Failed to refresh data")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Fetch data when teacher is available
   useEffect(() => {
+    if (!teacher) return
+    
     const fetchData = async () => {
       if (!teacher) return
       setLoading(true)
       try {
         // 1) Fetch full teacher record (for school, etc.)
-        const [teacherRes, studentsRes, quizzesRes] = await Promise.all([
+        // 2) Fetch teacher analytics
+        // 3) Fetch students 
+        // 4) Fetch teacher's quizzes
+        const [teacherRes, analyticsRes, studentsRes, quizzesRes] = await Promise.all([
           fetch(`${baseUrl}/api/user?userId=${encodeURIComponent(teacher.id)}`),
+          fetch(`${baseUrl}/api/teacher/analytics?teacherId=${encodeURIComponent(teacher.id)}`),
           fetch(`${baseUrl}/api/teacher/students?teacherId=${encodeURIComponent(teacher.id)}`),
           fetch(`${baseUrl}/api/teacher/quizzes?teacherId=${encodeURIComponent(teacher.id)}`),
         ])
@@ -127,6 +235,12 @@ export default function TeacherDashboard() {
                 }
               : prev,
           )
+        }
+
+        // Fetch real analytics
+        if (analyticsRes.ok) {
+          const data = await analyticsRes.json()
+          setStats(data.stats)
         }
 
         let studentSummaries: StudentSummary[] = []
@@ -159,27 +273,29 @@ export default function TeacherDashboard() {
           setQuizzes(teacherQuizzes)
         }
 
-        // Aggregate basic stats for the teacher view
-        const totalStudents = studentSummaries.length
-        const activeClassesSet = new Set(studentSummaries.map((s) => s.level).filter(Boolean) as string[])
-        const activeClasses = activeClassesSet.size
-        const averageScore =
-          studentSummaries.length > 0
-            ? Math.round(
-                studentSummaries.reduce((sum, s) => sum + (s.averageScore || 0), 0) /
-                  studentSummaries.length,
-              )
-            : 0
+        // If analytics failed, calculate basic stats
+        if (!analyticsRes.ok && stats === null) {
+          const totalStudents = studentSummaries.length
+          const activeClassesSet = new Set(studentSummaries.map((s) => s.level).filter(Boolean) as string[])
+          const activeClasses = activeClassesSet.size
+          const averageScore =
+            studentSummaries.length > 0
+              ? Math.round(
+                  studentSummaries.reduce((sum, s) => sum + (s.averageScore || 0), 0) /
+                    studentSummaries.length,
+                )
+              : 0
 
-        const teacherStats: TeacherStatsState = {
-          totalQuizzes: 0, // TODO: wire to teacher-specific quizzes endpoint
-          totalStudents,
-          activeClasses,
-          averageScore,
-          totalAttempts: 0,
-          thisWeekAttempts: 0,
+          const teacherStats: TeacherStatsState = {
+            totalQuizzes: quizzes.length,
+            totalStudents,
+            activeClasses,
+            averageScore,
+            totalAttempts: 0,
+            thisWeekAttempts: 0,
+          }
+          setStats(teacherStats)
         }
-        setStats(teacherStats)
 
         // Derive pseudo class/group overview from student levels
         const classMap = new Map<string, ClassData>()
@@ -191,7 +307,7 @@ export default function TeacherDashboard() {
               name: `${lvl} Class`,
               students: 0,
               level: lvl,
-              subject: teacher.subject || 'General',
+              subject: teacher?.subject || 'General',
               avgScore: 0,
               activeQuizzes: 0,
             })
@@ -205,11 +321,10 @@ export default function TeacherDashboard() {
           avgScore: c.students > 0 ? Math.round(c.avgScore / c.students) : 0,
         }))
         setClasses(classList)
-
-        // Placeholder: quizzes can be wired to a teacher-specific quizzes API later
-        setQuizzes([])
-      } catch (err) {
-        console.error('Failed to load teacher dashboard data', err)
+        setLastRefresh(new Date())
+      } catch (error) {
+        console.error("Error fetching teacher data:", error)
+        setError("Failed to load dashboard data")
       } finally {
         setLoading(false)
       }
@@ -217,6 +332,17 @@ export default function TeacherDashboard() {
 
     fetchData()
   }, [teacher, baseUrl])
+
+  // Auto-refresh every 5 minutes
+  useEffect(() => {
+    if (!teacher) return
+    
+    const interval = setInterval(() => {
+      refreshData()
+    }, 5 * 60 * 1000) // 5 minutes
+
+    return () => clearInterval(interval)
+  }, [teacher])
 
   return (
     <div className="min-h-screen gradient-bg">
@@ -330,20 +456,21 @@ export default function TeacherDashboard() {
           {/* Stats Overview */}
           {stats && <TeacherStats stats={stats} />}
 
-          <div className="grid lg:grid-cols-3 gap-8 mt-8">
+          <div className="grid lg:grid-cols-4 gap-8 mt-8">
+            {/* Sidebar with Quick Navigation */}
+            <div className="lg:col-span-1">
+              <QuickNavigation />
+            </div>
+
             {/* Main Content */}
-            <div className="lg:col-span-2 space-y-8">
+            <div className="lg:col-span-3 space-y-8">
               {/* Quiz Management */}
               <QuizManagement quizzes={quizzes} />
 
               {/* Student Analytics */}
               <StudentAnalytics students={students} />
             </div>
-
-            {/* Sidebar */}
-            <div className="space-y-6">
-              {/* Class Overview */}
-              <ClassOverview classes={classes} />
+          </div>
 
               {/* Recent Activity */}
               <Card className="glass-effect border-border/50">
@@ -410,7 +537,5 @@ export default function TeacherDashboard() {
             </div>
           </div>
         </div>
-      </div>
-    </div>
   )
 }

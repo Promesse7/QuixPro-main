@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Trophy, Medal, Award, Crown, Star, TrendingUp, Loader2 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { getCurrentUser } from "@/lib/auth"
 import { getBaseUrl } from "@/lib/getBaseUrl"
 
@@ -73,7 +74,7 @@ export function Leaderboard() {
 
         if (levelResponse.ok) {
           // Transform data to match component's expected format
-          const formattedLevelData = levelData.leaderboard.map((user, index) => ({
+          const formattedLevelData = levelData.leaderboard.map((user: any, index: number) => ({
             id: user.id,
             name: user.name,
             level: user.level,
@@ -89,7 +90,7 @@ export function Leaderboard() {
 
         if (overallResponse.ok) {
           // Transform data to match component's expected format
-          const formattedOverallData = overallDataResult.leaderboard.map((user, index) => ({
+          const formattedOverallData = overallDataResult.leaderboard.map((user: any, index: number) => ({
             id: user.id,
             name: user.name,
             level: user.level,
@@ -120,7 +121,7 @@ export function Leaderboard() {
 
   if (loading) {
     return (
-      <Card className="glass-effect border-border/50">
+      <Card className="border-border/50">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2 glow-text">
             <Trophy className="h-5 w-5" />
@@ -136,7 +137,7 @@ export function Leaderboard() {
   }
 
   return (
-    <Card className="glass-effect border-border/50">
+    <Card className="border-border/50 shadow-xl">
       <CardHeader>
         <CardTitle className="flex items-center space-x-2 glow-text">
           <Trophy className="h-5 w-5" />
@@ -146,14 +147,8 @@ export function Leaderboard() {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="level" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 glass-effect">
-            <TabsTrigger value="level" className="text-xs">
-              My Level
-            </TabsTrigger>
-            <TabsTrigger value="exam" className="text-xs">
-              By Exam
-            </TabsTrigger>
-            <TabsTrigger value="overall" className="text-xs">
+          <TabsList className="grid w-full grid-cols-3 bg-muted/30 p-1 rounded-2xl">
+            <TabsTrigger value="overall" className="text-xs rounded-xl">
               Overall
             </TabsTrigger>
           </TabsList>
@@ -161,7 +156,7 @@ export function Leaderboard() {
           <TabsContent value="level" className="space-y-4">
             <div className="flex items-center justify-between">
               <Select value={selectedLevel} onValueChange={setSelectedLevel}>
-                <SelectTrigger className="w-32 glass-effect">
+                <SelectTrigger className="w-32 rounded-xl bg-muted/30">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -184,16 +179,82 @@ export function Leaderboard() {
               </Badge>
             </div>
 
-            <div className="space-y-3">
-              {leaderboardData.length > 0 ? (
-                leaderboardData.map((student) => (
+            <ScrollArea className="h-[400px] pr-4">
+              <div className="space-y-3">
+                {leaderboardData.length > 0 ? (
+                  leaderboardData.map((student) => (
+                    <div
+                      key={student.id}
+                      className={`flex items-center space-x-3 p-3 rounded-2xl transition-all ${student.id === currentUser?.id
+                        ? "bg-primary/20 border border-primary/30 glow-effect"
+                        : "bg-muted/50 hover:bg-muted/80"
+                        }`}
+                    >
+                      <div className="flex items-center space-x-2">
+                        {getRankIcon(student.rank)}
+                        <span className="font-bold text-sm w-6">#{student.rank}</span>
+                      </div>
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={student.avatar || "/placeholder.svg"} />
+                        <AvatarFallback>
+                          {student.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{student.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {student.completedQuizzes} quizzes • {student.averageScore}% avg
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-sm">{student.totalPoints}</p>
+                        <div className="flex items-center space-x-1">{getTrendIcon("up")}</div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">No students found for {selectedLevel}</div>
+                )}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+
+          <TabsContent value="exam" className="space-y-4">
+            <Select value={selectedExam} onValueChange={setSelectedExam}>
+              <SelectTrigger className="rounded-xl bg-muted/30">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Mathematics S3 Mid-Term">Mathematics S3 Mid-Term</SelectItem>
+                <SelectItem value="English S3 Final">English S3 Final</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="text-center py-8 text-muted-foreground">Exam-specific rankings coming soon!</div>
+          </TabsContent>
+
+          <TabsContent value="overall" className="space-y-4">
+            <div className="text-center p-4 bg-muted/30 rounded-2xl">
+              <div className="flex items-center justify-center space-x-2 mb-2">
+                <Star className="h-5 w-5 text-primary" />
+                <span className="font-bold">Your Overall Rank</span>
+              </div>
+              <div className="text-2xl font-bold glow-text">#{userOverallRank?.rank || "N/A"}</div>
+              <p className="text-sm text-muted-foreground">Out of all students</p>
+            </div>
+
+            <ScrollArea className="h-[400px] pr-4">
+              <div className="space-y-3">
+                {overallData.slice(0, 10).map((student) => (
                   <div
                     key={student.id}
-                    className={`flex items-center space-x-3 p-3 rounded-lg transition-all ${
-                      student.id === currentUser?.id
-                        ? "bg-primary/20 border border-primary/30 glow-effect"
-                        : "bg-accent/10 hover:bg-accent/20"
-                    }`}
+                    className={`flex items-center space-x-3 p-3 rounded-2xl transition-all ${student.id === currentUser?.id
+                      ? "bg-primary/20 border border-primary/30 glow-effect"
+                      : "bg-muted/50 hover:bg-muted/80"
+                      }`}
                   >
                     <div className="flex items-center space-x-2">
                       {getRankIcon(student.rank)}
@@ -210,82 +271,18 @@ export function Leaderboard() {
                     </Avatar>
                     <div className="flex-1">
                       <p className="font-medium text-sm">{student.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {student.completedQuizzes} quizzes • {student.averageScore}% avg
-                      </p>
+                      <Badge variant="secondary" className="text-xs">
+                        {student.level}
+                      </Badge>
                     </div>
                     <div className="text-right">
                       <p className="font-bold text-sm">{student.totalPoints}</p>
                       <div className="flex items-center space-x-1">{getTrendIcon("up")}</div>
                     </div>
                   </div>
-                ))
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">No students found for {selectedLevel}</div>
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="exam" className="space-y-4">
-            <Select value={selectedExam} onValueChange={setSelectedExam}>
-              <SelectTrigger className="glass-effect">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Mathematics S3 Mid-Term">Mathematics S3 Mid-Term</SelectItem>
-                <SelectItem value="English S3 Final">English S3 Final</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <div className="text-center py-8 text-muted-foreground">Exam-specific rankings coming soon!</div>
-          </TabsContent>
-
-          <TabsContent value="overall" className="space-y-4">
-            <div className="text-center p-4 bg-accent/10 rounded-lg">
-              <div className="flex items-center justify-center space-x-2 mb-2">
-                <Star className="h-5 w-5 text-primary" />
-                <span className="font-bold">Your Overall Rank</span>
+                ))}
               </div>
-              <div className="text-2xl font-bold glow-text">#{userOverallRank?.rank || "N/A"}</div>
-              <p className="text-sm text-muted-foreground">Out of all students</p>
-            </div>
-
-            <div className="space-y-3">
-              {overallData.slice(0, 10).map((student) => (
-                <div
-                  key={student.id}
-                  className={`flex items-center space-x-3 p-3 rounded-lg transition-all ${
-                    student.id === currentUser?.id
-                      ? "bg-primary/20 border border-primary/30 glow-effect"
-                      : "bg-accent/10 hover:bg-accent/20"
-                  }`}
-                >
-                  <div className="flex items-center space-x-2">
-                    {getRankIcon(student.rank)}
-                    <span className="font-bold text-sm w-6">#{student.rank}</span>
-                  </div>
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={student.avatar || "/placeholder.svg"} />
-                    <AvatarFallback>
-                      {student.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <p className="font-medium text-sm">{student.name}</p>
-                    <Badge variant="secondary" className="text-xs">
-                      {student.level}
-                    </Badge>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-sm">{student.totalPoints}</p>
-                    <div className="flex items-center space-x-1">{getTrendIcon("up")}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            </ScrollArea>
           </TabsContent>
         </Tabs>
       </CardContent>

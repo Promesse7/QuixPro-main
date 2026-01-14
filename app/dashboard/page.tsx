@@ -1,334 +1,393 @@
-"use client";
+// app/dashboard/page.tsx
+"use client"
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { getCurrentUser } from "@/lib/auth"
-
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
+import { useState, useEffect, useRef } from "react"
+import Link from "next/link"
 import {
-  Mic,
-  Target,
-  Zap,
-  Play,
-  Trophy,
-  Star,
-  Award,
   Users,
-  FileText,
-  Briefcase,
+  Target,
+  Star,
+  BookOpen,
   MessageSquare,
-} from "lucide-react";
+  Settings,
+  Activity,
+  Brain,
+  Bell,
+  Menu,
+  BarChart3,
+  Calendar,
+  Home,
+  Globe,
+  LogOut,
+} from "lucide-react"
+import { getCurrentUser } from "@/lib/auth"
+import { Button } from "@/components/ui/button"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { cn } from "@/lib/utils"
+import { usePathname } from "next/navigation"
+import { SocialDashboardLayout } from "./components/SocialDashboardLayout"
 
-import { DashboardHeader } from "@/components/dashboard/dashboard-header";
-import { AppBreadcrumb } from "@/components/app/AppBreadcrumb";
-import { QuickStartCTA } from "@/components/app/QuickStartCTA";
-import { QuickActions } from "@/components/dashboard/quick-actions";
-import { ProgressStats } from "@/components/dashboard/progress-stats";
-import { RecentActivity } from "@/components/dashboard/recent-activity";
-import { RecommendedQuizzes } from "@/components/dashboard/recommended-quizzes";
-import { Leaderboard } from "@/components/dashboard/leaderboard";
+export default function Ultimate2025Dashboard() {
+  const [activeView, setActiveView] = useState<string>("dashboard")
+  const [mounted, setMounted] = useState<boolean>(false)
+  const [hoveredCard, setHoveredCard] = useState<number | null>(null)
+  const [analyticsVisible, setAnalyticsVisible] = useState<boolean>(false)
+  const [loading, setLoading] = useState<boolean>(true)
+  const [dashboardData, setDashboardData] = useState<any>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [user, setUser] = useState<any>(null)
 
-import { CourseProgressCard } from "@/components/progress/CourseProgressCard";
-import { PageTransition } from "@/components/ui/page-transition";
-import { BadgeShowcase } from "@/components/gamification/BadgeShowcase";
-import { XPProgressBar } from "@/components/gamification/XPProgressBar";
-import  { getBaseUrl }  from "@/lib/getBaseUrl"; // optional helper for API base URL
+  const analyticsRef = useRef<HTMLDivElement>(null)
+  const pathname = usePathname()
 
-type DashboardUser = { id: string; name: string; email: string; role: string; level?: string; avatar?: string }
-
-export default function StudentDashboard() {
-  const router = useRouter()
-  const [user, setUser] = useState<DashboardUser | null>(null)
-  const [stats, setStats] = useState({ totalQuizzes: 0, completedQuizzes: 0, averageScore: 0, totalPoints: 0, certificates: 0 })
-  const [userBadges, setUserBadges] = useState<any[]>([])
-  const [earnedCount, setEarnedCount] = useState(0)
-  const [loadingProgress, setLoadingProgress] = useState(true)
-  const [isVoiceActive, setIsVoiceActive] = useState(false)
-  const [activities, setActivities] = useState<any[]>([])
-  const [goals, setGoals] = useState<any[]>([])
-
-  const baseUrl = getBaseUrl ? getBaseUrl() : ""
-
+  // Fetch real data from database
   useEffect(() => {
-    const u = getCurrentUser()
-    if (!u) {
-      router.push('/auth')
-      return
-    }
-    if (u.role === 'admin') { router.push('/admin'); return }
-    if (u.role === 'teacher') { router.push('/teacher'); return }
-    setUser(u)
-  }, [router])
-
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (!user) return
+    const fetchData = async () => {
       try {
-        // Overview + supporting endpoints
-        const [overviewRes, attemptsRes, badgesRes, certsRes] = await Promise.all([
-          fetch(`${baseUrl}/api/user/overview?userId=${encodeURIComponent(user.id)}`),
-          fetch(`${baseUrl}/api/quiz-attempts?userId=${encodeURIComponent(user.id)}`),
-          fetch(`${baseUrl}/api/badges?userId=${encodeURIComponent(user.id)}`),
-          fetch(`${baseUrl}/api/certificates?userId=${encodeURIComponent(user.id)}`)
-        ])
+        setLoading(true)
+        setError(null)
 
-        const overview = overviewRes.ok ? await overviewRes.json() : {}
-        const attemptsJson = attemptsRes.ok ? await attemptsRes.json() : { attempts: [] }
-        const badgesJson = badgesRes.ok ? await badgesRes.json() : { badges: [] }
-        const certsJson = certsRes.ok ? await certsRes.json() : { certificates: [] }
+        // Get current user first
+        const currentUser = getCurrentUser()
+        setUser(currentUser)
 
-        // Derive stats
-        const attempts = attemptsJson.attempts || []
-        const totalQuizzes = attempts.length
-        const completedQuizzes = attempts.length
-        const averageScore = totalQuizzes > 0 ? Math.round(attempts.reduce((s: number, a: any) => s + (a.percentage || 0), 0) / totalQuizzes) : 0
-        const certificates = (certsJson.certificates || []).length
+        // If no user, use fallback data immediately and don't make API calls
+        if (!currentUser) {
+          console.log("No current user found, using fallback data")
+          setDashboardData(getFallbackData())
+          setLoading(false)
+          return
+        }
+ 
+        // Only try API if we have a user
+        try {
+          const response = await fetch("/api/dashboard-data")
 
-        setStats({
-          totalQuizzes,
-          completedQuizzes,
-          averageScore,
-          totalPoints: overview?.xp ?? 0,
-          certificates,
-          streak: overview?.streak ?? 0
-        })
+          if (!response.ok) {
+            if (response.status === 401) {
+              console.log("User not authenticated, using fallback data")
+              setDashboardData(getFallbackData())
+              setLoading(false)
+              return
+            }
+            if (response.status === 404) {
+              console.log("Dashboard API not found, using fallback data")
+              throw new Error("Dashboard API not available")
+            }
+            throw new Error(`HTTP error! status: ${response.status}`)
+          }
 
-        setActivities(overview?.activities || [])
-        setGoals(overview?.goals || [])
-
-        const badges = badgesJson.badges || []
-        setUserBadges(badges)
-        setEarnedCount(badges.filter((b: any) => b.isEarned).length)
-
-        // Optional: check for new badges based on server logic
-        fetch(`${baseUrl}/api/badges/check`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: user.id }) }).catch(() => {})
-      } catch (err) {
-        console.error("Failed to fetch user data:", err)
+          const data = await response.json()
+          setDashboardData(data)
+        } catch (apiError) {
+          console.error("API call failed, using fallback data:", apiError)
+          setDashboardData(getFallbackData())
+        }
+      } catch (error) {
+        console.error("Error in fetchData:", error)
+        setError((error as Error).message)
+        setDashboardData(getFallbackData())
       } finally {
-        setLoadingProgress(false)
+        setLoading(false)
       }
     }
-    fetchUserData()
-  }, [user, baseUrl])
 
-  const handleVoiceCommand = () => {
-    setIsVoiceActive(!isVoiceActive);
-    if (!isVoiceActive) setTimeout(() => setIsVoiceActive(false), 3000);
-  };
+    fetchData()
+  }, [])
+ 
+  // Fallback data function
+  const getFallbackData = () => ({
+    progressStats: {
+      totalQuizzes: 10,
+      completedQuizzes: 0,
+      averageScore: 0,
+      totalPoints: 0,
+      certificates: 0,
+      streak: 0,
+    },
+    analytics: {
+      weeklyActivity: [],
+      subjectDistribution: [],
+      difficultyBreakdown: [],
+      chatActivity: [],
+    },
+    recommendedQuizzes: [
+      { id: 1, title: "Getting Started Quiz", difficulty: "Easy", time: "10 min", enrolled: 0, completion: 0 },
+      { id: 2, title: "Math Basics", difficulty: "Easy", time: "15 min", enrolled: 0, completion: 0 },
+      { id: 3, title: "Science Introduction", difficulty: "Medium", time: "20 min", enrolled: 0, completion: 0 },
+    ],
+    activities: [
+      {
+        id: 1,
+        type: "welcome",
+        title: "Welcome to Quix! Start your first quiz to see your progress.",
+        time: "Just now",
+        icon: Star,
+        color: "#3b82f6",
+      },
+    ],
+    leaderboard: [{ rank: 1, name: "You", score: 0, avatar: "YU", isUser: true }],
+    achievements: [],
+    socialSignals: {
+      unreadMessages: 0,
+      groupUpdates: 0,
+      newMessages: 0,
+    },
+  })
 
-  return (
-    <div className="min-h-screen gradient-bg">
-      <DashboardHeader user={{ name: user?.name || 'Student', email: user?.email || '', level: user?.level || '-', avatar: user?.avatar || '/student-avatar.png' }} />
+  useEffect(() => {
+    setMounted(true)
 
-      <PageTransition>
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Breadcrumb */}
-          <div className="mb-2">
-            <AppBreadcrumb items={[{ label: "Home" }, { label: "Dashboard" }]} />
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => setAnalyticsVisible(true), 300)
+        }
+      },
+      { threshold: 0.2 },
+    )
+
+    if (analyticsRef.current) {
+      observer.observe(analyticsRef.current)
+    }
+
+    return () => observer.disconnect()
+  }, [])
+
+  // Transform database data to UI format for existing components
+  const getTransformedData = () => {
+    if (!dashboardData) return getFallbackData()
+
+    const { stats, analytics, activities, recommendedQuizzes, leaderboard, achievements, socialSignals } = dashboardData
+
+    return {
+      // Progress stats component format
+      progressStats: {
+        totalQuizzes: stats?.totalQuizzes || 10,
+        completedQuizzes: stats?.completedQuizzes || 0,
+        averageScore: stats?.averageScore || 0,
+        totalPoints: stats?.totalPoints || 0,
+        certificates: stats?.certificates || 0,
+        streak: stats?.streak || 0,
+      },
+      // Analytics component format
+      analytics: analytics || {
+        weeklyActivity: [],
+        subjectDistribution: [],
+        difficultyBreakdown: [],
+        chatActivity: [],
+      },
+      // Recommended quizzes component format (component handles its own data fetching)
+      recommendedQuizzes: recommendedQuizzes || [],
+      // Activity feed component format
+      activities:
+        activities?.map((activity: any) => ({
+          type: activity.type || "general",
+          description: activity.title || activity.description || "Activity",
+          time: activity.time || new Date().toISOString(),
+          link: activity.link,
+        })) || [],
+      // Leaderboard component format (component handles its own data fetching)
+      leaderboard: leaderboard || [],
+      // Achievements component format
+      achievements:
+        achievements?.map((achievement: any) => ({
+          id: achievement.id || "1",
+          title: achievement.title || "Achievement",
+          description: achievement.description || "Description",
+          type: "certificate" as const,
+        })) || [],
+      // Social signals component format
+      socialSignals: socialSignals || {
+        unreadMessages: 0,
+        groupUpdates: 0,
+        newMessages: 0,
+      },
+    }
+  }
+
+  const transformedData = getTransformedData()
+
+  const navigation = [
+    { id: "dashboard", label: "Dashboard", icon: Home, href: "/dashboard" },
+    { id: "courses", label: "Courses", icon: BookOpen, href: "/explore" },
+    { id: "quix-sites", label: "Quix Sites", icon: Globe, href: "/quix-sites" },
+    { id: "quix-chat", label: "Quix Chat", icon: MessageSquare, href: "/chat" },
+    { id: "quix-groups", label: "Quix Groups", icon: Users, href: "/groups" },
+    { id: "quix-insights", label: "Quix Insights", icon: BarChart3, href: "/leaderboard" },
+    { id: "quizzes", label: "Quizzes", icon: Target, href: "/quiz-selection" },
+    { id: "calendar", label: "Calendar", icon: Calendar, href: "/dashboard" },
+    { id: "settings", label: "Settings", icon: Settings, href: "/profile" },
+  ]
+
+  const SidebarContent = () => (
+    <div className="flex flex-col h-full bg-card/50 backdrop-blur-xl border-r border-border">
+      <div className="p-6">
+        <Link href="/" className="flex items-center gap-3 mb-8 hover:opacity-80 transition-opacity">
+          <div className="w-12 h-12 rounded-[22px] bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-lg shadow-primary/20 transition-transform duration-300 group-hover:rotate-6">
+            <Brain className="w-7 h-7 text-white" />
           </div>
-
-          {/* Welcome Section */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold glow-text mb-2">
-                  Welcome back, {user?.name?.split(" ")[0] || 'Student'}!
-                </h1>
-                <p className="text-muted-foreground">
-                  Ready to continue your learning journey?
-                </p>
-              </div>
-              <Button
-                onClick={handleVoiceCommand}
-                className={`glow-effect ${isVoiceActive ? "voice-wave" : ""}`}
-                size="lg"
-              >
-                <Mic className="h-5 w-5 mr-2" />
-                {isVoiceActive ? "Listening..." : "Voice Command"}
-              </Button>
-            </div>
-            <div className="mt-3">
-              <Button asChild variant="outline" size="sm">
-                <Link href="/profile">View Profile</Link>
-              </Button>
-            </div>
+          <div>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
+              Quix
+            </h1>
+            <p className="text-xs text-muted-foreground font-medium">Learning Dashboard</p>
           </div>
+        </Link>
 
-          {/* Quick Start */}
-          <QuickStartCTA />
+        <ScrollArea className="flex-1 -mx-6 px-6">
+          <nav className="space-y-1.5 pb-6">
+            {navigation.map((item) => {
+              const isActive = pathname === item.href
+              return (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 font-medium group",
+                    isActive
+                      ? "bg-primary/10 text-primary border border-primary/20 shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                  )}
+                >
+                  <item.icon
+                    className={cn(
+                      "w-5 h-5 transition-colors",
+                      isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground",
+                    )}
+                  />
+                  <span>{item.label}</span>
+                  {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
+                </Link>
+              )
+            })}
+          </nav>
+        </ScrollArea>
+      </div>
 
-          {/* Quick Actions */}
-          <QuickActions />
-
-          {/* Progress + Gamification */}
-          {loadingProgress ? (
-            <div className="space-y-4">
-              <div className="animate-pulse grid md:grid-cols-2 gap-4">
-                <div className="h-24 rounded-lg bg-muted/30" />
-                <div className="h-24 rounded-lg bg-muted/30" />
+      <div className="mt-auto p-6 border-t border-border/50">
+        <div className="p-4 rounded-3xl bg-gradient-to-br from-card to-muted border border-border/50 shadow-inner group/user relative overflow-hidden">
+          <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover/user:opacity-100 transition-opacity duration-300" />
+          <div className="flex items-center gap-3 relative z-10">
+            <Avatar className="h-10 w-10 border-2 border-background shadow-md">
+              <AvatarImage src={user?.avatar || "/placeholder.svg"} />
+              <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                {user?.name?.charAt(0) || "U"}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-sm truncate">{user?.name || "User"}</p>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                <p className="text-xs text-muted-foreground">Level {user?.level || 1}</p>
               </div>
-              <div className="animate-pulse h-20 rounded-lg bg-muted/30" />
-              <div className="animate-pulse h-28 rounded-lg bg-muted/30" />
             </div>
-          ) : (
-            <>
-              <ProgressStats stats={stats} />
-              <XPProgressBar currentXP={stats.totalPoints} currentLevel={Math.max(1, Math.floor(stats.totalPoints / 1000))} />
-              <BadgeShowcase badges={userBadges} earnedCount={earnedCount} />
-            </>
-          )}
-
-          <div className="grid lg:grid-cols-3 gap-8 mt-8">
-            {/* Left Column */}
-            <div className="lg:col-span-2 space-y-8">
-              {/* Goals Section */}
-              <Card className="glass-effect border-border/50">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2 glow-text">
-                    <Target className="h-5 w-5" />
-                    <span>Current Goals</span>
-                  </CardTitle>
-                  <CardDescription>Track your learning objectives</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {goals.slice(0,5).map((goal:any) => (
-                    <div key={goal.id} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium">{goal.title}</h4>
-                        <span className="text-sm text-muted-foreground">{goal.current}/{goal.target}</span>
-                      </div>
-                      <Progress value={goal.progress} className="h-2 glow-effect" />
-                    </div>
-                  ))}
-                  {goals.length === 0 && (
-                    <div className="text-sm text-muted-foreground">No active goals yet.</div>
-                  )}
-                  {goals.length > 5 && (
-                    <div className="pt-2"><Link className="text-xs text-primary hover:underline" href="/progress">View all</Link></div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Explore Features */}
-              <Card className="glass-effect border-border/50">
-                <CardHeader>
-                  <CardTitle className="glow-text">Explore New Features</CardTitle>
-                  <CardDescription>Enhance your learning experience</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    {[
-                      {
-                        href: "/peer-tutoring",
-                        icon: <Users className="h-8 w-8 mb-2 text-primary" />,
-                        title: "Peer Tutoring",
-                        desc: "Connect with student tutors",
-                      },
-                      {
-                        href: "/exam-simulation",
-                        icon: <FileText className="h-8 w-8 mb-2 text-primary" />,
-                        title: "Exam Simulation",
-                        desc: "Practice with mock exams",
-                      },
-                      {
-                        href: "/career-explorer",
-                        icon: <Briefcase className="h-8 w-8 mb-2 text-primary" />,
-                        title: "Career Explorer",
-                        desc: "Discover career paths",
-                      },
-                      {
-                        href: "/feedback",
-                        icon: <MessageSquare className="h-8 w-8 mb-2 text-primary" />,
-                        title: "Give Feedback",
-                        desc: "Help improve content",
-                      },
-                    ].map((feature) => (
-                      <Link key={feature.href} href={feature.href}>
-                        <div className="feature-card p-4 cursor-pointer hover:bg-accent/10 rounded-xl">
-                          {feature.icon}
-                          <h4 className="font-semibold mb-1">{feature.title}</h4>
-                          <p className="text-sm text-muted-foreground">{feature.desc}</p>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Recommended Quizzes + Leaderboard */}
-              <RecommendedQuizzes />
-              <Leaderboard />
-            </div>
-
-            {/* Right Column */}
-            <div className="space-y-6">
-              <RecentActivity activities={activities} maxItems={5} viewAllHref="/progress" />
-
-              {/* Achievements */}
-              <Card className="glass-effect border-border/50">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2 glow-text">
-                    <Trophy className="h-5 w-5" />
-                    <span>Recent Achievements</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {[
-                    { icon: <Star className="h-5 w-5 text-white" />, title: "Quiz Master", desc: "Completed 20+ quizzes" },
-                    { icon: <Award className="h-5 w-5 text-white" />, title: "High Achiever", desc: "85%+ average score" },
-                    { icon: <Zap className="h-5 w-5 text-white" />, title: "Streak Champion", desc: "7-day learning streak" },
-                  ].map((achv, i) => (
-                    <div key={i} className="flex items-center space-x-3 p-3 bg-accent/20 rounded-lg">
-                      <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
-                        {achv.icon}
-                      </div>
-                      <div>
-                        <p className="font-medium text-sm">{achv.title}</p>
-                        <p className="text-xs text-muted-foreground">{achv.desc}</p>
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              {/* Quick Stats */}
-              <Card className="glass-effect border-border/50">
-                <CardHeader>
-                  <CardTitle className="glow-text">Quick Stats</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">This Week</span>
-                    <span className="font-medium">5 quizzes</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Best Subject</span>
-                    <Badge variant="secondary">Mathematics</Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Time Spent</span>
-                    <span className="font-medium">12h 30m</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Level Rank</span>
-                    <span className="font-medium text-primary glow-text">#1</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Overall Rank</span>
-                    <span className="font-medium text-primary glow-text">#23</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
           </div>
         </div>
       </div>
-      </PageTransition>
     </div>
-  );
+  )
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-primary/30 rounded-full"></div>
+            <div className="absolute top-0 w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <p className="text-muted-foreground animate-pulse">Loading experience...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="max-w-md w-full text-center space-y-4">
+          <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto">
+            <Activity className="w-8 h-8 text-destructive" />
+          </div>
+          <h2 className="text-2xl font-bold">Something went wrong</h2>
+          <p className="text-muted-foreground">{error}</p>
+          <Button onClick={() => window.location.reload()}>Try Again</Button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
+      {/* Mobile Header */}
+      <div className="lg:hidden flex items-center justify-between p-4 border-b border-border bg-background/80 backdrop-blur-md sticky top-0 z-50">
+        <div className="flex items-center gap-3">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="w-5 h-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="p-0 w-80">
+              <SidebarContent />
+            </SheetContent>
+          </Sheet>
+          <Link href="/" className="flex items-center gap-2">
+            <Brain className="w-6 h-6 text-primary" />
+            <span className="font-bold text-lg">Quix</span>
+          </Link>
+        </div>
+        <Button variant="ghost" size="icon" className="relative">
+          <Bell className="w-5 h-5" />
+          <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+        </Button>
+      </div>
+
+      {/* Desktop Sidebar (hidden on mobile) */}
+      <aside className="hidden lg:block fixed left-0 top-0 h-full w-72 z-40">
+        <SidebarContent />
+      </aside>
+
+      {/* Main Content */}
+      {!loading && !error && <SocialDashboardLayout dashboardData={transformedData} user={user} />}
+
+      {/* Loading state */}
+      {loading && (
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="relative">
+              <div className="w-16 h-16 border-4 border-primary/30 rounded-full"></div>
+              <div className="absolute top-0 w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            </div>
+            <p className="text-muted-foreground animate-pulse">Loading experience...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error state */}
+      {error && (
+        <div className="min-h-screen bg-background flex items-center justify-center p-4">
+          <div className="max-w-md w-full text-center space-y-4">
+            <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto">
+              <Activity className="w-8 h-8 text-destructive" />
+            </div>
+            <h2 className="text-2xl font-bold">Something went wrong</h2>
+            <p className="text-muted-foreground">{error}</p>
+            <Button onClick={() => window.location.reload()}>Try Again</Button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }

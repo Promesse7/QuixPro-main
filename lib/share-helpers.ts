@@ -60,5 +60,3 @@ export async function createBadgeShare(userId: string, badge: any) {
 
 	return await response.json()
 }
-
-

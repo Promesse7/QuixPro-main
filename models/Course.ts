@@ -1,6 +1,6 @@
 import { ObjectId } from "mongodb";
 
-export type BlockType = 'text' | 'image' | 'video' | 'quiz' | 'heading' | 'code' | 'note';
+export type BlockType = 'text' | 'image' | 'video' | 'quiz' | 'heading' | 'code' | 'note' | 'math';
 
 export interface ContentBlock {
   id: string;
@@ -8,6 +8,8 @@ export interface ContentBlock {
   content: {
     // Text block
     text?: string;
+    // Math block (LaTeX)
+    latex?: string;
     // Image block
     url?: string;
     caption?: string;

@@ -9,5 +9,3 @@ export interface Certificate {
   issuedAt: Date;
   metadata?: Record<string, any>;
 }
-
-

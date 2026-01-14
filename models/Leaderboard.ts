@@ -12,5 +12,3 @@ export interface LeaderboardEntry {
   attempts?: number;
   lastUpdatedAt?: Date;
 }
-
-

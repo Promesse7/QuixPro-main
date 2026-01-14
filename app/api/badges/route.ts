@@ -16,31 +16,20 @@ export async function GET(request: NextRequest) {
 
     const allBadges = await badgesCol.find({}).toArray();
 
-    // If no userId, return all available badges (public view)
     if (!userId) {
-      return NextResponse.json({
-        context: "global",
-        badges: allBadges,
-      });
+      return NextResponse.json({ context: "global", badges: allBadges });
     }
 
-    // Only attempt ObjectId lookup if the id looks valid
-    let user: any = null
-    try {
-      if (userId && /^[a-fA-F0-9]{24}$/.test(userId)) {
-        user = await usersCol.findOne({ _id: new ObjectId(userId) });
-      }
-    } catch (_) {
-      user = null
+    let user: any = null;
+    if (userId && /^[a-fA-F0-9]{24}$/.test(userId)) {
+      user = await usersCol.findOne({ _id: new ObjectId(userId) });
     }
-    const earnedBadgeIds =
-      user?.gamification?.badges?.map((b: any) => b.badgeId?.toString()) || [];
+
+    const earnedBadgeIds = user?.gamification?.badges?.map((b: any) => b.badgeId) || [];
 
     const enrichedBadges = allBadges.map((badge) => {
-      const isEarned = earnedBadgeIds.includes(badge.badgeId?.toString());
-      const earnedInfo = user?.gamification?.badges?.find(
-        (b: any) => b.badgeId?.toString() === badge.badgeId?.toString()
-      );
+      const isEarned = earnedBadgeIds.includes(badge.badgeId);
+      const earnedInfo = user?.gamification?.badges?.find((b: any) => b.badgeId === badge.badgeId);
       return {
         ...badge,
         isEarned,
@@ -60,79 +49,69 @@ export async function POST(request: NextRequest) {
   try {
     const { userId } = await request.json();
 
-    if (!userId) {
-      return NextResponse.json({ error: "User ID required" }, { status: 400 });
-    }
-
-    if (!/^[a-fA-F0-9]{24}$/.test(userId)) {
-      return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
+    if (!userId || !/^[a-fA-F0-9]{24}$/.test(userId)) {
+      return NextResponse.json({ error: "Valid User ID required" }, { status: 400 });
     }
 
     const db = await getDatabase();
-    const badgesCol = db.collection("badges");
     const usersCol = db.collection("users");
-    const progressCol = db.collection("user_progress");
-
     const user = await usersCol.findOne({ _id: new ObjectId(userId) });
+
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    const badgesCol = db.collection("badges");
     const allBadges = await badgesCol.find({}).toArray();
-    const earnedBadgeIds =
-      user.gamification?.badges?.map((b: any) => b.badgeId?.toString()) || [];
-
+    const earnedBadgeIds = user.gamification?.badges?.map((b: any) => b.badgeId) || [];
     const newlyEarned: any[] = [];
     let totalXPAdded = 0;
 
     for (const badge of allBadges) {
-      if (earnedBadgeIds.includes(badge.badgeId?.toString())) continue;
+      if (earnedBadgeIds.includes(badge.badgeId)) continue;
 
       let isEligible = false;
-      const type = badge.unlockCriteria?.type;
-      const threshold = badge.unlockCriteria?.threshold || 0;
+      const criteria = badge.unlockCriteria;
+      if (!criteria) continue;
 
-      switch (type) {
+      switch (criteria.type) {
         case "xp":
-          isEligible = (user.gamification?.totalXP || 0) >= threshold;
+          isEligible = (user.gamification?.totalXP || 0) >= criteria.threshold;
           break;
-
         case "quizzes_completed":
-          isEligible = (user.analytics?.totalQuizzesTaken || 0) >= threshold;
+          isEligible = (user.analytics?.totalQuizzesTaken || 0) >= criteria.threshold;
           break;
-
         case "perfect_scores": {
-          const perfectScores = await progressCol
-            .aggregate([
-              { $match: { userId: user._id } },
-              { $unwind: "$quizAttempts" },
-              { $match: { "quizAttempts.score": 100 } },
-              { $count: "count" },
-            ])
-            .toArray();
-          const count = perfectScores[0]?.count || 0;
-          isEligible = count >= threshold;
+          const progressCol = db.collection("user_progress");
+          const perfectScores = await progressCol.countDocuments({ userId: user._id, "quizAttempts.score": 100 });
+          isEligible = perfectScores >= criteria.threshold;
           break;
         }
-
         case "streak":
-          isEligible = (user.gamification?.streak || 0) >= threshold;
+          isEligible = (user.gamification?.streak || 0) >= criteria.threshold;
           break;
-
         case "account_created":
-          // Always eligible for account creation badge if not already earned
           isEligible = true;
+          break;
+        // INNOVATION: New Social and Mastery Triggers
+        case "friends_added":
+          isEligible = (user.social?.friends?.length || 0) >= criteria.threshold;
+          break;
+        case "groups_joined":
+          isEligible = (user.social?.groups?.length || 0) >= criteria.threshold;
+          break;
+        case "courses_completed":
+          isEligible = (user.progress?.completedCourses?.length || 0) >= criteria.threshold;
           break;
       }
 
       if (isEligible) {
         const newBadge = {
-          badgeId: badge.badgeId?.toString(),
+          badgeId: badge.badgeId,
           name: badge.name,
           earnedAt: new Date(),
           tier: badge.tier,
         };
-
         newlyEarned.push(newBadge);
         totalXPAdded += badge.xpReward || 0;
       }
@@ -144,15 +123,13 @@ export async function POST(request: NextRequest) {
         {
           $push: { "gamification.badges": { $each: newlyEarned } },
           $inc: { "gamification.totalXP": totalXPAdded },
-        } as any
+        }
       );
     }
 
     return NextResponse.json({
       success: true,
       newlyEarned,
-      totalEarned: earnedBadgeIds.length + newlyEarned.length,
-      totalXPAdded,
     });
   } catch (error) {
     console.error("Badge check error:", error);

@@ -179,7 +179,7 @@ Quix Editor is an AI-powered learning and course creation ecosystem designed to 
 ## 5. Technical Architecture
 
 ### 5.1 System Architecture
-```mermaid
+\`\`\`mermaid
 graph TD
     A[User Browser] --> B[Next.js Frontend]
     B --> C[API Routes]
@@ -211,7 +211,7 @@ graph TD
         J
         K
     end
-```
+\`\`\`
 
 ### 5.2 Frontend Architecture
 **Technology Stack**:
@@ -224,7 +224,7 @@ graph TD
 - **Real-time**: Socket.io for collaborative editing
 
 **Component Structure**:
-```
+\`\`\`
 src/
 ├── components/
 │   ├── editor/
@@ -238,11 +238,11 @@ src/
 ├── hooks/
 ├── utils/
 └── types/
-```
+\`\`\`
 
 ### 5.3 Backend Architecture
 **API Routes Structure**:
-```
+\`\`\`
 app/api/
 ├── auth/           # Authentication endpoints
 ├── courses/        # Course management
@@ -251,7 +251,7 @@ app/api/
 ├── files/         # File upload/processing
 ├── quizzes/       # Quiz generation
 └── collaboration/ # Real-time collaboration
-```
+\`\`\`
 
 **Key Services**:
 - **AI Service**: OpenAI API integration with prompt engineering
@@ -282,7 +282,7 @@ app/api/
 
 ### 6.2 Layout Design
 **Three-Panel Layout**:
-```
+\`\`\`
 ┌─────────────────────────────────────────────────────────────┐
 │                    Top Navigation Bar                       │
 ├─────────────┬─────────────────────────┬─────────────────────┤
@@ -297,7 +297,7 @@ app/api/
 │ • Assets    │ • Real-time preview     │ • Quick actions    │
 │             │                         │ • Analytics        │
 └─────────────┴─────────────────────────┴─────────────────────┘
-```
+\`\`\`
 
 **Responsive Breakpoints**:
 - Desktop: 1280px+ (Full three-panel layout)
@@ -321,20 +321,20 @@ app/api/
 
 ### 7.1 AI Content Generation
 **Generate Course Outline**
-```
+\`\`\`
 POST /api/ai/generate-outline
-```
+\`\`\`
 Request:
-```json
+\`\`\`json
 {
   "topic": "Photosynthesis",
   "grade_level": "10th grade",
   "duration": "2 weeks",
   "learning_objectives": ["Understand photosynthesis process", "Identify key components"]
 }
-```
+\`\`\`
 Response:
-```json
+\`\`\`json
 {
   "outline": {
     "modules": [
@@ -347,28 +347,28 @@ Response:
   },
   "suggestions": ["Add interactive diagram", "Include lab experiment"]
 }
-```
+\`\`\`
 
 **Expand Content**
-```
+\`\`\`
 POST /api/ai/expand-content
-```
+\`\`\`
 Request:
-```json
+\`\`\`json
 {
   "content": "Photosynthesis converts light energy into chemical energy",
   "context": "High school biology",
   "expand_type": "detailed_explanation"
 }
-```
+\`\`\`
 
 ### 7.2 Course Management
 **Create Course**
-```
+\`\`\`
 POST /api/courses
-```
+\`\`\`
 Request:
-```json
+\`\`\`json
 {
   "title": "Photosynthesis Fundamentals",
   "description": "Comprehensive course on photosynthesis",
@@ -376,14 +376,14 @@ Request:
   "subject": "Biology",
   "duration": "2 weeks"
 }
-```
+\`\`\`
 
 **Update Course Content**
-```
+\`\`\`
 PUT /api/courses/{courseId}/content
-```
+\`\`\`
 Request:
-```json
+\`\`\`json
 {
   "blocks": [
     {
@@ -393,16 +393,16 @@ Request:
     }
   ]
 }
-```
+\`\`\`
 
 ### 7.3 File Processing
 **Upload Document**
-```
+\`\`\`
 POST /api/files/upload
-```
+\`\`\`
 Multipart form data with file upload
 Response:
-```json
+\`\`\`json
 {
   "file_id": "uuid",
   "filename": "document.pdf",
@@ -414,29 +414,29 @@ Response:
     }
   }
 }
-```
+\`\`\`
 
 ### 7.4 Quiz Generation
 **Generate Quiz**
-```
+\`\`\`
 POST /api/quizzes/generate
-```
+\`\`\`
 Request:
-```json
+\`\`\`json
 {
   "content_id": "content_uuid",
   "question_types": ["multiple_choice", "true_false"],
   "question_count": 10,
   "difficulty": "medium"
 }
-```
+\`\`\`
 
 ## 8. Database Schema
 
 ### 8.1 Core Collections
 
 **Users Collection**
-```javascript
+\`\`\`javascript
 {
   _id: ObjectId,
   email: String,
@@ -450,10 +450,10 @@ Request:
   created_at: Date,
   updated_at: Date
 }
-```
+\`\`\`
 
 **Courses Collection**
-```javascript
+\`\`\`javascript
 {
   _id: ObjectId,
   title: String,
@@ -481,10 +481,10 @@ Request:
   created_at: Date,
   updated_at: Date
 }
-```
+\`\`\`
 
 **Content Blocks Collection**
-```javascript
+\`\`\`javascript
 {
   _id: ObjectId,
   course_id: ObjectId,
@@ -505,10 +505,10 @@ Request:
   created_at: Date,
   updated_at: Date
 }
-```
+\`\`\`
 
 **AI Interactions Collection**
-```javascript
+\`\`\`javascript
 {
   _id: ObjectId,
   user_id: ObjectId,
@@ -520,16 +520,16 @@ Request:
   model: String,
   created_at: Date
 }
-```
+\`\`\`
 
 ### 8.2 Indexes
-```javascript
+\`\`\`javascript
 // Performance optimization
 db.courses.createIndex({ creator_id: 1, status: 1 })
 db.content_blocks.createIndex({ course_id: 1, module_id: 1, position: 1 })
 db.ai_interactions.createIndex({ user_id: 1, created_at: -1 })
 db.collaborations.createIndex({ user_id: 1, role: 1 })
-```
+\`\`\`
 
 ## 9. Integration Requirements
 
@@ -541,7 +541,7 @@ db.collaborations.createIndex({ user_id: 1, role: 1 })
 - Fine-tuned models for educational content
 
 **Configuration**:
-```javascript
+\`\`\`javascript
 {
   api_key: process.env.OPENAI_API_KEY,
   models: {
@@ -554,7 +554,7 @@ db.collaborations.createIndex({ user_id: 1, role: 1 })
     tokens_per_minute: 90000
   }
 }
-```
+\`\`\`
 
 ### 9.2 File Processing
 **PDF Processing Libraries**

@@ -15,14 +15,15 @@ interface QuizResultsProps {
     subject: string
     level: string
     questions: Array<{
-      id: string
-      text: string
-      options: Array<{ id: string; text: string; correct: boolean }>
-      explanation: string
-      marks: number
+      _id?: string
+      id?: string
+      question: string
+      options: string[]
+      correctAnswer: number | string
+      explanation?: string
     }>
   }
-  answers: Record<string, string>
+  answers: Record<string, string | number>
   timeElapsed: number
 }
 
@@ -44,16 +45,20 @@ export function QuizResults({ quiz, answers, timeElapsed }: QuizResultsProps) {
   const calculateScore = () => {
     let correct = 0
     quiz.questions.forEach((question) => {
-      const userAnswer = answers[question.id]
-      const correctOption = question.options.find((opt) => opt.correct)
-      if (userAnswer === correctOption?.id) {
+      const questionId = question._id?.toString() || question.id
+      if (!questionId) return // Skip if no valid ID
+      
+      const userAnswer = answers[questionId]
+      const correctAnswer = question.correctAnswer
+      if (userAnswer === correctAnswer) {
         correct++
       }
     })
+    const questionsLength = quiz.questions.length
     return {
       correct,
-      total: quiz.questions.length,
-      percentage: Math.round((correct / quiz.questions.length) * 100),
+      total: questionsLength,
+      percentage: questionsLength ? Math.round((correct / questionsLength) * 100) : 0,
     }
   }
 
@@ -140,21 +145,15 @@ export function QuizResults({ quiz, answers, timeElapsed }: QuizResultsProps) {
             </CardHeader>
             <CardContent className="space-y-4">
               {quiz.questions.map((question, index) => {
-                // Safety check for question data
-                if (!question || !question.id || !question.text || !question.options) {
-                  return null
-                }
-
-                const userAnswer = answers[question.id]
-                const correctOption = question.options.find((opt) => opt.correct)
-                const userOption = question.options.find((opt) => opt.id === userAnswer)
-                const isCorrect = userAnswer === correctOption?.id
+                const questionId = question._id?.toString() || question.id
+                const userAnswer = answers[questionId]
+                const isCorrect = userAnswer === question.correctAnswer
 
                 return (
-                  <div key={question.id} className="border border-border/50 rounded-lg p-4 glass-effect">
+                  <div key={questionId} className="border border-border/50 rounded-lg p-4 glass-effect">
                     <div className="flex items-start justify-between mb-3">
                       <h4 className="font-semibold text-lg">
-                        {index + 1}. {question.text}
+                        {index + 1}. {question.question}
                       </h4>
                       <Badge variant={isCorrect ? "default" : "destructive"}>
                         {isCorrect ? "Correct" : "Incorrect"}
@@ -164,13 +163,15 @@ export function QuizResults({ quiz, answers, timeElapsed }: QuizResultsProps) {
                       <div className="flex items-center space-x-2">
                         <span className="text-muted-foreground">Your answer:</span>
                         <span className={isCorrect ? "text-green-400" : "text-red-400"}>
-                          {userOption?.text || "Not answered"}
+                          {userAnswer !== undefined ? question.options[userAnswer as number] || "Invalid answer" : "Not answered"}
                         </span>
                       </div>
                       {!isCorrect && (
                         <div className="flex items-center space-x-2">
                           <span className="text-muted-foreground">Correct answer:</span>
-                          <span className="text-green-400">{correctOption?.text}</span>
+                          <span className="text-green-400">
+                            {question.options[question.correctAnswer as number]}
+                          </span>
                         </div>
                       )}
                       <div className="mt-3 p-3 bg-accent/20 rounded-md">

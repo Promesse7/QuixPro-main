@@ -30,5 +30,3 @@ export interface SharedContent {
 	views: number
 	clicks: number
 }
-
-

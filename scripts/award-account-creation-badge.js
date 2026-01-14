@@ -66,6 +66,3 @@ async function awardAccountCreationBadge() {
 }
 
 awardAccountCreationBadge();
-
-
-

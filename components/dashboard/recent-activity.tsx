@@ -1,6 +1,6 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Brain, Award, Clock } from "lucide-react"
 
@@ -54,16 +54,17 @@ export function RecentActivity({ activities, maxItems = 5, viewAllHref }: Recent
           <Clock className="h-5 w-5" />
           <span>Recent Activity</span>
         </CardTitle>
+        <CardDescription className="text-sm">Your latest learning events</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {(activities || []).slice(0, maxItems).map((activity) => {
+        <ul role="list" className="space-y-2">
+          {(activities || []).slice(0, maxItems).map((activity) => {
           const Icon = getActivityIcon(activity.type)
           const color = getActivityColor(activity.type)
-
           return (
-            <div key={activity.id} className="flex items-start space-x-3 p-3 bg-accent/20 rounded-lg">
-              <div className={`w-8 h-8 rounded-full bg-accent/30 flex items-center justify-center flex-shrink-0`}>
-                <Icon className={`h-4 w-4 ${color}`} />
+            <li key={activity.id} className="flex flex-col sm:flex-row sm:items-start space-y-2 sm:space-y-0 sm:space-x-3 p-3 bg-accent/20 rounded-lg">
+              <div className={`w-10 h-10 rounded-full bg-accent/30 flex items-center justify-center flex-shrink-0`}>
+                <Icon className={`h-5 w-5 ${color}`} />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm truncate">{activity.title}</p>
@@ -75,9 +76,10 @@ export function RecentActivity({ activities, maxItems = 5, viewAllHref }: Recent
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">{formatDate(activity.date)}</p>
               </div>
-            </div>
+            </li>
           )
         })}
+        </ul>
         {viewAllHref && activities.length > maxItems && (
           <div className="pt-2">
             <a href={viewAllHref} className="text-xs text-primary hover:underline">View all</a>

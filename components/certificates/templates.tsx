@@ -106,4 +106,3 @@ export function CertificateTemplateMinimal({ data }: { data: CertificateData }) 
     </div>
   )
 }
-

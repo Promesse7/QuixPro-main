@@ -1,14 +1,43 @@
-// app/layout.tsx
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { WebSocketProvider } from '@/context/WebSocketContext';
+import Provider from '@/components/Provider';
+import { FloatingNavbar } from '@/components/floating-navbar';
 
 const inter = Inter({ subsets: ['latin'] });
 
+export const viewport: Viewport = {
+  themeColor: '#3b82f6',
+};
+
 export const metadata: Metadata = {
-  title: 'Quix Chat',
-  description: 'Real-time chat for Quix learning platform',
+  title: 'QuixPro - Learning Platform',
+  description: 'Interactive learning platform with quizzes, real-time chat, and progress tracking',
+  generator: 'v0.app',
+  manifest: '/manifest.json',
+  other: {
+    'mobile-web-app-capable': 'yes',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'QuixPro',
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  openGraph: {
+    type: 'website',
+    siteName: 'QuixPro',
+    title: 'QuixPro - Learning Platform',
+    description: 'Interactive learning platform with quizzes, real-time chat, and progress tracking',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'QuixPro - Learning Platform',
+    description: 'Interactive learning platform with quizzes, real-time chat, and progress tracking',
+  },
 };
 
 export default function RootLayout({
@@ -17,11 +46,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <WebSocketProvider>
-          {children}
-        </WebSocketProvider>
+        <Provider>
+          <FloatingNavbar />
+          <main id="main-content">{children}</main>
+        </Provider>
       </body>
     </html>
   );

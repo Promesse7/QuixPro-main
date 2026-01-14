@@ -23,5 +23,3 @@ export function AppBreadcrumb({ items }: { items: Crumb[] }) {
     </nav>
   )
 }
-
-

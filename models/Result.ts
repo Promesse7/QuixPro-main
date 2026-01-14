@@ -10,5 +10,3 @@ export interface Result {
   difficulty?: string; // Easy | Moderate | Hard | Expert
   createdAt: Date;
 }
-
-

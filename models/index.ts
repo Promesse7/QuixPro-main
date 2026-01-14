@@ -7,3 +7,5 @@ export * from './Unit';
 export * from './Result';
 export * from './Certificate';
 export * from './Leaderboard';
+export * from './Post';
+export * from './Chat';

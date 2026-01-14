@@ -9,5 +9,3 @@ export interface Level {
   createdAt?: Date;
   updatedAt?: Date;
 }
-
-

@@ -38,10 +38,10 @@ export function ThemeSwitcher() {
         <AnimatePresence mode="wait">
           <motion.div
             key={theme}
-            initial={{ y: -20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 20, opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            initial={{ rotate: -180, opacity: 0 }}
+            animate={{ rotate: 0, opacity: 1 }}
+            exit={{ rotate: 180, opacity: 0 }}
+            transition={{ duration: 0.15, ease: "easeInOut" }}
           >
             <CurrentIcon className="h-5 w-5" />
           </motion.div>
@@ -54,7 +54,7 @@ export function ThemeSwitcher() {
             initial={{ opacity: 0, scale: 0.95, y: -10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.15, ease: "easeInOut" }}
             className="absolute right-0 top-full mt-2 z-50"
           >
             <div className="bg-card border border-border/50 rounded-lg shadow-lg p-2 backdrop-blur-sm">
@@ -69,7 +69,7 @@ export function ThemeSwitcher() {
                       setTheme(t.id)
                       setIsOpen(false)
                     }}
-                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors hover:translate-x-1 ${
+                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${
                       isActive
                         ? 'bg-primary/10 text-primary font-medium'
                         : 'text-foreground hover:bg-muted/50'

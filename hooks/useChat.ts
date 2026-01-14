@@ -1,3 +1,4 @@
+"use client"
 // hooks/useChat.ts
 import { useState, useEffect, useCallback } from 'react';
 import { useWebSocketContext } from '@/context/WebSocketContext';

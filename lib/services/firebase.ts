@@ -1,113 +1,166 @@
-import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
-import { getFirestore } from 'firebase-admin/firestore';
-import { Message, TypingIndicator } from '@/models/Chat';
+import type { Message } from "@/models/Chat"
+import { getFirebaseId, createChatId } from "@/lib/identifiers"
 
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || '{}');
+let firebaseApp: any = null
+let auth: any = null
+let firestore: any = null
+let realtimeDb: any = null
 
-let firebaseApp: App;
+function ensureFirebaseInitialized() {
+  if (firebaseApp) return
 
-if (!getApps().length) {
   if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
-    throw new Error('FIREBASE_SERVICE_ACCOUNT environment variable is not set');
+    return
   }
-  
-  firebaseApp = initializeApp({
-    credential: cert(serviceAccount),
-    databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
-  });
-} else {
-  firebaseApp = getApps()[0];
+
+  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || "{}")
+
+  const admin = require("firebase-admin")
+
+  if (!admin.apps.length) {
+    firebaseApp = admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+      databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
+    })
+  } else {
+    firebaseApp = admin.apps[0]
+  }
+
+  auth = admin.auth()
+  firestore = admin.firestore()
+  realtimeDb = admin.database()
 }
 
-export const auth = getAuth(firebaseApp);
-export const db = getFirestore(firebaseApp);
-
-// Firestore collections
-export const messagesCollection = db.collection('messages');
-export const groupsCollection = db.collection('groups');
-export const typingIndicatorsCollection = db.collection('typingIndicators');
-
 export const firebaseAdmin = {
-  // Generate custom token for Firebase Auth
   async createCustomToken(uid: string, additionalClaims = {}) {
-    return auth.createCustomToken(uid, additionalClaims);
+    ensureFirebaseInitialized()
+    if (!auth) throw new Error("Firebase not initialized")
+    return auth.createCustomToken(uid, additionalClaims)
   },
 
-  // Verify Firebase ID token
   async verifyIdToken(token: string) {
-    return auth.verifyIdToken(token);
+    ensureFirebaseInitialized()
+    if (!auth) throw new Error("Firebase not initialized")
+    return auth.verifyIdToken(token)
   },
 
-  // Real-time message listeners
-  onMessage(groupId: string, callback: (message: Message) => void) {
-    return messagesCollection
-      .where('groupId', '==', groupId)
-      .orderBy('createdAt', 'desc')
-      .limit(50)
-      .onSnapshot((snapshot) => {
-        snapshot.docChanges().forEach((change) => {
-          if (change.type === 'added') {
-            callback(change.doc.data() as Message);
-          }
-        });
-      });
+  // --- Realtime Database Methods ---
+
+  async syncGroupMembers(groupId: string, memberIds: string[]) {
+    ensureFirebaseInitialized()
+    if (!realtimeDb) throw new Error("Firebase Realtime DB not initialized")
+    const membersObject = memberIds.reduce(
+      (acc, memberId) => {
+        acc[memberId] = true
+        return acc
+      },
+      {} as Record<string, boolean>,
+    )
+    const groupMembersRef = realtimeDb.ref(`groups/${groupId}/members`)
+    await groupMembersRef.set(membersObject)
   },
 
-  // Typing indicators
+  async addUserToGroup(groupId: string, userId: string) {
+    ensureFirebaseInitialized()
+    if (!realtimeDb) throw new Error("Firebase Realtime DB not initialized")
+    const userMemberRef = realtimeDb.ref(`groups/${groupId}/members/${userId}`)
+    await userMemberRef.set(true)
+  },
+
+  async removeUserFromGroup(groupId: string, userId: string) {
+    ensureFirebaseInitialized()
+    if (!realtimeDb) throw new Error("Firebase Realtime DB not initialized")
+    const userMemberRef = realtimeDb.ref(`groups/${groupId}/members/${userId}`)
+    await userMemberRef.remove()
+  },
+
+  async publishMessage(message: Omit<Message, "_id" | "readBy">) {
+    ensureFirebaseInitialized()
+    if (!realtimeDb) throw new Error("Firebase Realtime DB not initialized")
+    const { groupId } = message
+    if (!groupId) {
+      console.error("Cannot publish message without a groupId")
+      return
+    }
+    const messagesRef = realtimeDb.ref(`messages/${groupId}`).push()
+    await messagesRef.set(message)
+  },
+
+  async publishDirectMessage(senderId: string, recipientId: string, message: any) {
+    ensureFirebaseInitialized()
+    if (!realtimeDb) throw new Error("Firebase Realtime DB not initialized")
+
+    const conversationId = createChatId(senderId, recipientId)
+    const senderFirebaseId = getFirebaseId(senderId)
+    const recipientFirebaseId = getFirebaseId(recipientId)
+
+    const messagesRef = realtimeDb.ref(`chats/${conversationId}/messages`).push()
+    await messagesRef.set({
+      ...message,
+      senderId: senderFirebaseId,
+      recipientId: recipientFirebaseId,
+      senderName: message.senderName || senderFirebaseId.split("_")[0],
+      createdAt: message.createdAt.toISOString ? message.createdAt.toISOString() : message.createdAt,
+      _id: messagesRef.key,
+    })
+
+    const updateConversation = async (uid: string, otherUid: string, unreadInc: number) => {
+      const ref = realtimeDb.ref(`user_conversations/${uid}/${otherUid}`)
+      await ref.update({
+        lastMessage: message.content,
+        lastMessageTime: message.createdAt.toISOString ? message.createdAt.toISOString() : message.createdAt,
+        unreadCount: firebaseAdmin.increment(unreadInc),
+        otherUserId: otherUid,
+        otherUserEmail: message.senderEmail || `${senderFirebaseId}@example.com`,
+        otherUserName: message.senderName || senderFirebaseId.split("_")[0],
+      })
+    }
+
+    await updateConversation(senderFirebaseId, recipientFirebaseId, 0)
+    await updateConversation(recipientFirebaseId, senderFirebaseId, 1)
+  },
+
+  increment(val: number) {
+    const admin = require("firebase-admin")
+    return admin.database.ServerValue.increment(val)
+  },
+
+  async markConversationAsRead(userId: string, otherUserId: string) {
+    ensureFirebaseInitialized()
+    if (!realtimeDb) throw new Error("Firebase Realtime DB not initialized")
+
+    // Use unique IDs directly - they're already Firebase-safe
+    const userFirebaseId = getFirebaseId(userId)
+    const otherUserFirebaseId = getFirebaseId(otherUserId)
+
+    const ref = realtimeDb.ref(`user_conversations/${userFirebaseId}/${otherUserFirebaseId}`)
+    await ref.update({
+      lastReadAt: Date.now(),
+      unreadCount: 0,
+    })
+
+    const conversationId = [userFirebaseId, otherUserFirebaseId].sort().join("_")
+    const messagesRef = realtimeDb.ref(`chats/${conversationId}/messages`).push()
+    await messagesRef.set({
+      type: "chat.read",
+      payload: {
+        readerId: userFirebaseId,
+        readAt: new Date().toISOString(),
+      },
+      timestamp: Date.now(),
+    })
+  },
+
   async setUserTyping(userId: string, groupId: string, isTyping: boolean) {
-    const docRef = typingIndicatorsCollection.doc(`${userId}_${groupId}`);
-    
+    ensureFirebaseInitialized()
+    if (!realtimeDb) throw new Error("Firebase Realtime DB not initialized")
+    const typingRef = realtimeDb.ref(`typingIndicators/${groupId}/${userId}`)
     if (isTyping) {
-      await docRef.set({
-        userId,
-        groupId,
-        isTyping: true,
-        lastUpdated: new Date()
-      });
-      // Auto-clear typing indicator after 3 seconds
-      setTimeout(() => {
-        docRef.update({ isTyping: false });
-      }, 3000);
+      await typingRef.set({ isTyping: true, lastUpdated: Date.now() })
     } else {
-      await docRef.update({ isTyping: false });
+      await typingRef.remove()
     }
   },
+}
 
-  onTypingUpdate(groupId: string, callback: (typingData: TypingIndicator) => void) {
-    return typingIndicatorsCollection
-      .where('groupId', '==', groupId)
-      .where('isTyping', '==', true)
-      .onSnapshot((snapshot) => {
-        snapshot.docChanges().forEach((change) => {
-          if (change.type === 'added' || change.type === 'modified') {
-            callback(change.doc.data() as TypingIndicator);
-          }
-        });
-      });
-  },
-
-  // Mark message as read
-  async markAsRead(messageId: string, userId: string) {
-    const messageRef = messagesCollection.doc(messageId);
-    await messageRef.update({
-      readBy: getFirestore.FieldValue.arrayUnion(userId)
-    });
-  },
-
-  // Get recent messages for a group
-  async getRecentMessages(groupId: string, limit = 50): Promise<Message[]> {
-    const snapshot = await messagesCollection
-      .where('groupId', '==', groupId)
-      .orderBy('createdAt', 'desc')
-      .limit(limit)
-      .get();
-
-    return snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as Message));
-  }
-};
-
-export default firebaseAdmin;
+export default firebaseAdmin

@@ -1,6 +1,6 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Brain, Clock, Star, Play, ChevronRight } from "lucide-react"
@@ -25,6 +25,7 @@ interface QuizData {
 // Fallback data in case API fails
 const fallbackQuizzes = [
 	{
+		_id: "rec-1",
 		id: "rec-1",
 		title: "Advanced Mathematics",
 		subject: "Mathematics",
@@ -37,6 +38,7 @@ const fallbackQuizzes = [
 		reason: "Based on your strong math performance",
 	},
 	{
+		_id: "rec-2",
 		id: "rec-2",
 		title: "Rwandan Literature",
 		subject: "Literature",
@@ -49,6 +51,7 @@ const fallbackQuizzes = [
 		reason: "Recommended for your level",
 	},
 	{
+		_id: "rec-3",
 		id: "rec-3",
 		title: "Environmental Science",
 		subject: "Science",
@@ -67,23 +70,34 @@ export function RecommendedQuizzes() {
 	const [isLoading, setIsLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
 
+	// Function to get random 4 quizzes
+	const getRandomQuizzes = (quizArray: QuizData[], count: number = 4): QuizData[] => {
+		const shuffled = [...quizArray].sort(() => 0.5 - Math.random())
+		return shuffled.slice(0, count)
+	}
+
 	useEffect(() => {
 		async function fetchRecommendedQuizzes() {
 			try {
 				setIsLoading(true)
-				const response = await fetch("/api/quiz?limit=3")
+				// Fetch more quizzes to have a pool to randomize from
+				const response = await fetch("/api/quiz?limit=20")
 
 				if (!response.ok) {
 					throw new Error("Failed to fetch recommended quizzes")
 				}
 
 				const data = await response.json()
-				setQuizzes(data.quizzes || [])
+				const allQuizzes = data.quizzes || []
+				// Get 4 random quizzes from the fetched pool
+				const randomQuizzes = getRandomQuizzes(allQuizzes.length > 0 ? allQuizzes : fallbackQuizzes as QuizData[])
+				setQuizzes(randomQuizzes)
 			} catch (err) {
 				console.error("Error fetching recommended quizzes:", err)
 				setError("Failed to load recommendations")
-				// Use fallback data if API fails
-				setQuizzes(fallbackQuizzes as QuizData[])
+				// Use fallback data if API fails - get 4 random from fallback
+				const randomFallback = getRandomQuizzes(fallbackQuizzes as QuizData[])
+				setQuizzes(randomFallback)
 			} finally {
 				setIsLoading(false)
 			}
@@ -107,8 +121,7 @@ export function RecommendedQuizzes() {
 					</div>
 					<Button variant="ghost" size="sm">
 						<Link href="/quiz">
-							View All{" "}
-							<ChevronRight className="h-4 w-4 ml-1" />
+							View All <ChevronRight className="h-4 w-4 ml-1" />
 						</Link>
 					</Button>
 				</div>
@@ -121,47 +134,42 @@ export function RecommendedQuizzes() {
 				) : error ? (
 					<div className="text-center py-4 text-red-500">{error}</div>
 				) : (
-					<div className="space-y-4">
-						{(quizzes.length > 0 ? quizzes : fallbackQuizzes).map((quiz) => (
-							<div
-								key={quiz._id || quiz.id}
-								className="flex items-center space-x-4 p-4 bg-accent/20 rounded-lg"
-							>
-								<div className="flex-1">
-									<div className="flex items-center space-x-2 mb-2">
-										<h4 className="font-semibold">{quiz.title}</h4>
-										<div className="flex items-center space-x-1">
-											<Star className="h-3 w-3 text-yellow-400 fill-current" />
-											<span className="text-xs">{quiz.rating}</span>
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+						{quizzes.map((quiz) => (
+							<Card key={quiz.id || quiz._id} className="group relative overflow-hidden border-border/40 hover:border-primary/40 transition-all hover:shadow-md bg-card/40 backdrop-blur-sm">
+								<div className="flex flex-col h-full">
+									<div className="p-3.5 flex-1">
+										<div className="flex items-start gap-3">
+											<div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+												<Brain className="h-5 w-5 text-primary" />
+											</div>
+											<div className="flex-1 min-w-0">
+												<h4 className="font-bold text-sm leading-tight truncate group-hover:text-primary transition-colors">{quiz.title}</h4>
+												<p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">{quiz.description}</p>
+											</div>
+										</div>
+
+										<div className="flex flex-wrap items-center gap-2 mt-4">
+											<div className="flex items-center gap-1 text-[10px] text-muted-foreground bg-muted/30 px-2 py-0.5 rounded-full">
+												<Brain className="h-3 w-3" />
+												<span>{Array.isArray(quiz.questions) ? quiz.questions.length : quiz.questions || 0} Qs</span>
+											</div>
+											<div className="flex items-center gap-1 text-[10px] text-muted-foreground bg-muted/30 px-2 py-0.5 rounded-full">
+												<Clock className="h-3 w-3" />
+												<span>{quiz.duration || 0}m</span>
+											</div>
+											<Badge variant="secondary" className="text-[10px] px-2 py-0 h-4 font-normal bg-primary/5 text-primary-foreground/80 border-none truncate max-w-[80px]">
+												{quiz.subject}
+											</Badge>
 										</div>
 									</div>
-									<p className="text-sm text-muted-foreground mb-2">
-										{quiz.description}
-									</p>
-									<div className="flex items-center space-x-4 text-xs text-muted-foreground">
-										<div className="flex items-center space-x-1">
-											<Brain className="h-3 w-3" />
-											<span>{Array.isArray(quiz.questions) ? quiz.questions.length : quiz.questions || 0} questions</span>
-										</div>
-										<div className="flex items-center space-x-1">
-											<Clock className="h-3 w-3" />
-											<span>{quiz.duration || 0} min</span>
-										</div>
-										<Badge variant="outline" className="text-xs">
-											{quiz.subject}
-										</Badge>
+									<div className="p-3 border-t border-border/40 bg-muted/5">
+										<Button size="sm" className="w-full h-8 text-xs font-medium rounded-lg shadow-sm hover:shadow-primary/20">
+											Start Quiz <Play className="ml-1.5 h-3 w-3" />
+										</Button>
 									</div>
-									<p className="text-xs text-primary mt-2">
-										{quiz.reason || "Recommended for your level"}
-									</p>
 								</div>
-								<Button size="sm" className="glow-effect">
-									<Link href={`/quiz/${quiz._id || quiz.id}`}>
-										<Play className="h-4 w-4 mr-1" />
-										Start
-									</Link>
-								</Button>
-							</div>
+							</Card>
 						))}
 					</div>
 				)}

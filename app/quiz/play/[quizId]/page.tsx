@@ -42,6 +42,8 @@ export default function PlayQuizPage({ params }: PageProps) {
 
   const quizId = decodeURIComponent(params.quizId)
 
+  const questionsLength = Array.isArray(quiz?.questions) ? quiz.questions.length : 0
+
   useEffect(() => {
     fetchQuizMeta()
   }, [quizId])
@@ -72,19 +74,21 @@ export default function PlayQuizPage({ params }: PageProps) {
       if (res.ok) {
         const data = await res.json()
         const rawQuiz = data.quiz
+        
+        // Handle the format from buildQuestions function
         const transformedQuestions: Question[] = (rawQuiz.questions || []).map((q: any) => {
-          const optionsText = (q.options || []).map((o: any) => o.text)
-          const correctIndex = (q.options || []).findIndex((o: any) => o.correct)
+          // Your seed format: { _id, question, options: string[], correctAnswer: number, explanation }
           return {
-            _id: q.id,
-            question: q.text,
-            options: optionsText,
-            correctAnswer: correctIndex >= 0 ? correctIndex : 0,
+            _id: q._id?.toString() || q.id,
+            question: q.question,
+            options: q.options, // Already an array of strings
+            correctAnswer: q.correctAnswer, // Already a number index
             explanation: q.explanation,
           }
         })
+        
         setQuiz({
-          _id: rawQuiz._id || rawQuiz.id,
+          _id: rawQuiz._id?.toString() || rawQuiz.id,
           title: rawQuiz.title,
           description: rawQuiz.description,
           duration: rawQuiz.duration,
@@ -107,7 +111,7 @@ export default function PlayQuizPage({ params }: PageProps) {
   }
 
   const handleSubmitQuiz = async () => {
-    if (!quiz) return
+    if (!quiz || !Array.isArray(quiz.questions)) return
 
     try {
       const baseUrl = getBaseUrl()
@@ -130,7 +134,7 @@ export default function PlayQuizPage({ params }: PageProps) {
           accuracy: score,
           timeSpent: quiz.duration * 60,
           difficulty: quiz.difficulty,
-          totalQuestions: quiz.questions.length,
+          totalQuestions: questionsLength,
         }),
       })
 
@@ -151,7 +155,7 @@ export default function PlayQuizPage({ params }: PageProps) {
     if (!showFeedback) {
       // Show feedback first
       setShowFeedback(true)
-    } else if (currentQuestion === quiz!.questions.length - 1) {
+    } else if (currentQuestion === questionsLength - 1) {
       // Last question - submit quiz
       handleSubmitQuiz()
     } else {
@@ -169,14 +173,15 @@ export default function PlayQuizPage({ params }: PageProps) {
   }
 
   const calculateScore = () => {
-    if (!quiz) return 0
+    if (!quiz || !Array.isArray(quiz.questions) || quiz.questions.length === 0) return 0
+    const qLen = quiz.questions.length
     let correct = 0
     quiz.questions.forEach((q, index) => {
       if (String(answers[index]) === String(q.correctAnswer)) {
         correct++
       }
     })
-    return Math.round((correct / quiz.questions.length) * 100)
+    return Math.round((correct / qLen) * 100)
   }
 
   if (loading) {
@@ -234,7 +239,7 @@ export default function PlayQuizPage({ params }: PageProps) {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 rounded-lg bg-primary/10 border border-primary/50">
                     <p className="text-sm text-muted-foreground">Total Questions</p>
-                    <p className="text-2xl font-bold text-primary">{quiz.questions.length}</p>
+                    <p className="text-2xl font-bold text-primary">{questionsLength}</p>
                   </div>
                   <div className="p-4 rounded-lg bg-orange-500/10 border border-orange-500/50">
                     <p className="text-sm text-muted-foreground">Time Limit</p>
@@ -278,6 +283,8 @@ export default function PlayQuizPage({ params }: PageProps) {
   const totalSeconds = quiz.duration * 60
   const answeredCount = Object.keys(answers).length
 
+  
+
   return (
     <div className="min-h-screen gradient-bg">
       <div className="container mx-auto px-4 py-6">
@@ -289,9 +296,9 @@ export default function PlayQuizPage({ params }: PageProps) {
           <div className="mb-6 p-4 rounded-lg glass-effect border border-border/50 flex items-center justify-between">
             <div className="flex-grow">
               <h2 className="font-semibold text-foreground">{quiz.title}</h2>
-              <p className="text-xs text-muted-foreground mt-1">Question {currentQuestion + 1} of {quiz.questions.length}</p>
+              <p className="text-xs text-muted-foreground mt-1">Question {currentQuestion + 1} of {questionsLength}</p>
             </div>
-            <QuizTimer
+              <QuizTimer
               totalSeconds={totalSeconds}
               paused={false}
               onTimeUp={() => {
@@ -305,7 +312,7 @@ export default function PlayQuizPage({ params }: PageProps) {
           <div className="mb-6">
             <QuizProgressBar
               currentQuestion={currentQuestion + 1}
-              totalQuestions={quiz.questions.length}
+              totalQuestions={questionsLength}
               answered={answeredCount}
             />
           </div>
@@ -313,9 +320,9 @@ export default function PlayQuizPage({ params }: PageProps) {
           {/* Question Card */}
           <div className="mb-6">
             <QuestionCard
-              question={quiz.questions[currentQuestion]}
+              question={Array.isArray(quiz?.questions) && quiz.questions[currentQuestion] ? quiz.questions[currentQuestion] : null}
               questionNumber={currentQuestion + 1}
-              totalQuestions={quiz.questions.length}
+              totalQuestions={questionsLength}
               selectedAnswer={answers[currentQuestion] ?? null}
               onAnswerSelect={handleAnswerSelect}
               onNext={handleNextQuestion}
@@ -330,7 +337,7 @@ export default function PlayQuizPage({ params }: PageProps) {
           <div className="mt-6 p-4 rounded-lg glass-effect border border-border/50">
             <p className="text-sm font-medium text-muted-foreground mb-3">Jump to Question</p>
             <div className="grid grid-cols-6 md:grid-cols-10 gap-2">
-              {quiz.questions.map((_, index) => (
+              {Array.isArray(quiz.questions) ? quiz.questions.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => {
@@ -347,7 +354,7 @@ export default function PlayQuizPage({ params }: PageProps) {
                 >
                   {index + 1}
                 </button>
-              ))}
+              )) : null}
             </div>
           </div>
         </div>

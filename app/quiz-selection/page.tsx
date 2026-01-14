@@ -49,6 +49,7 @@ export default function QuizSelectionPage() {
   const [levels, setLevels] = useState<Level[]>([])
   const [courses, setCourses] = useState<Course[]>([])
   const [units, setUnits] = useState<Unit[]>([])
+  const [allQuizzes, setAllQuizzes] = useState<Quiz[]>([])
   const [quizzes, setQuizzes] = useState<Quiz[]>([])
   
   const [selectedLevel, setSelectedLevel] = useState<string>("")
@@ -67,6 +68,8 @@ export default function QuizSelectionPage() {
     const currentUser = getCurrentUser()
     setUser(currentUser)
     fetchLevels()
+    // Fetch all quizzes initially
+    fetchAllQuizzes()
     // Try preselect from resume info
     const preload = async () => {
       try {
@@ -91,6 +94,53 @@ export default function QuizSelectionPage() {
     }
     preload()
   }, [])
+
+  const fetchAllQuizzes = async () => {
+    try {
+      setLoading(prev => ({ ...prev, quizzes: true }))
+      const baseUrl = getBaseUrl();
+      const res = await fetch(`${baseUrl}/api/quiz?limit=100`) // Fetch all quizzes
+      if (res.ok) {
+        const data = await res.json()
+        setAllQuizzes(data.quizzes || [])
+        setQuizzes(data.quizzes || []) // Initially show all quizzes
+      }
+    } catch (e) {
+      console.error("Failed to load all quizzes", e)
+    } finally {
+      setLoading(prev => ({ ...prev, quizzes: false }))
+    }
+  }
+
+  // Filter quizzes based on selected criteria
+  const filterQuizzes = () => {
+    let filtered = [...allQuizzes]
+    
+    if (selectedLevel) {
+      filtered = filtered.filter(quiz => quiz.level === selectedLevel)
+    }
+    if (selectedCourse) {
+      filtered = filtered.filter(quiz => quiz.subject === selectedCourse)
+    }
+    if (selectedUnit) {
+      // Note: This would need unit data in quiz object, for now filter by description containing unit name
+      filtered = filtered.filter(quiz => 
+        quiz.description.toLowerCase().includes(selectedUnit.toLowerCase())
+      )
+    }
+    if (selectedDifficulty) {
+      filtered = filtered.filter(quiz => quiz.difficulty === selectedDifficulty)
+    }
+    
+    setQuizzes(filtered)
+  }
+
+  // Re-filter quizzes when any filter changes
+  useEffect(() => {
+    if (allQuizzes.length > 0) {
+      filterQuizzes()
+    }
+  }, [selectedLevel, selectedCourse, selectedUnit, selectedDifficulty, allQuizzes])
 
   const fetchLevels = async () => {
     try {
@@ -162,36 +212,29 @@ export default function QuizSelectionPage() {
     setSelectedLevel(level)
     setSelectedCourse("")
     setSelectedUnit("")
+    setSelectedDifficulty("")
     setCourses([])
     setUnits([])
-    setQuizzes([])
     if (level) fetchCourses(level)
   }
 
   const handleCourseChange = (course: string) => {
     setSelectedCourse(course)
     setSelectedUnit("")
+    setSelectedDifficulty("")
     setUnits([])
-    setQuizzes([])
     if (course && selectedLevel) fetchUnits(selectedLevel, course)
   }
 
   const handleUnitChange = (unit: string) => {
     setSelectedUnit(unit)
-    setQuizzes([])
-    if (unit && selectedLevel && selectedCourse) {
-      fetchQuizzes(selectedLevel, selectedCourse, unit, selectedDifficulty)
-    }
+    setSelectedDifficulty("")
   }
 
   const handleDifficultyChange = (difficulty: string) => {
     // Interpret "any" as no filter
     const finalDifficulty = difficulty === "any" ? "" : difficulty
     setSelectedDifficulty(finalDifficulty)
-    
-    if (selectedLevel && selectedCourse && selectedUnit) {
-      fetchQuizzes(selectedLevel, selectedCourse, selectedUnit, finalDifficulty || undefined)
-    }
   }
   
 
@@ -324,69 +367,69 @@ export default function QuizSelectionPage() {
           </div>
 
           {/* Quizzes Grid */}
-          {quizzes.length > 0 && (
-            <div>
-              <h2 className="text-2xl font-bold glow-text mb-6">
-                Available Quizzes ({quizzes.length})
-              </h2>
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {quizzes.map((quiz) => (
-                  <Card key={quiz._id} className="glass-effect border-border/50 hover:glow-effect transition-all duration-300">
-                    <CardHeader>
-                      <CardTitle className="text-lg glow-text">{quiz.title}</CardTitle>
-                      <CardDescription>{quiz.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <Badge variant="secondary">{quiz.subject}</Badge>
-                          <Badge variant="outline">{quiz.level}</Badge>
-                        </div>
-                        
-                        <div className="flex items-center justify-between text-sm text-muted-foreground">
-                          <div className="flex items-center space-x-1">
-                            <Clock className="h-4 w-4" />
-                            <span>{quiz.duration} min</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <Brain className="h-4 w-4" />
-                            <span>{quiz.questions?.length || 0} questions</span>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <Badge 
-                            className={
-                              quiz.difficulty === "easy" ? "bg-green-500/20 text-green-400 border-green-500/30" :
-                              quiz.difficulty === "medium" ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" :
-                              "bg-red-500/20 text-red-400 border-red-500/30"
-                            }
-                          >
-                            {quiz.difficulty}
-                          </Badge>
-                        </div>
-
-                        <Button asChild className="w-full glow-effect">
-                          <Link href={`/quiz/${quiz._id}`}>
-                            Start Quiz
-                          </Link>
-                        </Button>
+          <div>
+            <h2 className="text-2xl font-bold glow-text mb-6">
+              Available Quizzes ({quizzes.length})
+            </h2>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {quizzes.map((quiz) => (
+                <Card key={quiz._id} className="glass-effect border-border/50 hover:glow-effect transition-all duration-300">
+                  <CardHeader>
+                    <CardTitle className="text-lg glow-text">{quiz.title}</CardTitle>
+                    <CardDescription>{quiz.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="secondary">{quiz.subject}</Badge>
+                        <Badge variant="outline">{quiz.level}</Badge>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                      
+                      <div className="flex items-center justify-between text-sm text-muted-foreground">
+                        <div className="flex items-center space-x-1">
+                          <Clock className="h-4 w-4" />
+                          <span>{quiz.duration} min</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Brain className="h-4 w-4" />
+                          <span>{quiz.questions?.length || 0} questions</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <Badge 
+                          className={
+                            quiz.difficulty === "easy" ? "bg-green-500/20 text-green-400 border-green-500/30" :
+                            quiz.difficulty === "medium" ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" :
+                            "bg-red-500/20 text-red-400 border-red-500/30"
+                          }
+                        >
+                          {quiz.difficulty}
+                        </Badge>
+                      </div>
+
+                      <Button asChild className="w-full glow-effect">
+                        <Link href={`/quiz/${quiz._id}`}>
+                          Start Quiz
+                        </Link>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-          )}
+          </div>
 
           {/* Empty State */}
-          {!loading.quizzes && quizzes.length === 0 && selectedUnit && (
+          {!loading.quizzes && quizzes.length === 0 && (
             <Card className="glass-effect border-border/50">
               <CardContent className="p-12 text-center">
                 <Brain className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-xl font-semibold mb-2">No quizzes found</h3>
                 <p className="text-muted-foreground">
-                  No quizzes available for the selected unit and difficulty level.
+                  {selectedLevel || selectedCourse || selectedUnit || selectedDifficulty
+                    ? "No quizzes match your current filter criteria. Try adjusting your filters."
+                    : "No quizzes are available at the moment."}
                 </p>
               </CardContent>
             </Card>

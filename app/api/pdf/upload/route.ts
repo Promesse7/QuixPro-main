@@ -98,4 +98,3 @@ The conclusion summarizes key points and provides next steps for learning.`,
     );
   }
 }
-

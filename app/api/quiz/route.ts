@@ -61,8 +61,8 @@ export async function GET(request: NextRequest) {
     }
 
     if (difficulty) {
-      // Normalize difficulty to lowercase to match database format
-      query.difficulty = difficulty.toLowerCase();
+      // Use a case-insensitive regex for the difficulty query to match "easy", "Easy", "EASY", etc.
+      query.difficulty = { $regex: `^${difficulty}$`, $options: 'i' };
     }
 
     const quizzes = await collection
@@ -90,26 +90,22 @@ export async function POST(request: NextRequest) {
     const db = await getDatabase();
     const collection = db.collection("quizzes");
     
-    const newQuiz: Quiz = {
-      id: uuidv4(),
+    const newQuiz = {
       title,
       subject,
       level,
       description,
-      questions: questions || 0,
+      questions: questions || [],
       duration: duration || 0,
       difficulty: difficulty || "Medium",
-      rating: 0,
       createdBy,
       createdAt: new Date(),
       updatedAt: new Date(),
-      isPublic: true,
-      questionIds: []
     };
     
-    await collection.insertOne(newQuiz);
+    const result = await collection.insertOne(newQuiz);
     
-    return NextResponse.json({ quiz: newQuiz }, { status: 201 });
+    return NextResponse.json({ quiz: { ...newQuiz, _id: result.insertedId } }, { status: 201 });
   } catch (error) {
     console.error("Error creating quiz:", error);
     return NextResponse.json({ error: "Failed to create quiz" }, { status: 500 });

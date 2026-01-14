@@ -1,224 +1,180 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { BookOpen, Search, Filter, Clock, Users, TrendingUp, ArrowRight, Loader2 } from "lucide-react"
-import Link from "next/link"
-import { getBaseUrl } from "@/lib/getBaseUrl"
-import { useGuestSession } from "@/hooks/useGuestSession"
+import { useState, useEffect, useMemo } from 'react'
+import Link from 'next/link'
+import { motion } from 'framer-motion'
+import { BookOpen, Search, Filter, Clock, Users, ArrowRight, Loader2, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { getBaseUrl } from '@/lib/getBaseUrl'
+import { useDebounce } from '@/hooks/useDebounce' // A custom hook for debouncing
+
+// Assuming Course type is defined somewhere, let's define it for clarity
+type Course = {
+  _id: string
+  name: string
+  description: string
+  level: string
+  quizCount: number
+  enrolledCount: number
+}
 
 export default function ExplorePage() {
-  const [courses, setCourses] = useState([])
+  const [courses, setCourses] = useState<Course[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedLevel, setSelectedLevel] = useState("all")
-  const { isGuest } = useGuestSession()
+
+  const debouncedSearchTerm = useDebounce(searchTerm, 300)
 
   useEffect(() => {
-    fetchAllCourses()
+    const fetchCourses = async () => {
+      setLoading(true)
+      try {
+        const baseUrl = getBaseUrl()
+        const res = await fetch(`${baseUrl}/api/explore/courses?limit=20`)
+        const data = await res.json()
+        setCourses(data.courses || [])
+      } catch (error) {
+        console.error("Failed to fetch courses:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchCourses()
   }, [])
 
-  const fetchAllCourses = async () => {
-    try {
-      const baseUrl = getBaseUrl()
-      const res = await fetch(`${baseUrl}/api/explore/courses?limit=12`)
-      const data = await res.json()
-      setCourses(data.courses || [])
-    } catch (error) {
-      console.error("Failed to fetch courses:", error)
-    } finally {
-      setLoading(false)
-    }
+  const filteredCourses = useMemo(() => {
+    return courses.filter((course) => {
+      const matchesSearch = course.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+      const matchesLevel = selectedLevel === 'all' || course.level === selectedLevel
+      return matchesSearch && matchesLevel
+    })
+  }, [courses, debouncedSearchTerm, selectedLevel])
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.05 },
+    },
   }
 
-  const filteredCourses = courses.filter((course: any) => {
-    const matchesSearch = course.name.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesLevel = selectedLevel === "all" || course.level === selectedLevel
-    return matchesSearch && matchesLevel
-  })
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900">
-      {/* Header */}
-      <div className="bg-white/5 backdrop-blur-lg border-b border-white/10 sticky top-0 z-50">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-black to-gray-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">Q</span>
-              </div>
-              <span className="text-white text-2xl font-bold">Qouta</span>
-            </Link>
-            
-            {isGuest && (
-              <Button asChild className="bg-gradient-to-r from-black to-gray-500">
-                <Link href="/auth">Sign Up Free</Link>
-              </Button>
-            )}
+    <div className="min-h-screen bg-background">
+      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="container max-w-7xl mx-auto h-16 flex items-center justify-between px-6">
+              <h1 className="text-2xl font-bold">Explore Courses</h1>
           </div>
-        </div>
-      </div>
-
-      <div className="container mx-auto px-6 py-12">
-        {/* Page Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
-        >
-          <h1 className="text-5xl font-bold text-white mb-4">
-            Explore Our Courses
-          </h1>
-          <p className="text-xl text-white/70 max-w-2xl mx-auto">
-            Browse through our collection of courses aligned with African education systems
-          </p>
-        </motion.div>
-
+      </header>
+      
+      <main className="container max-w-7xl mx-auto px-6 py-12">
         {/* Filters */}
-        <Card className="bg-white/5 backdrop-blur-lg border-white/10 mb-12">
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/40" />
-                <Input
-                  placeholder="Search courses..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/40"
-                />
-              </div>
-              <Select value={selectedLevel} onValueChange={setSelectedLevel}>
-                <SelectTrigger className="w-full md:w-48 bg-white/10 border-white/20 text-white">
-                  <SelectValue placeholder="All Levels" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Levels</SelectItem>
-                  <SelectItem value="P1">Primary 1-6</SelectItem>
-                  <SelectItem value="S1">Secondary 1-3</SelectItem>
-                  <SelectItem value="S4">Secondary 4-6</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Results Count */}
-        {!loading && (
-          <div className="mb-6">
-            <p className="text-white/70">
-              Showing <strong className="text-white">{filteredCourses.length}</strong> courses
-            </p>
+        <div className="mb-12 flex flex-col md:flex-row gap-4 items-center">
+          <div className="relative w-full md:flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <Input
+              placeholder="Search for courses..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 h-11 w-full"
+            />
           </div>
-        )}
+          <Select value={selectedLevel} onValueChange={setSelectedLevel}>
+            <SelectTrigger className="w-full md:w-56 h-11">
+              <Filter className="w-4 h-4 mr-2 text-muted-foreground"/>
+              <SelectValue placeholder="Filter by level" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Levels</SelectItem>
+              <SelectItem value="P1-P6">Primary (P1-P6)</SelectItem>
+              <SelectItem value="S1-S3">O-Level (S1-S3)</SelectItem>
+              <SelectItem value="S4-S6">A-Level (S4-S6)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-        {/* Courses Grid */}
+        {/* Results */}
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-12 h-12 text-black animate-spin" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => <CourseCardSkeleton key={i} />)}
           </div>
-        ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredCourses.map((course: any, index) => (
-              <motion.div
-                key={course._id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <Card className="bg-white/5 backdrop-blur-lg border-white/10 hover:bg-white/10 transition-all group h-full">
-                  <CardHeader>
-                    <div className="w-12 h-12 bg-gradient-to-br from-black to-gray-500 rounded-lg flex items-center justify-center mb-4">
-                      <BookOpen className="w-6 h-6 text-white" />
-                    </div>
-                    <CardTitle className="text-white text-xl">
-                      {course.name}
-                    </CardTitle>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Badge variant="secondary" className="bg-black/20 text-black border-0">
-                        {course.level || "All Levels"}
-                      </Badge>
-                      <Badge variant="outline" className="border-white/20 text-white/70">
-                        {course.difficulty || "Moderate"}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-white/60 mb-6">
-                      {course.description || "Comprehensive course covering essential topics"}
-                    </p>
-                    
-                    <div className="flex items-center justify-between text-sm text-white/50 mb-6">
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        <span>{course.estimatedHours || 20}hrs</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Users className="w-4 h-4" />
-                        <span>{course.enrollmentCount || 0} enrolled</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <TrendingUp className="w-4 h-4" />
-                        <span>{course.averageRating || 4.5}★</span>
-                      </div>
-                    </div>
-
-                    <Button
-                      asChild
-                      className="w-full bg-white/10 hover:bg-white/20 text-white border-0 group-hover:bg-gradient-to-r group-hover:from-black group-hover:to-gray-500"
-                    >
-                      <Link href={`/explore/course/${course._id}`}>
-                        View Details
-                        <ArrowRight className="ml-2 w-4 h-4" />
-                      </Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        )}
-
-        {/* Empty State */}
-        {!loading && filteredCourses.length === 0 && (
-          <div className="text-center py-20">
-            <BookOpen className="w-16 h-16 text-white/20 mx-auto mb-4" />
-            <h3 className="text-2xl font-bold text-white mb-2">No courses found</h3>
-            <p className="text-white/60">Try adjusting your search or filters</p>
-          </div>
-        )}
-
-        {/* Bottom CTA */}
-        {isGuest && (
+        ) : filteredCourses.length > 0 ? (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="mt-16 bg-gradient-to-r from-black/20 to-gray-500/20 rounded-2xl p-8 border border-white/20 text-center"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
           >
-            <h3 className="text-2xl font-bold text-white mb-3">
-              Ready to start your learning journey?
-            </h3>
-            <p className="text-white/70 mb-6">
-              Create a free account to save your progress, earn certificates, and compete on leaderboards
-            </p>
-            <Button
-              asChild
-              size="lg"
-              className="bg-gradient-to-r from-black to-gray-500 hover:from-black hover:to-gray-600 text-white px-10 py-6 text-lg"
-            >
-              <Link href="/auth">
-                Get Started Free
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Link>
-            </Button>
+            {filteredCourses.map((course) => (
+              <CourseCard key={course._id} course={course} />
+            ))}
           </motion.div>
+        ) : (
+          <div className="text-center py-20 rounded-lg border-2 border-dashed border-border">
+            <X className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-2xl font-bold mb-2">No Courses Found</h3>
+            <p className="text-muted-foreground">Your search for "{searchTerm}" in {selectedLevel} did not return any results.</p>
+          </div>
         )}
-      </div>
+      </main>
     </div>
   )
 }
+
+// --- Components --- //
+
+const CourseCard = ({ course }: { course: Course }) => {
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { y: 0, opacity: 1, transition: { type: 'spring' } },
+  }
+
+  return (
+    <motion.div variants={itemVariants} whileHover={{ y: -5 }}>
+      <Link href={`/course/${course._id}`} className="block h-full">
+        <div className="h-full rounded-2xl border bg-card p-6 flex flex-col justify-between transition-shadow duration-300 hover:shadow-lg hover:border-primary/50">
+          <div>
+            <div className="mb-4">
+              <span className="inline-flex items-center gap-2 rounded-md bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+                <BookOpen className="w-4 h-4" />
+                {course.level || 'General'}
+              </span>
+            </div>
+            <h3 className="text-xl font-semibold mb-2 text-foreground">{course.name}</h3>
+            <p className="text-muted-foreground text-sm mb-6 line-clamp-2">{course.description}</p>
+          </div>
+          <div className="flex items-center justify-between text-sm text-muted-foreground border-t pt-4 mt-auto">
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              <span>{course.enrolledCount || 0} enrolled</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              <span>{course.quizCount || 0} Quizzes</span>
+            </div>
+          </div>
+        </div>
+      </Link>
+    </motion.div>
+  )
+}
+
+const CourseCardSkeleton = () => (
+  <div className="rounded-2xl border bg-card p-6">
+    <div className="animate-pulse">
+      <div className="w-2/5 h-8 bg-muted rounded-md mb-4"></div>
+      <div className="w-full h-6 bg-muted rounded-md mb-2"></div>
+      <div className="w-4/5 h-6 bg-muted rounded-md"></div>
+      <div className="mt-6 space-y-2">
+        <div className="w-full h-4 bg-muted rounded-md"></div>
+        <div className="w-2/3 h-4 bg-muted rounded-md"></div>
+      </div>
+      <div className="flex items-center justify-between border-t mt-6 pt-4">
+        <div className="w-1/3 h-5 bg-muted rounded-md"></div>
+        <div className="w-1/3 h-5 bg-muted rounded-md"></div>
+      </div>
+    </div>
+  </div>
+)
