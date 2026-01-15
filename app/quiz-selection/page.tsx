@@ -48,10 +48,9 @@ export default function QuizSelectionPage() {
   const [user, setUser] = useState<any>(null)
   const [levels, setLevels] = useState<Level[]>([])
   const [courses, setCourses] = useState<Course[]>([])
-  const [units, setUnits] = useState<Unit[]>([])
-  const [allQuizzes, setAllQuizzes] = useState<Quiz[]>([])
   const [quizzes, setQuizzes] = useState<Quiz[]>([])
-  
+  const [allQuizzes, setAllQuizzes] = useState<Quiz[]>([])
+  const [totalQuizzes, setTotalQuizzes] = useState<number>(0)
   const [selectedLevel, setSelectedLevel] = useState<string>("")
   const [selectedCourse, setSelectedCourse] = useState<string>("")
   const [selectedUnit, setSelectedUnit] = useState<string>("")
@@ -68,8 +67,10 @@ export default function QuizSelectionPage() {
     const currentUser = getCurrentUser()
     setUser(currentUser)
     fetchLevels()
-    // Fetch all quizzes initially
-    fetchAllQuizzes()
+    // Fetch quiz count instead of all quizzes initially
+    fetchQuizCount()
+    // Only fetch all quizzes when filters are applied
+    // fetchAllQuizzes()
     // Try preselect from resume info
     const preload = async () => {
       try {
@@ -94,6 +95,19 @@ export default function QuizSelectionPage() {
     }
     preload()
   }, [])
+
+  const fetchQuizCount = async () => {
+    try {
+      const baseUrl = getBaseUrl();
+      const res = await fetch(`${baseUrl}/api/quizzes/count`)
+      if (res.ok) {
+        const data = await res.json()
+        setTotalQuizzes(data.count || 0)
+      }
+    } catch (e) {
+      console.error("Failed to load quiz count", e)
+    }
+  }
 
   const fetchAllQuizzes = async () => {
     try {
@@ -369,7 +383,7 @@ export default function QuizSelectionPage() {
           {/* Quizzes Grid */}
           <div>
             <h2 className="text-2xl font-bold glow-text mb-6">
-              Available Quizzes ({quizzes.length})
+              Available Quizzes ({selectedLevel || selectedCourse || selectedUnit || selectedDifficulty ? quizzes.length : totalQuizzes})
             </h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {quizzes.map((quiz) => (

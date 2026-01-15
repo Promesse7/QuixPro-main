@@ -4,7 +4,6 @@ import './globals.css';
 import { WebSocketProvider } from '@/context/WebSocketContext';
 import Provider from '@/components/Provider';
 import { FloatingNavbar } from '@/components/floating-navbar';
-
 const inter = Inter({ subsets: ['latin'] });
 
 export const viewport: Viewport = {
