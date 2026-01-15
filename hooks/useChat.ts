@@ -11,7 +11,7 @@ export const useChat = (groupId?: string) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load initial messages
+  // Load initial messages 
   const loadMessages = useCallback(async () => {
     if (!groupId) return;
     

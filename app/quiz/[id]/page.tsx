@@ -13,7 +13,7 @@ import { getBaseUrl } from "@/lib/getBaseUrl"
 
 export default function QuizPage({ params }: { params: { id: string } }) {
   const [currentQuestion, setCurrentQuestion] = useState(0)
-  const [answers, setAnswers] = useState<Record<string, string>>({})
+  const [answers, setAnswers] = useState<Record<string, string[]>>({})
   const [showExplanation, setShowExplanation] = useState(false)
   const [isCompleted, setIsCompleted] = useState(false)
   const [timeElapsed, setTimeElapsed] = useState(0)
@@ -91,8 +91,8 @@ export default function QuizPage({ params }: { params: { id: string } }) {
     }
   }, [timerInterval])
 
-  const handleAnswerSelect = (questionId: string, answerId: string) => {
-    setAnswers((prev) => ({ ...prev, [questionId]: answerId }))
+  const handleAnswerSelect = (questionId: string, answerIds: string[]) => {
+    setAnswers((prev) => ({ ...prev, [questionId]: answerIds }))
     setShowExplanation(true)
   }
 
@@ -162,14 +162,35 @@ export default function QuizPage({ params }: { params: { id: string } }) {
     if (!quiz || !quiz.questions || !Array.isArray(quiz.questions)) {
       return { correct: 0, total: 0, percentage: 0 }
     }
+    
     let correct = 0
     quiz.questions.forEach((question: any) => {
-      const userAnswer = answers[question.id]
-      const correctOption = question.options.find((opt: any) => opt.correct)
-      if (userAnswer === correctOption?.id) {
-        correct++
+      const userAnswers = answers[question.id] || []
+      const correctOptions = question.options
+        .filter((opt: any) => opt.correct)
+        .map((opt: any) => opt.id)
+      
+      // For single-answer questions
+      if (question.type !== 'multiple') {
+        const userAnswer = userAnswers[0]
+        if (correctOptions.includes(userAnswer)) {
+          correct++
+        }
+      } 
+      // For multiple-answer questions
+      else {
+        const allCorrectSelected = correctOptions.every((opt: string) => 
+          userAnswers.includes(opt)
+        )
+        const noIncorrectSelected = userAnswers.every((opt: string) => 
+          correctOptions.includes(opt)
+        )
+        if (allCorrectSelected && noIncorrectSelected && userAnswers.length > 0) {
+          correct++
+        }
       }
     })
+    
     const questionsLength = quiz.questions.length
     return {
       correct,
@@ -314,7 +335,7 @@ export default function QuizPage({ params }: { params: { id: string } }) {
         <div className="max-w-4xl mx-auto">
           <QuizQuestion
             question={question}
-            selectedAnswer={answers[question.id]}
+            selectedAnswers={answers[question.id] || []}
             showExplanation={showExplanation}
             onAnswerSelect={handleAnswerSelect}
             isVoiceMode={isVoiceMode}
