@@ -3,17 +3,18 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { WebSocketProvider } from '@/context/WebSocketContext';
 import Provider from '@/components/Provider';
+import 
 import { FloatingNavbar } from '@/components/floating-navbar';
 const inter = Inter({ subsets: ['latin'] });
 
 export const viewport: Viewport = {
-  themeColor: '#3b82f6',
+  themeColor: '#4a5361ff',
 };
 
 export const metadata: Metadata = {
-  title: 'QuixPro - Learning Platform',
+  title: 'Kwix - Learning Platform',
   description: 'Interactive learning platform with quizzes, real-time chat, and progress tracking',
-  generator: 'v0.app',
+  generator: 'Prometheus',
   manifest: '/manifest.json',
   other: {
     'mobile-web-app-capable': 'yes',
@@ -21,20 +22,20 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'QuixPro',
+    title: 'Kwix',
   },
   formatDetection: {
     telephone: false,
   },
   openGraph: {
     type: 'website',
-    siteName: 'QuixPro',
-    title: 'QuixPro - Learning Platform',
+    siteName: 'Kwix',
+    title: 'Kwix - Learning Platform',
     description: 'Interactive learning platform with quizzes, real-time chat, and progress tracking',
   },
   twitter: {
     card: 'summary',
-    title: 'QuixPro - Learning Platform',
+    title: 'Kwix - Learning Platform',
     description: 'Interactive learning platform with quizzes, real-time chat, and progress tracking',
   },
 };

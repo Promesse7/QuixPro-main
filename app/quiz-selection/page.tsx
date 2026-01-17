@@ -48,6 +48,7 @@ export default function QuizSelectionPage() {
   const [user, setUser] = useState<any>(null)
   const [levels, setLevels] = useState<Level[]>([])
   const [courses, setCourses] = useState<Course[]>([])
+  const [units, setUnits] = useState<Unit[]>([])
   const [quizzes, setQuizzes] = useState<Quiz[]>([])
   const [allQuizzes, setAllQuizzes] = useState<Quiz[]>([])
   const [totalQuizzes, setTotalQuizzes] = useState<number>(0)
@@ -252,13 +253,30 @@ export default function QuizSelectionPage() {
   }
   
 
+  // Safely render units only when they exist
+  const renderUnits = () => {
+    if (!units || units.length === 0) {
+      return <p className="text-sm text-muted-foreground mt-2">No units available for this course</p>
+    }
+    
+    return (
+      <SelectContent>
+        {units.map((unit) => (
+          <SelectItem key={unit._id} value={unit.name}>
+            {unit.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    )
+  }
+
   return (
     <div className="min-h-screen gradient-bg">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           {/* Breadcrumb */}
           <div className="mb-4">
-            <AppBreadcrumb items={[{ label: 'Home', href: '/dashboard' }, { label: 'Quiz Selection' }]} />
+            <AppBreadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Quiz Selection' }]} />
           </div>
 
           {/* Header */}
@@ -342,15 +360,12 @@ export default function QuizSelectionPage() {
                   <SelectTrigger className="glass-effect">
                     <SelectValue placeholder="Choose unit" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {units.map((unit) => (
-                      <SelectItem key={unit._id} value={unit.name}>
-                        {unit.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
+                  {renderUnits()}
                 </Select>
-                {loading.quizzes && <p className="text-sm text-muted-foreground mt-2">Loading quizzes...</p>}
+                {loading.units && <p className="text-sm text-muted-foreground mt-2">Loading units...</p>}
+                {!loading.units && (!units || units.length === 0) && selectedCourse && (
+                  <p className="text-sm text-muted-foreground mt-2">No units found for this course</p>
+                )}
               </CardContent>
             </Card>
 
