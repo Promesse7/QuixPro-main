@@ -28,6 +28,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { usePathname } from "next/navigation"
 import { SocialDashboardLayout } from "./components/SocialDashboardLayout"
+import { ZeroStateExperience } from "@/components/onboarding/ZeroStateExperience"
 
 export default function Ultimate2025Dashboard() {
   const [activeView, setActiveView] = useState<string>("dashboard")
@@ -60,7 +61,7 @@ export default function Ultimate2025Dashboard() {
           setLoading(false)
           return
         }
- 
+
         // Only try API if we have a user
         try {
           const response = await fetch("/api/dashboard-data")
@@ -96,7 +97,7 @@ export default function Ultimate2025Dashboard() {
 
     fetchData()
   }, [])
- 
+
   // Fallback data function
   const getFallbackData = () => ({
     progressStats: {
@@ -329,65 +330,67 @@ export default function Ultimate2025Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
-      {/* Mobile Header */}
-      <div className="lg:hidden flex items-center justify-between p-4 border-b border-border bg-background/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="flex items-center gap-3">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Menu className="w-5 h-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-80">
-              <SidebarContent />
-            </SheetContent>
-          </Sheet>
-          <Link href="/" className="flex items-center gap-2">
-            <Brain className="w-6 h-6 text-primary" />
-            <span className="font-bold text-lg">Quix</span>
-          </Link>
+    <ZeroStateExperience>
+      <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
+        {/* Mobile Header */}
+        <div className="lg:hidden flex items-center justify-between p-4 border-b border-border bg-background/80 backdrop-blur-md sticky top-0 z-50">
+          <div className="flex items-center gap-3">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Menu className="w-5 h-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="p-0 w-80">
+                <SidebarContent />
+              </SheetContent>
+            </Sheet>
+            <Link href="/" className="flex items-center gap-2">
+              <Brain className="w-6 h-6 text-primary" />
+              <span className="font-bold text-lg">Quix</span>
+            </Link>
+          </div>
+          <Button variant="ghost" size="icon" className="relative">
+            <Bell className="w-5 h-5" />
+            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+          </Button>
         </div>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-        </Button>
+
+        {/* Desktop Sidebar (hidden on mobile) */}
+        <aside className="hidden lg:block fixed left-0 top-0 h-full w-72 z-40">
+          <SidebarContent />
+        </aside>
+
+        {/* Main Content */}
+        {!loading && !error && <SocialDashboardLayout dashboardData={transformedData} user={user} />}
+
+        {/* Loading state */}
+        {loading && (
+          <div className="min-h-screen bg-background flex items-center justify-center">
+            <div className="flex flex-col items-center gap-4">
+              <div className="relative">
+                <div className="w-16 h-16 border-4 border-primary/30 rounded-full"></div>
+                <div className="absolute top-0 w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+              </div>
+              <p className="text-muted-foreground animate-pulse">Loading experience...</p>
+            </div>
+          </div>
+        )}
+
+        {/* Error state */}
+        {error && (
+          <div className="min-h-screen bg-background flex items-center justify-center p-4">
+            <div className="max-w-md w-full text-center space-y-4">
+              <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto">
+                <Activity className="w-8 h-8 text-destructive" />
+              </div>
+              <h2 className="text-2xl font-bold">Something went wrong</h2>
+              <p className="text-muted-foreground">{error}</p>
+              <Button onClick={() => window.location.reload()}>Try Again</Button>
+            </div>
+          </div>
+        )}
       </div>
-
-      {/* Desktop Sidebar (hidden on mobile) */}
-      <aside className="hidden lg:block fixed left-0 top-0 h-full w-72 z-40">
-        <SidebarContent />
-      </aside>
-
-      {/* Main Content */}
-      {!loading && !error && <SocialDashboardLayout dashboardData={transformedData} user={user} />}
-
-      {/* Loading state */}
-      {loading && (
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="relative">
-              <div className="w-16 h-16 border-4 border-primary/30 rounded-full"></div>
-              <div className="absolute top-0 w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-            </div>
-            <p className="text-muted-foreground animate-pulse">Loading experience...</p>
-          </div>
-        </div>
-      )}
-
-      {/* Error state */}
-      {error && (
-        <div className="min-h-screen bg-background flex items-center justify-center p-4">
-          <div className="max-w-md w-full text-center space-y-4">
-            <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto">
-              <Activity className="w-8 h-8 text-destructive" />
-            </div>
-            <h2 className="text-2xl font-bold">Something went wrong</h2>
-            <p className="text-muted-foreground">{error}</p>
-            <Button onClick={() => window.location.reload()}>Try Again</Button>
-          </div>
-        </div>
-      )}
-    </div>
+    </ZeroStateExperience>
   )
 }
