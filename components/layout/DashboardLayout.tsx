@@ -5,14 +5,14 @@ import { useSession } from 'next-auth/react';
 import { CollapsibleSidebar } from '@/components/dashboard/Sidebar';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { NotificationProvider } from '@/components/notifications/NotificationProvider';
-import { NotificationContextProvider } from '@/lib/contexts/NotificationContext';
+import { NotificationProvider as MainNotificationProvider } from '@/lib/contexts/NotificationContext';
 
 export default function DashboardLayout({ children, onNavigate }: { children: React.ReactNode, onNavigate: (view: string) => void }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { data: session } = useSession();
 
   return (
-    <NotificationContextProvider>
+    <MainNotificationProvider>
       <NotificationProvider>
         <div className="flex h-screen bg-gray-900 text-white">
           <CollapsibleSidebar isCollapsed={isCollapsed} onCollapse={setIsCollapsed} onNavigate={onNavigate} />
@@ -44,6 +44,6 @@ export default function DashboardLayout({ children, onNavigate }: { children: Re
           </main>
         </div>
       </NotificationProvider>
-    </NotificationContextProvider>
+    </MainNotificationProvider>
   );
 }

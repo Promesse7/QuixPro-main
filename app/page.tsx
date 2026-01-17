@@ -7,7 +7,7 @@ import { ThemeSwitcher } from '@/components/theme-switcher'
 import ParticleBackground from '@/components/landing/ParticleBackground'
 import TryQuizSection from '@/components/landing/TryQuizSection'
 
-export default function QuixLanding() {
+export default function KwixLanding() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { scrollYProgress } = useScroll()
   const opacity = useTransform(scrollYProgress, [0, 0.2], [1, 0])
@@ -61,7 +61,7 @@ export default function QuixLanding() {
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-lg">Q</span>
               </div>
-              <span className="text-xl font-semibold tracking-tight">Quix</span>
+              <span className="text-xl font-semibold tracking-tight">Kwix</span>
             </div>
 
             <div className="hidden md:flex items-center gap-8">
@@ -430,7 +430,7 @@ export default function QuixLanding() {
       <section id="how-it-works" className="py-24 px-6 bg-muted/30">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">How Quix works</h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-4">How Kwix works</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               A simple, effective learning journey designed to maximize your potential.
             </p>
@@ -485,7 +485,7 @@ export default function QuixLanding() {
           <div className="grid md:grid-cols-2 gap-6">
             {[
               {
-                quote: "Quix completely transformed how I prepare for exams. The adaptive quizzes identified my weak areas and helped me improve dramatically. I increased my math score by 25%!",
+                quote: "Kwix completely transformed how I prepare for exams. The adaptive quizzes identified my weak areas and helped me improve dramatically. I increased my math score by 25%!",
                 name: "Marie Claire Uwase",
                 role: "S6 Student, G.S. Kimisagara",
                 score: "78% → 95%"
@@ -497,13 +497,13 @@ export default function QuixLanding() {
                 score: "Top 5% nationally"
               },
               {
-                quote: "As a teacher, I've seen remarkable improvement in my students who use Quix. The instant feedback helps them learn from mistakes immediately, which is crucial for retention.",
+                quote: "As a teacher, I've seen remarkable improvement in my students who use Kwix. The instant feedback helps them learn from mistakes immediately, which is crucial for retention.",
                 name: "Claudine Mukamana",
                 role: "Mathematics Teacher, FAWE Girls School",
                 score: "Class avg +18%"
               },
               {
-                quote: "Preparing for national exams was stressful until I found Quix. The curriculum-aligned content and detailed explanations gave me the confidence I needed to excel.",
+                quote: "Preparing for national exams was stressful until I found Kwix. The curriculum-aligned content and detailed explanations gave me the confidence I needed to excel.",
                 name: "Eric Habimana",
                 role: "S6 Student, Lycée de Nyanza",
                 score: "National top 50"
@@ -587,7 +587,7 @@ export default function QuixLanding() {
               Ready to transform your grades?
             </h2>
             <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
-              Join 15,000+ Rwandan students who are already learning smarter with Quix. Start your free trial today.
+              Join 15,000+ Rwandan students who are already learning smarter with Kwix. Start your free trial today.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <button className="group px-8 py-4 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all flex items-center gap-2 text-lg">
@@ -612,7 +612,7 @@ export default function QuixLanding() {
                 <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-lg">Q</span>
                 </div>
-                <span className="text-xl font-semibold">Quix</span>
+                <span className="text-xl font-semibold">Kwix</span>
               </div>
               <p className="text-sm text-muted-foreground">
                 Empowering Rwandan students to achieve academic excellence through intelligent, adaptive learning.
@@ -650,7 +650,7 @@ export default function QuixLanding() {
           </div>
 
           <div className="pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
-            <p>© 2025 Quix. All rights reserved.</p>
+            <p>© 2025 Kwix. All rights reserved.</p>
             <div className="flex gap-6">
               <a href="#" className="hover:text-foreground">Twitter</a>
               <a href="#" className="hover:text-foreground">LinkedIn</a>

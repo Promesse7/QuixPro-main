@@ -1,6 +1,6 @@
 {
-  "name": "QuixPro - Learning Platform",
-  "short_name": "QuixPro",
+  "name": "Kwix - Learning Platform",
+  "short_name": "Kwix",
   "description": "Interactive learning platform with quizzes, real-time chat, and progress tracking",
   "start_url": "/",
   "display": "standalone",
