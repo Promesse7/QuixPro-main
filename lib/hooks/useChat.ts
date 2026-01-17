@@ -5,6 +5,8 @@ import type { Message } from "@/models/Chat"
 import { database, authenticateWithFirebase } from "@/lib/firebaseClient"
 import { getCurrentUserId, getFirebaseId } from "@/lib/userUtils"
 import { ref, onChildAdded, off, push, set, get } from "firebase/database"
+import { useMessagePagination } from "@/hooks/useMessagePagination"
+import { usePushNotifications } from "@/hooks/usePushNotifications"
 
 interface EnrichedMessage extends Omit<Message, "senderId"> {
   sender: { _id: string; name: string; avatar?: string; image?: string; email?: string }
@@ -17,6 +19,9 @@ export function useChat(conversationId: string) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [currentUserFirebaseId, setCurrentUserFirebaseId] = useState<string | null>(null)
   const isFetching = useRef(false)
+
+  const pagination = useMessagePagination(50)
+  const pushNotifications = usePushNotifications()
 
   useEffect(() => {
     async function setup() {
@@ -78,7 +83,11 @@ export function useChat(conversationId: string) {
           ...newMessage,
           sender: {
             _id: newMessage.senderId || newMessage.senderEmail, // Use unique ID if available
-            name: newMessage.senderName || newMessage.senderId?.split("_")[0] || newMessage.senderEmail?.split("@")[0] || "Unknown",
+            name:
+              newMessage.senderName ||
+              newMessage.senderId?.split("_")[0] ||
+              newMessage.senderEmail?.split("@")[0] ||
+              "Unknown",
             email: newMessage.senderEmail,
           },
         }
@@ -146,13 +155,21 @@ export function useChat(conversationId: string) {
         }
 
         await set(newMessageRef, messageData)
+
+        if (pushNotifications.isSubscribed) {
+          pushNotifications.sendNotification(`New message from ${messageData.senderName}`, {
+            body: content.substring(0, 100),
+            tag: `chat-${conversationId}`,
+          })
+        }
+
         console.log("[v0] Message sent successfully")
       } catch (err: any) {
         console.error("[v0] Error sending message:", err)
         setError(err.message)
       }
     },
-    [conversationId, database, currentUserId],
+    [conversationId, database, currentUserId, pushNotifications],
   )
 
   const setTyping = useCallback(
@@ -167,7 +184,6 @@ export function useChat(conversationId: string) {
             isTyping: true,
           })
         } else {
-          // Remove typing indicator
           await set(typingRef, null)
         }
       } catch (err: any) {
@@ -184,5 +200,7 @@ export function useChat(conversationId: string) {
     setTyping,
     error,
     currentUserId,
+    pagination,
+    pushNotifications,
   }
 }
