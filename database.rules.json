@@ -1,117 +1,94 @@
 {
   "rules": {
-    "messages": {
-      "$conversationId": {
-        ".read": true,
-        ".write": true,
-        "$messageId": {
-          ".read": true,
-          ".write": true
-        }
-      }
-    },
-    
-    "conversations": {
-      ".read": true,
-      ".write": true,
-      "$conversationId": {
-        ".read": true,
-        ".write": true,
-        "participants": {
-          "$userId": {
-            ".read": true,
-            ".write": true
-          }
-        }
-      }
-    },
-    
-    "typing": {
-      "$conversationId": {
-        ".read": true,
-        ".write": true,
-        "$userId": {
-          ".read": true,
-          ".write": true
-        }
-      }
-    },
-    
+    ".read": false,
+    ".write": false,
+
     "status": {
       "$userId": {
-        ".read": true,
-        ".write": true
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid === $userId"
       }
     },
-    
-    "chats": {
-      "$chatId": {
-        ".read": true,
-        ".write": true,
-        "messages": {
-          "$messageId": {
-            ".read": true,
-            ".write": true
+
+    "conversations": {
+      "$conversationId": {
+        ".read": "auth != null && data.child('participants').hasChild(auth.uid)",
+        ".write": "auth != null && (!data.exists() || data.child('participants').hasChild(auth.uid))",
+
+        "participants": {
+          "$userId": {
+            ".read": "auth != null",
+            ".write": "auth != null && $userId === auth.uid"
           }
         }
       }
     },
-    
-    "user_conversations": {
-      "$userId": {
-        ".read": true,
-        ".write": true
+
+    "messages": {
+      "$conversationId": {
+        ".read": "auth != null && root.child('conversations').child($conversationId).child('participants').hasChild(auth.uid)",
+        ".write": "auth != null && root.child('conversations').child($conversationId).child('participants').hasChild(auth.uid)",
+
+        "$messageId": {
+          ".validate": "newData.hasChildren(['senderId', 'content', 'timestamp']) &&
+                        newData.child('senderId').val() === auth.uid &&
+                        newData.child('content').isString() &&
+                        newData.child('content').val().length > 0"
+        }
       }
     },
-    
-    ".read": false,
-    ".write": false
-  }
-}
 
+    "typing": {
+      "$conversationId": {
+        ".read": "auth != null && root.child('conversations').child($conversationId).child('participants').hasChild(auth.uid)",
 
+        "$userId": {
+          ".write": "auth != null && $userId === auth.uid",
+          ".validate": "newData.hasChildren(['isTyping', 'timestamp']) &&
+                        newData.child('isTyping').isBoolean() &&
+                        newData.child('timestamp').isNumber()"
+        }
+      }
+    },
 
-{
-  {
-  "rules": {
     "groups": {
       "$groupId": {
-        // Allow read if user is a member of the group
-        ".read": "auth != null && 
-                 (data.child('members').hasChild(auth.uid) || 
-                  data.child('isPublic').val() === true)",
-                  
-        // Only allow group creation and updates by authenticated users
-        ".write": "auth != null && 
-                  (!data.exists() || 
-                   data.child('creatorId').val() === auth.uid || 
-                   data.child('admins').hasChild(auth.uid))",
-        
-        "messages": {
-          // Allow reading messages if user is a member
-          ".read": "auth != null && 
-                   root.child('groups').child($groupId).child('members').hasChild(auth.uid)",
-                  
-          // Allow writing messages if user is a member
-          // and not banned (if you implement banning)
-          ".write": "auth != null && 
-                    root.child('groups').child($groupId).child('members').hasChild(auth.uid) &&
-                    (!data.parent().child('settings').child('moderation').child('adminOnlyMessages').val() || 
-                     root.child('groups').child($groupId).child('admins').hasChild(auth.uid))",
-                     
-          "$messageId": {
-            // Allow message deletion by the sender or group admin
-            ".write": "auth != null && 
-                      (data.child('senderId').val() === auth.uid || 
-                       root.child('groups').child($groupId).child('admins').hasChild(auth.uid))",
-                       
-            // Validate message structure
-            ".validate": "newData.hasChildren(['content', 'senderId', 'timestamp'])"
+        ".read": "auth != null &&
+                  (data.child('members').hasChild(auth.uid) ||
+                   data.child('isPublic').val() === true)",
+
+        ".write": "auth != null &&
+                   (!data.exists() ||
+                    newData.child('creatorId').val() === auth.uid ||
+                    data.child('admins').hasChild(auth.uid))",
+
+        "members": {
+          "$userId": {
+            ".write": "auth != null && $userId === auth.uid"
           }
         },
-        
+
+        "admins": {
+          "$userId": {
+            ".write": "auth != null && data.parent().child('creatorId').val() === auth.uid"
+          }
+        },
+
+        "messages": {
+          ".read": "auth != null &&
+                    root.child('groups').child($groupId).child('members').hasChild(auth.uid)",
+
+          ".write": "auth != null &&
+                     root.child('groups').child($groupId).child('members').hasChild(auth.uid)",
+
+          "$messageId": {
+            ".validate": "newData.hasChildren(['senderId', 'content', 'timestamp']) &&
+                          newData.child('senderId').val() === auth.uid &&
+                          newData.child('content').isString()"
+          }
+        },
+
         "typing": {
-          // Allow users to update their own typing status
           "$userId": {
             ".write": "auth != null && $userId === auth.uid",
             ".validate": "newData.hasChildren(['isTyping', 'timestamp'])"
@@ -119,15 +96,20 @@
         }
       }
     },
-    
-    // User groups index for quick lookups
+
+    "user_conversations": {
+      "$userId": {
+        ".read": "auth != null && auth.uid === $userId",
+        ".write": "auth != null && auth.uid === $userId"
+      }
+    },
+
     "userGroups": {
       "$userId": {
-        // Users can only see their own groups
         ".read": "auth != null && auth.uid === $userId",
+        ".write": "auth != null && auth.uid === $userId",
         ".indexOn": ["updatedAt"]
       }
     }
   }
-}
 }

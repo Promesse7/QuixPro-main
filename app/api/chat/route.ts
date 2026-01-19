@@ -54,7 +54,7 @@ export async function POST(req: Request) {
 
 // Handler functions for each action
 async function handleCreateGroup(userId: string, data: any) {
-  const { name, description, isPublic = true, settings } = data;
+  const { name, description, isPublic = false } = data;
 
   if (!name) {
     return NextResponse.json(
@@ -63,15 +63,29 @@ async function handleCreateGroup(userId: string, data: any) {
     );
   }
 
-  const group = await chatService.createGroup({
-    name,
-    description,
+  const groupRef = push(ref(db, "groups"));
+
+  await set(groupRef, {
+    creatorId: userId,
     isPublic,
-    createdBy: userId,
-    settings
+    name,
+    description: description || '',
+    createdAt: Date.now(),
+    members: {
+      [userId]: true
+    },
+    admins: {
+      [userId]: true
+    }
   });
 
-  return NextResponse.json({ group });
+  return NextResponse.json({ 
+    success: true, 
+    group: {
+      id: groupRef.key,
+      ...(await get(groupRef)).val()
+    }
+  });
 }
 
 async function handleAddGroupMember(userId: string, data: any) {
