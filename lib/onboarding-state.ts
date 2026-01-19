@@ -1,7 +1,6 @@
 export type OnboardingStep =
   | "welcome"
-  | "first_message"
-  | "chat_feature"
+  | "feature_showcase"
   | "personalization"
   | "first_group"
   | "group_message"
@@ -12,7 +11,7 @@ export interface OnboardingState {
   completed: boolean
   timestamps: {
     started: number
-    firstMessage?: number
+    featureShowcase?: number
     personalization?: number
     firstGroup?: number
     groupMessage?: number

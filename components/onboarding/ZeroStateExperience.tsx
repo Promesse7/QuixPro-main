@@ -7,6 +7,7 @@ import { useOnboarding } from "@/hooks/useOnboarding"
 import { OnboardingTooltip } from "./OnboardingTooltip"
 import { MicroMissionChecklist } from "./MicroMissionChecklist"
 import { PersonalizationPrompt } from "./PersonalizationPrompt"
+import { InteractiveFeatureShowcase } from "./InteractiveFeatureShowcase"
 import { AnimatePresence } from "framer-motion"
 
 interface ZeroStateExperienceProps {
@@ -24,8 +25,8 @@ export function ZeroStateExperience({ onComplete, children }: ZeroStateExperienc
 
     // Auto-progress through onboarding steps
     if (state.step === "welcome") {
-      setTooltipText("Type your first message…")
-      updateStep("first_message")
+      setTooltipText("Explore Quix features…")
+      updateStep("feature_showcase")
     }
   }, [state, isLoading, updateStep])
 
@@ -33,11 +34,8 @@ export function ZeroStateExperience({ onComplete, children }: ZeroStateExperienc
     return children
   }
 
-  const handleFirstMessageSent = () => {
-    setShowTooltip(true)
-    setTooltipText("Nice. Conversations in Quix are real-time.")
-    setTimeout(() => setShowTooltip(false), 3000)
-    updateStep("chat_feature")
+  const handleFeatureShowcaseComplete = () => {
+    updateStep("personalization")
   }
 
   const handlePersonalizationComplete = (useCase: "friends" | "school" | "work") => {
@@ -49,15 +47,26 @@ export function ZeroStateExperience({ onComplete, children }: ZeroStateExperienc
     onComplete?.()
   }
 
+  const handleSkipShowcase = () => {
+    updateStep("personalization")
+  }
+
   return (
     <div className="relative">
       <AnimatePresence>{showTooltip && <OnboardingTooltip text={tooltipText} />}</AnimatePresence>
+
+      {state.step === "feature_showcase" && (
+        <InteractiveFeatureShowcase 
+          onComplete={handleFeatureShowcaseComplete}
+          onSkip={handleSkipShowcase}
+        />
+      )}
 
       {state.step === "personalization" && <PersonalizationPrompt onComplete={handlePersonalizationComplete} />}
 
       {state.step === "first_group" && <MicroMissionChecklist onComplete={handleMissionComplete} />}
 
-      <div onFocus={handleFirstMessageSent}>{children}</div>
+      <div>{children}</div>
     </div>
   )
 }
