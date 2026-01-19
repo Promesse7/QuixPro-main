@@ -10,7 +10,6 @@
         }
       }
     },
-    
     "conversations": {
       ".read": true,
       ".write": true,
@@ -25,7 +24,6 @@
         }
       }
     },
-    
     "typing": {
       "$conversationId": {
         ".read": true,
@@ -36,14 +34,12 @@
         }
       }
     },
-    
     "status": {
       "$userId": {
         ".read": true,
         ".write": true
       }
     },
-    
     "chats": {
       "$chatId": {
         ".read": true,
@@ -56,62 +52,42 @@
         }
       }
     },
-    
     "user_conversations": {
       "$userId": {
-        ".read": true,
-        ".write": true
+        ".read": "auth != null && auth.uid === $userId",
+        ".write": "auth != null && auth.uid === $userId"
       }
     },
-    
-    ".read": false,
-    ".write": false
-  }
-}
-
-
-
-{
-  {
-  "rules": {
     "groups": {
       "$groupId": {
-        // Allow read if user is a member of the group
         ".read": "auth != null && 
-                 (data.child('members').hasChild(auth.uid) || 
-                  data.child('isPublic').val() === true)",
+                 (root.child('groups').child($groupId).child('members').hasChild(auth.uid) || 
+                  root.child('groups').child($groupId).child('isPublic').val() === true)",
                   
-        // Only allow group creation and updates by authenticated users
         ".write": "auth != null && 
                   (!data.exists() || 
                    data.child('creatorId').val() === auth.uid || 
                    data.child('admins').hasChild(auth.uid))",
         
         "messages": {
-          // Allow reading messages if user is a member
           ".read": "auth != null && 
                    root.child('groups').child($groupId).child('members').hasChild(auth.uid)",
                   
-          // Allow writing messages if user is a member
-          // and not banned (if you implement banning)
           ".write": "auth != null && 
                     root.child('groups').child($groupId).child('members').hasChild(auth.uid) &&
                     (!data.parent().child('settings').child('moderation').child('adminOnlyMessages').val() || 
                      root.child('groups').child($groupId).child('admins').hasChild(auth.uid))",
                      
           "$messageId": {
-            // Allow message deletion by the sender or group admin
             ".write": "auth != null && 
                       (data.child('senderId').val() === auth.uid || 
                        root.child('groups').child($groupId).child('admins').hasChild(auth.uid))",
                        
-            // Validate message structure
             ".validate": "newData.hasChildren(['content', 'senderId', 'timestamp'])"
           }
         },
         
         "typing": {
-          // Allow users to update their own typing status
           "$userId": {
             ".write": "auth != null && $userId === auth.uid",
             ".validate": "newData.hasChildren(['isTyping', 'timestamp'])"
@@ -120,14 +96,14 @@
       }
     },
     
-    // User groups index for quick lookups
     "userGroups": {
       "$userId": {
-        // Users can only see their own groups
         ".read": "auth != null && auth.uid === $userId",
         ".indexOn": ["updatedAt"]
       }
-    }
+    },
+    
+    ".read": "auth != null",
+    ".write": "auth != null"
   }
-}
 }
