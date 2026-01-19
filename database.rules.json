@@ -10,6 +10,7 @@
         }
       }
     },
+    
     "conversations": {
       ".read": true,
       ".write": true,
@@ -24,6 +25,7 @@
         }
       }
     },
+    
     "typing": {
       "$conversationId": {
         ".read": true,
@@ -34,12 +36,14 @@
         }
       }
     },
+    
     "status": {
       "$userId": {
         ".read": true,
         ".write": true
       }
     },
+    
     "chats": {
       "$chatId": {
         ".read": true,
@@ -52,45 +56,45 @@
         }
       }
     },
+    
     "user_conversations": {
       "$userId": {
-        ".read": "auth != null && auth.uid === $userId",
-        ".write": "auth != null && auth.uid === $userId"
+        ".read": true,
+        ".write": true
       }
     },
+
     "groups": {
       "$groupId": {
-        ".read": "auth != null && 
-                 (root.child('groups').child($groupId).child('members').hasChild(auth.uid) || 
-                  root.child('groups').child($groupId).child('isPublic').val() === true)",
-                  
-        ".write": "auth != null && 
-                  (!data.exists() || 
-                   data.child('creatorId').val() === auth.uid || 
-                   data.child('admins').hasChild(auth.uid))",
+        ".read": "auth != null && (data.child('members').hasChild(auth.uid) || data.child('isPublic').val() === true)",
+        ".write": "auth != null && (!data.exists() || data.child('creatorId').val() === auth.uid || data.child('admins').hasChild(auth.uid))",
+        
+        "members": {
+          "$userId": {
+            ".read": "auth != null && root.child('groups').child($groupId).child('members').hasChild(auth.uid)",
+            ".write": "auth != null && (auth.uid === $userId || root.child('groups').child($groupId).child('admins').hasChild(auth.uid))"
+          }
+        },
+        
+        "admins": {
+          "$userId": {
+            ".read": "auth != null && root.child('groups').child($groupId).child('members').hasChild(auth.uid)",
+            ".write": "auth != null && root.child('groups').child($groupId).child('admins').hasChild(auth.uid)"
+          }
+        },
         
         "messages": {
-          ".read": "auth != null && 
-                   root.child('groups').child($groupId).child('members').hasChild(auth.uid)",
-                  
-          ".write": "auth != null && 
-                    root.child('groups').child($groupId).child('members').hasChild(auth.uid) &&
-                    (!data.parent().child('settings').child('moderation').child('adminOnlyMessages').val() || 
-                     root.child('groups').child($groupId).child('admins').hasChild(auth.uid))",
-                     
+          ".read": "auth != null && root.child('groups').child($groupId).child('members').hasChild(auth.uid)",
+          ".write": "auth != null && root.child('groups').child($groupId).child('members').hasChild(auth.uid)",
+          
           "$messageId": {
-            ".write": "auth != null && 
-                      (data.child('senderId').val() === auth.uid || 
-                       root.child('groups').child($groupId).child('admins').hasChild(auth.uid))",
-                       
-            ".validate": "newData.hasChildren(['content', 'senderId', 'timestamp'])"
+            ".validate": "newData.hasChildren(['senderId', 'content', 'timestamp']) && newData.child('senderId').val() === auth.uid"
           }
         },
         
         "typing": {
           "$userId": {
-            ".write": "auth != null && $userId === auth.uid",
-            ".validate": "newData.hasChildren(['isTyping', 'timestamp'])"
+            ".write": "auth != null && auth.uid === $userId"
           }
         }
       }
@@ -99,11 +103,12 @@
     "userGroups": {
       "$userId": {
         ".read": "auth != null && auth.uid === $userId",
+        ".write": "auth != null && auth.uid === $userId",
         ".indexOn": ["updatedAt"]
       }
     },
     
-    ".read": "auth != null",
-    ".write": "auth != null"
+    ".read": false,
+    ".write": false
   }
 }
