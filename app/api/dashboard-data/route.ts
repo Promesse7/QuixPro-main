@@ -3,6 +3,8 @@ import { getDatabase } from '@/lib/mongodb';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     console.log('Dashboard API: Starting request');
@@ -43,53 +45,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-async function getCalendarEvents(userId: string, db: any) {
-  try {
-    // Get upcoming quizzes
-    const upcomingQuizzes = await db.collection('quizzes')
-      .find({
-        startDate: { $gte: new Date() },
-        $or: [
-          { assignedTo: 'all' },
-          { assignedTo: userId },
-          { assignedUsers: { $in: [userId] } }
-        ]
-      })
-      .sort({ startDate: 1 })
-      .limit(5)
-      .toArray()
-    // Get assignments/deadlines
-    const assignments = await db.collection('assignments')
-      .find({
-        userId,
-        dueDate: { $gte: new Date() },
-        completed: { $ne: true }
-      })
-      .sort({ dueDate: 1 })
-      .limit(5)
-      .toArray()
-    // Format events
-    return [
-      ...upcomingQuizzes.map((quiz: any) => ({
-        id: `quiz-${quiz._id}`,
-        title: quiz.title,
-        date: quiz.startDate,
-        type: 'quiz' as const
-      })),
-      ...assignments.map((assignment: any) => ({
-        id: `assignment-${assignment._id}`,
-        title: assignment.title,
-        date: assignment.dueDate,
-        type: 'deadline' as const
-      }))
-    ]
-  } catch (error) {
-    console.error('Error fetching calendar events:', error)
-    return []
-  }
-}
-
-
 async function calculateRealData(user: any, userAttempts: any[], db: any) {
   const totalQuizzes = userAttempts.length;
   const averageScore = totalQuizzes > 0
@@ -110,7 +65,6 @@ async function calculateRealData(user: any, userAttempts: any[], db: any) {
           const attemptDate = new Date(attempt.createdAt);
           return attemptDate.getDay() === (index + 1) % 7;
         });
-        
         return { day, attempts: dayAttempts.length };
       });
     }
@@ -213,13 +167,12 @@ async function calculateRealData(user: any, userAttempts: any[], db: any) {
   } catch (leaderboardError) {
     console.warn('Error fetching leaderboard:', leaderboardError);
   }
- const calendarEvents = await getCalendarEvents(user._id, db)
+
   return {
     stats: {
       totalQuizzes,
       completedQuizzes: totalQuizzes,
       averageScore,
-      calendarEvents,
       certificates: 0,
       streak: user.streak || 0,
       totalPoints: user.points || 0

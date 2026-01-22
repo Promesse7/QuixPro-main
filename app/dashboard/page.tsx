@@ -3,10 +3,6 @@
 
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
-import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import { CalendarView } from '@/components/calendar/CalendarView'
-
 import {
   Users,
   Target,
@@ -46,54 +42,6 @@ export default function Ultimate2025Dashboard() {
 
   const analyticsRef = useRef<HTMLDivElement>(null)
   const pathname = usePathname()
-  const { data: session, status } = useSession()
-  const router = useRouter()
-
-
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/signin')
-      return
-    }
-    if (status === 'authenticated') {
-      fetchDashboardData()
-    }
-  }, [status, router])
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch('/api/dashboard-data')
-      if (!response.ok) throw new Error('Failed to fetch dashboard data')
-      const data = await response.json()
-      setDashboardData(data)
-    } catch (err) {
-      console.error('Error fetching dashboard data:', err)
-      setError('Failed to load dashboard data. Please try again later.')
-    } finally {
-      setLoading(false)
-    }
-  }
-  // Mock calendar events - replace with real data from your API
-  const calendarEvents = [
-    {
-      id: '1',
-      title: 'Physics Quiz',
-      date: new Date(),
-      type: 'quiz' as const
-    },
-    {
-      id: '2',
-      title: 'Maths Assignment Due',
-      date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
-      type: 'deadline' as const
-    }
-  ]
-  if (loading) {
-    return <div>Loading dashboard...</div>
-  }
-  if (error) {
-    return <div>Error: {error}</div>
-  }
 
   // Fetch real data from database
   useEffect(() => {
@@ -271,7 +219,7 @@ export default function Ultimate2025Dashboard() {
     { id: "quix-groups", label: "Quix Groups", icon: Users, href: "/groups" },
     { id: "quix-insights", label: "Quix Insights", icon: BarChart3, href: "/leaderboard" },
     { id: "quizzes", label: "Quizzes", icon: Target, href: "/quiz-selection" },
-    { id: "calendar", label: "Calendar", icon: Calendar, href: "/calendar" },
+    { id: "calendar", label: "Calendar", icon: Calendar, href: "/dashboard" },
     { id: "settings", label: "Settings", icon: Settings, href: "/profile" },
   ]
 
