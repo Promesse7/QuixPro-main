@@ -1,18 +1,15 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export async function GET() {
   try {
-    const session = await auth();
-    if (session) {
-      // This will clear the session cookie
-      await auth().signOut();
-    }
+    const session = await getServerSession(authOptions);
     
-    // Redirect to home page after sign out
+    // Create response with redirect
     const response = NextResponse.redirect(new URL('/', process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'));
     
-    // Clear any auth-related cookies
+    // Clear the session cookie
     response.cookies.set({
       name: 'next-auth.session-token',
       value: '',
