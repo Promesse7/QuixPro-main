@@ -2,13 +2,15 @@ import { ObjectId } from "mongodb";
 
 export interface User {
   _id?: ObjectId;
-  id: string;
+  firebaseUid: string; // Firebase Auth UID (primary key for auth)
+  id?: string;
   name: string;
   email: string;
   image?: string;
   role: "student" | "teacher" | "admin";
   level?: string;
   school?: string;
+  authProvider: "firebase" | "legacy"; // Track migration status
   progress?: {
     quizzesTaken: number;
     quizzesPassed: number;

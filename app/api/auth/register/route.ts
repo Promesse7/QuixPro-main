@@ -1,71 +1,92 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { registerUser } from "@/lib/auth-db"
 import { getDatabase } from "@/lib/mongodb"
-import { sign } from "jsonwebtoken"
-import { cookies } from 'next/headers'
+import { initializeApp, cert, getApps } from "firebase-admin/app"
+import { getAuth } from "firebase-admin/auth"
+
+// Initialize Firebase Admin SDK
+function getFirebaseAdmin() {
+  const apps = getApps()
+  if (apps.length === 0) {
+    initializeApp({
+      credential: cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+      }),
+    })
+  }
+  return getAuth()
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const userData = await request.json()
+    const { email, password, name, role, level } = await request.json()
 
-    const { email, password, name, role } = userData
-
+    // Validation
     if (!email || !password || !name || !role) {
-      return NextResponse.json({ error: "All fields are required" }, { status: 400 })
+      return NextResponse.json({ error: "Email, password, name, and role are required" }, { status: 400 })
     }
 
-    const user = await registerUser(userData)
-
-    if (!user) {
-      return NextResponse.json({ error: "Registration failed" }, { status: 400 })
+    if (password.length < 6) {
+      return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 })
     }
 
-    // Generate JWT token
-    const token = sign(
-      { 
-        userId: user.id,
-        email: user.email,
-        role: user.role,
-        name: user.name
-      },
-      process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '7d' }
-    )
+    console.log("[v0] Registration attempt for email:", email)
 
-    // Set HTTP-only cookie
-    cookies().set({
-      name: 'qouta_token',
-      value: token,
-      httpOnly: true,
-      path: '/',
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7 // 7 days
-    })
-
-    // Set role cookie (non-httpOnly for client-side access)
-    cookies().set({
-      name: 'qouta_role',
-      value: user.role,
-      path: '/',
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7 // 7 days
-    })
-
-    // Award Account Creator badge automatically
+    // Step 1: Create Firebase Auth user (THIS IS THE SOURCE OF TRUTH)
+    const auth = getFirebaseAdmin()
+    let firebaseUser
     try {
-      const db = await getDatabase()
-      const badgesCol = db.collection("badges")
-      const usersCol = db.collection("users")
-
-      // Find the Account Creator badge
-      const accountCreatorBadge = await badgesCol.findOne({
-        name: "Account Creator",
+      firebaseUser = await auth.createUser({
+        email: email.toLowerCase(),
+        password,
+        displayName: name,
       })
+      console.log("[v0] Firebase user created with UID:", firebaseUser.uid)
+    } catch (firebaseError: any) {
+      if (firebaseError.code === "auth/email-already-exists") {
+        return NextResponse.json({ error: "Email already registered" }, { status: 400 })
+      }
+      throw firebaseError
+    }
+
+    // Step 2: Create MongoDB profile linked to Firebase UID
+    const db = await getDatabase()
+    const usersCol = db.collection("users")
+
+    const mongoUser = {
+      firebaseUid: firebaseUser.uid,
+      email: email.toLowerCase(),
+      name,
+      role,
+      level: level || null,
+      authProvider: "firebase",
+      stats: {
+        totalQuizzes: 0,
+        completedQuizzes: 0,
+        averageScore: 0,
+        totalPoints: 0,
+        certificates: 0,
+      },
+      gamification: {
+        totalXP: 0,
+        currentLevel: 1,
+        streak: 0,
+        badges: [],
+      },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
+
+    const result = await usersCol.insertOne(mongoUser)
+    console.log("[v0] MongoDB profile created with ID:", result.insertedId)
+
+    // Step 3: Award Account Creator badge
+    try {
+      const badgesCol = db.collection("badges")
+      const accountCreatorBadge = await badgesCol.findOne({ name: "Account Creator" })
 
       if (accountCreatorBadge) {
-        // Award badge to user
         const newBadge = {
           badgeId: accountCreatorBadge._id.toString(),
           name: accountCreatorBadge.name,
@@ -73,9 +94,8 @@ export async function POST(request: NextRequest) {
           tier: accountCreatorBadge.tier,
         }
 
-        // Update user with badge and XP
         await usersCol.updateOne(
-          { email: email.toLowerCase() },
+          { firebaseUid: firebaseUser.uid },
           {
             $push: { "gamification.badges": newBadge },
             $inc: {
@@ -85,18 +105,22 @@ export async function POST(request: NextRequest) {
         )
       }
     } catch (badgeError) {
-      console.warn("Warning: Could not award account creation badge:", badgeError)
-      // Don't fail registration if badge award fails
+      console.warn("[v0] Could not award account creation badge:", badgeError)
     }
 
-    // Return user data without sensitive information
-    const { passwordHash, ...userWithoutPassword } = user as any;
-    return NextResponse.json({ 
-      user: userWithoutPassword,
-      token // For client-side storage if needed (e.g., in localStorage)
+    console.log("[v0] Registration successful for email:", email)
+
+    return NextResponse.json({
+      user: {
+        firebaseUid: firebaseUser.uid,
+        email: mongoUser.email,
+        name: mongoUser.name,
+        role: mongoUser.role,
+      },
+      message: "Registration successful. Please log in.",
     })
   } catch (error: any) {
-    console.error("Registration error:", error)
-    return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 })
+    console.error("[v0] Registration error:", error.message)
+    return NextResponse.json({ error: error.message || "Registration failed" }, { status: 500 })
   }
 }

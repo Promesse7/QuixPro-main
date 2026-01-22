@@ -59,13 +59,10 @@ export default function AuthPage() {
 
       const data = await response.json()
 
-      if (response.ok && data.user && data.token) {
+      if (response.ok && data.user) {
         setCurrentUser(data.user)
-        // Store token in localStorage for API authentication
-        localStorage.setItem('token', data.token)
-        // Also keep cookies for backward compatibility
-        document.cookie = `qouta_token=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`
-        document.cookie = `qouta_role=${data.user.role}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`
+        document.cookie = `qouta_token=${data.user.id}; path=/; max-age=${60 * 60 * 24 * 7}`
+        document.cookie = `qouta_role=${data.user.role}; path=/; max-age=${60 * 60 * 24 * 7}`
         
         setSuccess("Login successful! Redirecting...")
         setTimeout(() => {
