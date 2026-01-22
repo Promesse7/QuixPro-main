@@ -109,3 +109,4 @@ export function LeftSidebar({ user }: LeftSidebarProps) {
     </aside>
   )
 }
+ 

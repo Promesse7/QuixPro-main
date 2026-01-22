@@ -14,7 +14,7 @@
  */
 
 import { initializeApp, cert } from "firebase-admin/app"
-import { getAuth } from "firebase-admin/auth"
+import { getAuth } from "firebase-admin/auth" 
 import { getDatabase } from "../lib/mongodb"
 import * as crypto from "crypto"
 
