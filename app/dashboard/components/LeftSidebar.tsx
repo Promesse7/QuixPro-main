@@ -14,6 +14,7 @@ import {
   Award,
   FileText,
 } from "lucide-react"
+import { useRouter } from 'next/navigation'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -24,6 +25,17 @@ interface LeftSidebarProps {
 
 export function LeftSidebar({ user }: LeftSidebarProps) {
   const pathname = usePathname()
+  const router = useRouter()
+   const handleLogout = async () => {
+    try {
+      const response = await fetch('/api/auth/signout', { method: 'GET' })
+      if (response.redirected) {
+        window.location.href = response.url
+      }
+    } catch (error) {
+      console.error('Logout failed:', error)
+    }
+  }
 
   const navigationItems = [
     { id: "dashboard", label: "Dashboard", icon: Home, href: "/dashboard" },
@@ -100,6 +112,7 @@ export function LeftSidebar({ user }: LeftSidebarProps) {
       <div className="p-4 border-t border-border/50 mt-auto">
         <Button
           variant="ghost"
+          onClick={handleLogout}
           className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10"
         >
           <LogOut className="w-5 h-5 mr-3" />
