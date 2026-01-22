@@ -172,17 +172,31 @@ export const RWANDA_LEVELS: Record<
 // Database authentication functions
 export const authenticateUser = async (email: string, password: string): Promise<User | null> => {
   try {
+    console.log('Attempting to authenticate user:', email);
+    
     const db = await getDatabase()
+    if (!db) {
+      console.error('Failed to connect to database');
+      throw new Error('Database connection failed');
+    }
+    
     const usersCol = db.collection("users")
-
+    console.log('Looking up user in database...');
+    
     const user = await usersCol.findOne({ email: email.toLowerCase() })
-    if (!user) return null
-
-    // Check password
+    if (!user) {
+      console.log('No user found with email:', email);
+      return null
+    }
+    
+    console.log('User found, verifying password...');
     const isValidPassword = await bcrypt.compare(password, user.passwordHash)
-    if (!isValidPassword) return null
+    if (!isValidPassword) {
+      console.log('Invalid password for user:', email);
+      return null
+    }
 
-    // Convert ObjectId to string for frontend compatibility
+    console.log('Authentication successful for user:', email);
     const userForFrontend: User = {
       ...user,
       id: user._id.toString(),
@@ -193,7 +207,8 @@ export const authenticateUser = async (email: string, password: string): Promise
     return userForFrontend
   } catch (error) {
     console.error("Authentication error:", error)
-    return null
+    // Re-throw the error to be handled by the caller
+    throw error
   }
 }
 
