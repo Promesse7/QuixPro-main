@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { registerUser } from "@/lib/auth-db"
 import { getDatabase } from "@/lib/mongodb"
+import { sign } from "jsonwebtoken"
+import { cookies } from 'next/headers'
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,6 +19,39 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: "Registration failed" }, { status: 400 })
     }
+
+    // Generate JWT token
+    const token = sign(
+      { 
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+        name: user.name
+      },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '7d' }
+    )
+
+    // Set HTTP-only cookie
+    cookies().set({
+      name: 'qouta_token',
+      value: token,
+      httpOnly: true,
+      path: '/',
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7 // 7 days
+    })
+
+    // Set role cookie (non-httpOnly for client-side access)
+    cookies().set({
+      name: 'qouta_role',
+      value: user.role,
+      path: '/',
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7 // 7 days
+    })
 
     // Award Account Creator badge automatically
     try {
@@ -54,7 +89,12 @@ export async function POST(request: NextRequest) {
       // Don't fail registration if badge award fails
     }
 
-    return NextResponse.json({ user })
+    // Return user data without sensitive information
+    const { passwordHash, ...userWithoutPassword } = user as any;
+    return NextResponse.json({ 
+      user: userWithoutPassword,
+      token // For client-side storage if needed (e.g., in localStorage)
+    })
   } catch (error: any) {
     console.error("Registration error:", error)
     return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 })
