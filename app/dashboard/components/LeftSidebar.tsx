@@ -1,6 +1,7 @@
 "use client"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import { signOut } from "next-auth/react"
 import {
   Home,
   BookOpen,
@@ -13,10 +14,13 @@ import {
   Trophy,
   Award,
   FileText,
+  Loader2,
 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { useState } from "react"
+import { toast } from "sonner"
 
 interface LeftSidebarProps {
   user: any
@@ -24,6 +28,22 @@ interface LeftSidebarProps {
 
 export function LeftSidebar({ user }: LeftSidebarProps) {
   const pathname = usePathname()
+  const router = useRouter()
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true)
+      await signOut({ redirect: false })
+      router.push('/auth/signin')
+      router.refresh()
+    } catch (error) {
+      console.error('Error during logout:', error)
+      toast.error('Failed to log out. Please try again.')
+    } finally {
+      setIsLoggingOut(false)
+    }
+  }
 
   const navigationItems = [
     { id: "dashboard", label: "Dashboard", icon: Home, href: "/dashboard" },
@@ -100,13 +120,23 @@ export function LeftSidebar({ user }: LeftSidebarProps) {
       <div className="p-4 border-t border-border/50 mt-auto">
         <Button
           variant="ghost"
+          onClick={handleLogout}
+          disabled={isLoggingOut}
           className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10"
         >
-          <LogOut className="w-5 h-5 mr-3" />
-          Logout
+          {isLoggingOut ? (
+            <>
+              <Loader2 className="w-5 h-5 mr-3 animate-spin" />
+              Logging out...
+            </>
+          ) : (
+            <>
+              <LogOut className="w-5 h-5 mr-3" />
+              Logout
+            </>
+          )}
         </Button>
       </div>
     </aside>
   )
 }
- 
