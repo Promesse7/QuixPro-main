@@ -163,7 +163,8 @@ async function seedDatabase() {
         if (level) {
           courses.push({
             _id: new ObjectId(),
-            name: courseInfo.name,
+            name: `${courseInfo.name} - ${levelName}`, // Fix: Include level in name to avoid duplicates
+            displayName: courseInfo.name, // Keep original name for display
             description: `${courseInfo.name} for ${levelName}`,
             levelId: level._id,
             resources: [],
@@ -172,6 +173,90 @@ async function seedDatabase() {
       }
     }
     await coursesCol.insertMany(courses)
+
+    // 4.5 Insert Units for each course
+    console.log("📚 Inserting units...")
+    const unitsCol = db.collection("units")
+    const units = []
+
+    // Define unit templates for different subjects
+    const unitTemplates = {
+      Mathematics: [
+        "Numbers and Operations", "Algebra", "Geometry", "Statistics", "Probability", "Calculus"
+      ],
+      Biology: [
+        "Cell Biology", "Genetics", "Ecology", "Human Biology", "Evolution", "Plant Biology"
+      ],
+      Physics: [
+        "Mechanics", "Thermodynamics", "Waves", "Electricity", "Magnetism", "Modern Physics"
+      ],
+      Chemistry: [
+        "Atomic Structure", "Chemical Bonding", "Organic Chemistry", "Inorganic Chemistry", "Physical Chemistry", "Analytical Chemistry"
+      ],
+      English: [
+        "Grammar", "Comprehension", "Writing Skills", "Literature", "Vocabulary", "Communication"
+      ],
+      History: [
+        "Ancient History", "Medieval History", "Modern History", "Rwandan History", "World History", "Historical Methods"
+      ],
+      Geography: [
+        "Physical Geography", "Human Geography", "Economic Geography", "Rwandan Geography", "Climate Studies", "Cartography"
+      ],
+      "Science & Elementary Technology": [
+        "Basic Science", "Living Things", "Materials", "Energy", "Environment", "Technology Basics"
+      ],
+      Social Studies: [
+        "Community", "Culture", "Government", "Economics", "Citizenship", "Global Issues"
+      ],
+      Kinyarwanda: [
+        "Imvugo", "Inyandiko", "Ubumenyi", "Ururimi", "Umuco", "Ibyamamare"
+      ],
+      ICT: [
+        "Computer Basics", "Digital Literacy", "Programming", "Internet Skills", "Software Applications", "Digital Safety"
+      ],
+      "Advanced Mathematics": [
+        "Advanced Algebra", "Calculus", "Statistics", "Probability", "Linear Algebra", "Discrete Mathematics"
+      ],
+      Economics: [
+        "Microeconomics", "Macroeconomics", "Economic Theory", "Development Economics", "International Economics", "Financial Economics"
+      ],
+      Literature: [
+        "Literary Analysis", "Poetry", "Drama", "Fiction", "Critical Theory", "World Literature"
+      ],
+      "Computer Science": [
+        "Programming Fundamentals", "Data Structures", "Algorithms", "Database Systems", "Software Engineering", "Computer Networks"
+      ],
+      Medicine: [
+        "Anatomy", "Physiology", "Biochemistry", "Pharmacology", "Pathology", "Clinical Medicine"
+      ],
+      Engineering: [
+        "Engineering Mathematics", "Engineering Physics", "Materials Science", "Thermodynamics", "Fluid Mechanics", "Engineering Design"
+      ]
+    }
+
+    for (const course of courses) {
+      const subjectName = course.displayName || course.name.split(' - ')[0]
+      const levelName = course.name.includes(' - ') ? course.name.split(' - ')[1] : ''
+      const templateUnits = unitTemplates[subjectName] || ["Unit 1", "Unit 2", "Unit 3", "Unit 4", "Unit 5", "Unit 6"]
+      
+      // Create units for this course
+      for (let i = 0; i < templateUnits.length; i++) {
+        units.push({
+          _id: new ObjectId(),
+          courseId: course._id,
+          levelId: course.levelId,
+          name: templateUnits[i],
+          title: templateUnits[i],
+          description: `${templateUnits[i]} - ${subjectName} for ${levelName}`,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+      }
+    }
+    
+    if (units.length > 0) {
+      await unitsCol.insertMany(units)
+    }
 
     // 5. Insert Sample Quizzes with different difficulty levels
     console.log("❓ Inserting sample quizzes...")
@@ -298,6 +383,7 @@ async function seedDatabase() {
     - ${schools.length} schools  
     - ${levels.length} education levels
     - ${courses.length} courses
+    - ${units.length} units
     - ${sampleQuizzes.length} sample quizzes
     - ${sampleUsers.length} sample users
     - ${sampleTutors.length} sample tutors`)

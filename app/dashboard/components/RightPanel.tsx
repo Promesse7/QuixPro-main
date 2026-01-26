@@ -128,25 +128,27 @@ export function RightPanel({ dashboardData, user }: RightPanelProps) {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              {[
-                { name: "Alice J.", xp: 2840 },
-                { name: "Bob K.", xp: 2650 },
-                { name: "You", xp: 1850, isYou: true },
-              ].map((entry, idx) => (
-                <div
-                  key={idx}
-                  className={cn(
-                    "flex items-center justify-between p-2 rounded text-sm",
-                    entry.isYou ? "bg-primary/10 border border-primary/20" : "hover:bg-muted/50",
-                  )}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-muted-foreground">{idx + 1}</span>
-                    <span className={entry.isYou ? "font-bold" : ""}>{entry.name}</span>
+              {dashboardData?.leaderboard && dashboardData.leaderboard.length > 0 ? (
+                dashboardData.leaderboard.slice(0, 3).map((entry: any, idx: number) => (
+                  <div
+                    key={entry.id || entry.name}
+                    className={cn(
+                      "flex items-center justify-between p-2 rounded text-sm",
+                      entry.isCurrentUser ? "bg-primary/10 border border-primary/20" : "hover:bg-muted/50",
+                    )}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-muted-foreground">{entry.rank || idx + 1}</span>
+                      <span className={entry.isCurrentUser ? "font-bold" : ""}>{entry.name}</span>
+                    </div>
+                    <span className="text-xs font-semibold text-primary">{entry.totalPoints || 0} pts</span>
                   </div>
-                  <span className="text-xs font-semibold text-primary">{entry.xp} XP</span>
+                ))
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-xs text-muted-foreground">No activity yet. Complete quizzes to see rankings!</p>
                 </div>
-              ))}
+              )}
             </CardContent>
           </Card>
         </div>

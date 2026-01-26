@@ -64,7 +64,10 @@ export default function Ultimate2025Dashboard() {
 
         // Only try API if we have a user
         try {
-          const response = await fetch("/api/dashboard-data")
+          const token = currentUser?.token || currentUser?.sessionToken;
+          const response = await fetch("/api/dashboard-data", {
+            headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+          })
 
           if (!response.ok) {
             if (response.status === 401) {
@@ -81,6 +84,19 @@ export default function Ultimate2025Dashboard() {
           }
 
           const data = await response.json()
+          
+          // Fetch real leaderboard data
+          try {
+            const leaderboardResponse = await fetch("/api/leaderboard")
+            if (leaderboardResponse.ok) {
+              const leaderboardData = await leaderboardResponse.json()
+              data.leaderboard = leaderboardData.leaderboard || []
+            }
+          } catch (leaderboardError) {
+            console.error("Failed to fetch leaderboard:", leaderboardError)
+            data.leaderboard = []
+          }
+          
           setDashboardData(data)
         } catch (apiError) {
           console.error("API call failed, using fallback data:", apiError)

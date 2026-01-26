@@ -3,6 +3,11 @@ import { getDatabase } from 'firebase/database';
 import { getAuth, signInWithCustomToken, Auth } from 'firebase/auth';
 import { getCurrentUserId } from '@/lib/userUtils';
 
+import { signInAnonymously } from 'firebase/auth';
+
+
+
+
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
     authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -27,6 +32,8 @@ const validateFirebaseConfig = () => {
 let app: any = null;
 let database: any = null;
 let auth: Auth | null = null;
+
+
 
 // Initialize Firebase only if config is valid
 if (validateFirebaseConfig()) {

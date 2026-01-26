@@ -49,9 +49,19 @@ export function QuizResults({ quiz, answers, timeElapsed }: QuizResultsProps) {
       if (!questionId) return // Skip if no valid ID
       
       const userAnswer = answers[questionId]
-      const correctAnswer = question.correctAnswer
-      if (userAnswer === correctAnswer) {
-        correct++
+      
+      // Handle transformed data structure
+      if (question.options && Array.isArray(question.options)) {
+        const correctOption = question.options.find((opt: any) => opt.correct)
+        if (correctOption && userAnswer === correctOption.id) {
+          correct++
+        }
+      }
+      // Handle original data structure (correctAnswer as index)
+      else if (typeof question.correctAnswer === 'number') {
+        if (userAnswer !== undefined && parseInt(userAnswer) === question.correctAnswer) {
+          correct++
+        }
       }
     })
     const questionsLength = quiz.questions.length
@@ -147,7 +157,24 @@ export function QuizResults({ quiz, answers, timeElapsed }: QuizResultsProps) {
               {quiz.questions.map((question, index) => {
                 const questionId = question._id?.toString() || question.id
                 const userAnswer = answers[questionId]
-                const isCorrect = userAnswer === question.correctAnswer
+                
+                // Determine if answer is correct
+                let isCorrect = false
+                let correctAnswerText = ""
+                let userAnswerText = ""
+                
+                if (question.options && Array.isArray(question.options)) {
+                  const correctOption = question.options.find((opt: any) => opt.correct)
+                  isCorrect = correctOption && userAnswer === correctOption.id
+                  correctAnswerText = correctOption ? correctOption.text : ""
+                  
+                  const userOption = question.options.find((opt: any) => opt.id === userAnswer)
+                  userAnswerText = userOption ? userOption.text : ""
+                } else if (typeof question.correctAnswer === 'number') {
+                  isCorrect = userAnswer !== undefined && parseInt(userAnswer) === question.correctAnswer
+                  correctAnswerText = question.options[question.correctAnswer] || ""
+                  userAnswerText = userAnswer !== undefined ? question.options[parseInt(userAnswer)] || "Invalid answer" : "Not answered"
+                }
 
                 return (
                   <div key={questionId} className="border border-border/50 rounded-lg p-4 glass-effect">
@@ -163,14 +190,14 @@ export function QuizResults({ quiz, answers, timeElapsed }: QuizResultsProps) {
                       <div className="flex items-center space-x-2">
                         <span className="text-muted-foreground">Your answer:</span>
                         <span className={isCorrect ? "text-green-400" : "text-red-400"}>
-                          {userAnswer !== undefined ? question.options[userAnswer as number] || "Invalid answer" : "Not answered"}
+                          {userAnswerText}
                         </span>
                       </div>
                       {!isCorrect && (
                         <div className="flex items-center space-x-2">
                           <span className="text-muted-foreground">Correct answer:</span>
                           <span className="text-green-400">
-                            {question.options[question.correctAnswer as number]}
+                            {correctAnswerText}
                           </span>
                         </div>
                       )}

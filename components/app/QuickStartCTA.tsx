@@ -9,10 +9,14 @@ import { getBaseUrl } from "@/lib/getBaseUrl"
 
 export function QuickStartCTA() {
   const [resumeLinks, setResumeLinks] = useState<{ lastQuizUrl?: string | null; continueCourseUrl?: string | null; latestCertificateUrl?: string | null }>({})
+  const [isLoadingResume, setIsLoadingResume] = useState(true)
 
   useEffect(() => {
     const u = getCurrentUser()
-    if (!u) return
+    if (!u?.id) {
+      setIsLoadingResume(false)
+      return
+    }
     const load = async () => {
       try {
         const baseUrl = getBaseUrl()
@@ -21,7 +25,11 @@ export function QuickStartCTA() {
           const data = await res.json()
           setResumeLinks(data)
         }
-      } catch { }
+      } catch (error) {
+        console.error("Failed to load resume data:", error)
+      } finally {
+        setIsLoadingResume(false)
+      }
     }
     load()
   }, [])
@@ -38,20 +46,26 @@ export function QuickStartCTA() {
         </div>
       </div>
       <div className="flex flex-wrap gap-2">
-        {resumeLinks.lastQuizUrl && (
-          <Button asChild size="sm" className="glow-effect">
-            <Link href={resumeLinks.lastQuizUrl} className="rounded-xl"><RotateCcw className="h-4 w-4 mr-2" /> Resume Quiz</Link>
-          </Button>
-        )}
-        {resumeLinks.continueCourseUrl && (
-          <Button asChild size="sm" variant="outline">
-            <Link href={resumeLinks.continueCourseUrl} className="rounded-xl"><BookOpen className="h-4 w-4 mr-2" /> Continue Course</Link>
-          </Button>
-        )}
-        {resumeLinks.latestCertificateUrl && (
-          <Button asChild size="sm" variant="outline">
-            <Link href={resumeLinks.latestCertificateUrl} className="rounded-xl"><Award className="h-4 w-4 mr-2" /> Latest Certificate</Link>
-          </Button>
+        {isLoadingResume ? (
+          <div className="text-sm text-muted-foreground animate-pulse">Loading quick actions...</div>
+        ) : (
+          <>
+            {resumeLinks.lastQuizUrl && (
+              <Button asChild size="sm" className="glow-effect">
+                <Link href={resumeLinks.lastQuizUrl} className="rounded-xl"><RotateCcw className="h-4 w-4 mr-2" /> Resume Quiz</Link>
+              </Button>
+            )}
+            {resumeLinks.continueCourseUrl && (
+              <Button asChild size="sm" variant="outline">
+                <Link href={resumeLinks.continueCourseUrl} className="rounded-xl"><BookOpen className="h-4 w-4 mr-2" /> Continue Course</Link>
+              </Button>
+            )}
+            {resumeLinks.latestCertificateUrl && (
+              <Button asChild size="sm" variant="outline">
+                <Link href={resumeLinks.latestCertificateUrl} className="rounded-xl"><Award className="h-4 w-4 mr-2" /> Latest Certificate</Link>
+              </Button>
+            )}
+          </>
         )}
         <Button asChild size="sm" className="glow-effect">
           <Link href="/quiz" className="rounded-xl"><Play className="h-4 w-4 mr-2" /> Take a Quiz</Link>

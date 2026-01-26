@@ -1,49 +1,64 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { withAuth } from '@/lib/middleware/withAuth';
 
-export const dynamic = 'force-dynamic'
+// Rate limiting configuration
+const RATE_LIMIT = {
+  max: 100, // 100 requests per window
+  windowMs: 60 * 1000, // 1 minute
+};
 
-export async function GET(request: NextRequest) {
+// Main handler function that will be wrapped with auth
+async function dashboardHandler(
+  request: NextRequest,
+  _context: { params: any },
+  user: any
+) {
   try {
-    console.log('Dashboard API: Starting request');
+    console.log('Dashboard API: Processing request for user', user.email);
 
-    // 1. Get current user session
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
-      console.log('Dashboard API: No session found, returning 401');
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-    }
-
-    // 2. Connect to database
+    // Connect to database
     const db = await getDatabase();
-
-    // 3. Get user details from DB
-    const user = await db.collection('users').findOne({ email: session.user.email });
-    if (!user) {
+    
+    // Get fresh user details from DB
+    const userData = await db.collection('users').findOne({ email: user.email });
+    if (!userData) {
       console.log('Dashboard API: User not found in DB');
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // 4. Get user's quiz attempts
+    // Get user's quiz attempts
     const userAttempts = await db.collection('quiz_attempts')
-      .find({ userId: user._id.toString() }) // Ensure string comparison if storing as string, or ObjectId if ObjectId
+      .find({ userId: userData._id.toString() })
       .sort({ createdAt: -1 })
       .toArray();
 
-    // 5. Calculate real data
-    const realData = await calculateRealData(user, userAttempts, db);
+    // Calculate dashboard data
+    const realData = await calculateRealData(userData, userAttempts, db);
 
     return NextResponse.json(realData);
 
   } catch (error) {
     console.error('Dashboard data error:', error);
-    // On server error, we might still want to return 500 so frontend knows it failed
-    // The frontend has fallback logic for errors
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    // Return appropriate error response
+    if (error instanceof Error) {
+      return NextResponse.json(
+        { error: error.message || 'Internal server error' }, 
+        { status: error.name === 'UnauthorizedError' ? 401 : 500 }
+      );
+    }
+    return NextResponse.json(
+      { error: 'Internal server error' }, 
+      { status: 500 }
+    );
   }
 }
+
+// Export the route handler wrapped with authentication and rate limiting
+export const GET = withAuth(dashboardHandler, {
+  roles: ['student', 'teacher', 'admin'],
+  rateLimit: RATE_LIMIT
+});
 
 async function calculateRealData(user: any, userAttempts: any[], db: any) {
   const totalQuizzes = userAttempts.length;

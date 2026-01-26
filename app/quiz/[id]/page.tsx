@@ -45,7 +45,27 @@ export default function QuizPage({ params }: { params: { id: string } }) {
         const quizRes = await fetch(`${baseUrl}/api/quiz/${params.id}`)
         if (!quizRes.ok) throw new Error("Failed to fetch quiz")
         const quizData = await quizRes.json()
-        setQuiz(quizData.quiz)
+        
+        // Transform quiz data to match component expectations
+        const transformedQuiz = {
+          ...quizData.quiz,
+          questions: quizData.quiz.questions?.map((q: any, index: number) => ({
+            _id: q._id,
+            id: q._id || q.id || `question-${index}`,
+            question: q.question,
+            options: q.options.map((option: string, optIndex: number) => ({
+              id: optIndex.toString(), // Use index as ID
+              text: option,
+              correct: optIndex === q.correctAnswer // Mark correct option
+            })),
+            correctAnswer: q.correctAnswer,
+            explanation: q.explanation,
+            marks: 1, // Default marks per question
+            type: 'single' // Default to single choice
+          })) || []
+        }
+        
+        setQuiz(transformedQuiz)
 
         // Check for existing attempts
         if (currentUser) {
@@ -116,11 +136,13 @@ export default function QuizPage({ params }: { params: { id: string } }) {
       const score = calculateScore()
       const attemptData = {
         userId: user.id,
-        quizId: quiz.id,
+        quizId: quiz._id || quiz.id, // Use _id from database
         answers,
         timeElapsed,
         score,
       }
+
+      console.log('Recording quiz attempt:', attemptData)
 
       const baseUrl = getBaseUrl();
       const res = await fetch(`${baseUrl}/api/quiz-attempts`, {
@@ -133,13 +155,20 @@ export default function QuizPage({ params }: { params: { id: string } }) {
         const errorData = await res.json()
         if (res.status === 409) {
           // Quiz already completed
+          console.log('Quiz already completed:', errorData.attempt)
           setExistingAttempt(errorData.attempt)
         } else {
+          console.error('Failed to record attempt:', errorData)
           throw new Error(errorData.error || "Failed to record attempt")
         }
+      } else {
+        const result = await res.json()
+        console.log('Quiz attempt recorded successfully:', result)
       }
     } catch (e) {
       console.error("Failed to record quiz attempt", e)
+      // Don't throw error to prevent breaking the user experience
+      // Still show results even if recording fails
     }
   }
 
@@ -165,27 +194,21 @@ export default function QuizPage({ params }: { params: { id: string } }) {
     
     let correct = 0
     quiz.questions.forEach((question: any) => {
-      const userAnswers = answers[question.id] || []
-      const correctOptions = question.options
-        .filter((opt: any) => opt.correct)
-        .map((opt: any) => opt.id)
+      const questionId = question._id || question.id
+      const userAnswers = answers[questionId] || []
       
-      // For single-answer questions
-      if (question.type !== 'multiple') {
+      // Handle single-answer questions (correctAnswer is an index)
+      if (question.correctAnswer !== undefined && typeof question.correctAnswer === 'number') {
         const userAnswer = userAnswers[0]
-        if (correctOptions.includes(userAnswer)) {
+        if (userAnswer !== undefined && parseInt(userAnswer) === question.correctAnswer) {
           correct++
         }
-      } 
-      // For multiple-answer questions
-      else {
-        const allCorrectSelected = correctOptions.every((opt: string) => 
-          userAnswers.includes(opt)
-        )
-        const noIncorrectSelected = userAnswers.every((opt: string) => 
-          correctOptions.includes(opt)
-        )
-        if (allCorrectSelected && noIncorrectSelected && userAnswers.length > 0) {
+      }
+      // Handle the transformed data structure
+      else if (question.options && Array.isArray(question.options)) {
+        const correctOption = question.options.find((opt: any) => opt.correct)
+        const userAnswer = userAnswers[0]
+        if (correctOption && userAnswer === correctOption.id) {
           correct++
         }
       }

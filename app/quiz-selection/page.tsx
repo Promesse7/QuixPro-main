@@ -56,6 +56,7 @@ export default function QuizSelectionPage() {
   const [selectedCourse, setSelectedCourse] = useState<string>("")
   const [selectedUnit, setSelectedUnit] = useState<string>("")
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("")
+  const [isLoadingResume, setIsLoadingResume] = useState(true)
   
   const [loading, setLoading] = useState({
     levels: true,
@@ -75,7 +76,10 @@ export default function QuizSelectionPage() {
     // Try preselect from resume info
     const preload = async () => {
       try {
-        if (!currentUser) return
+        if (!currentUser?.id) {
+          setIsLoadingResume(false)
+          return
+        }
         const baseUrl = getBaseUrl();
         const res = await fetch(`${baseUrl}/api/user/resume?userId=${encodeURIComponent(currentUser.id)}`)
         if (!res.ok) return
@@ -92,7 +96,11 @@ export default function QuizSelectionPage() {
           setSelectedUnit(data.lastUnitName)
           await fetchQuizzes(data.lastLevelName || "", data.lastCourseName || "", data.lastUnitName)
         }
-      } catch {}
+      } catch (error) {
+        console.error("Failed to load resume data:", error)
+      } finally {
+        setIsLoadingResume(false)
+      }
     }
     preload()
   }, [])
@@ -304,9 +312,9 @@ export default function QuizSelectionPage() {
                 <CardDescription>Select your education level</CardDescription>
               </CardHeader>
               <CardContent>
-                <Select value={selectedLevel} onValueChange={handleLevelChange}>
+                <Select value={selectedLevel} onValueChange={handleLevelChange} disabled={loading.levels || isLoadingResume}>
                   <SelectTrigger className="glass-effect">
-                    <SelectValue placeholder="Choose level" />
+                    <SelectValue placeholder={isLoadingResume ? "Loading..." : "Choose level"} />
                   </SelectTrigger>
                   <SelectContent>
                     {levels.map((level) => (
@@ -316,7 +324,7 @@ export default function QuizSelectionPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                {loading.courses && <p className="text-sm text-muted-foreground mt-2">Loading courses...</p>}
+                {(loading.courses || isLoadingResume) && <p className="text-sm text-muted-foreground mt-2">Loading courses...</p>}
               </CardContent>
             </Card>
 
@@ -330,19 +338,19 @@ export default function QuizSelectionPage() {
                 <CardDescription>Select your subject</CardDescription>
               </CardHeader>
               <CardContent>
-                <Select value={selectedCourse} onValueChange={handleCourseChange} disabled={!selectedLevel}>
+                <Select value={selectedCourse} onValueChange={handleCourseChange} disabled={!selectedLevel || loading.courses || isLoadingResume}>
                   <SelectTrigger className="glass-effect">
-                    <SelectValue placeholder="Choose course" />
+                    <SelectValue placeholder={isLoadingResume ? "Loading..." : "Choose course"} />
                   </SelectTrigger>
                   <SelectContent>
                     {courses.map((course) => (
                       <SelectItem key={course._id} value={course.name}>
-                        {course.name}
+                        {course.displayName || course.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                {loading.units && <p className="text-sm text-muted-foreground mt-2">Loading units...</p>}
+                {(loading.units || isLoadingResume) && <p className="text-sm text-muted-foreground mt-2">Loading units...</p>}
               </CardContent>
             </Card>
 
@@ -356,14 +364,14 @@ export default function QuizSelectionPage() {
                 <CardDescription>Select a topic</CardDescription>
               </CardHeader>
               <CardContent>
-                <Select value={selectedUnit} onValueChange={handleUnitChange} disabled={!selectedCourse}>
+                <Select value={selectedUnit} onValueChange={handleUnitChange} disabled={!selectedCourse || isLoadingResume}>
                   <SelectTrigger className="glass-effect">
-                    <SelectValue placeholder="Choose unit" />
+                    <SelectValue placeholder={isLoadingResume ? "Loading..." : "Choose unit"} />
                   </SelectTrigger>
                   {renderUnits()}
                 </Select>
-                {loading.units && <p className="text-sm text-muted-foreground mt-2">Loading units...</p>}
-                {!loading.units && (!units || units.length === 0) && selectedCourse && (
+                {(loading.units || isLoadingResume) && <p className="text-sm text-muted-foreground mt-2">Loading units...</p>}
+                {!loading.units && !isLoadingResume && (!units || units.length === 0) && selectedCourse && (
                   <p className="text-sm text-muted-foreground mt-2">No units found for this course</p>
                 )}
               </CardContent>
@@ -379,9 +387,9 @@ export default function QuizSelectionPage() {
     <CardDescription>Filter by difficulty</CardDescription>
   </CardHeader>
   <CardContent>
-    <Select value={selectedDifficulty} onValueChange={handleDifficultyChange} disabled={!selectedUnit}>
+    <Select value={selectedDifficulty} onValueChange={handleDifficultyChange} disabled={!selectedUnit || isLoadingResume}>
       <SelectTrigger className="glass-effect">
-        <SelectValue placeholder="Any difficulty" />
+        <SelectValue placeholder={isLoadingResume ? "Loading..." : "Any difficulty"} />
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="any">Any difficulty</SelectItem> {/* ✅ FIXED */}
