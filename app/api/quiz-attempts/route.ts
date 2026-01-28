@@ -105,6 +105,19 @@ export async function POST(request: NextRequest) {
       }
     )
 
+    // Check and award eligible badges after quiz completion
+    try {
+      console.log(`Checking badges for user ${userId} after quiz completion...`)
+      
+      // Import and call the badge checking logic directly
+      const { checkAndAwardBadges } = await import("../badges/award-badges")
+      await checkAndAwardBadges(db, userId)
+      
+    } catch (badgeError) {
+      console.error("Failed to check badges:", badgeError)
+      // Don't fail the quiz attempt if badge checking fails
+    }
+
     return NextResponse.json({ attempt }, { status: 201 })
   } catch (error) {
     console.error("Create quiz attempt error:", error)

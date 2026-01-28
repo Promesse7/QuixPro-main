@@ -86,6 +86,13 @@ export const firebaseAdmin = {
     await messagesRef.set(message)
   },
 
+  async publishMessageToRealtimeDb(groupId: string, message: any) {
+    ensureFirebaseInitialized()
+    if (!realtimeDb) throw new Error("Firebase Realtime DB not initialized")
+    const messagesRef = realtimeDb.ref(`messages/${groupId}`).push()
+    await messagesRef.set(message)
+  },
+
   async publishDirectMessage(senderId: string, recipientId: string, message: any) {
     ensureFirebaseInitialized()
     if (!realtimeDb) throw new Error("Firebase Realtime DB not initialized")

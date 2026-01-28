@@ -97,6 +97,34 @@ export default function Ultimate2025Dashboard() {
             data.leaderboard = []
           }
           
+          // Fetch badges data
+          try {
+            const badgesResponse = await fetch(`/api/badges?userId=${currentUser.id || currentUser._id}`)
+            if (badgesResponse.ok) {
+              const badgesData = await badgesResponse.json()
+              data.badges = badgesData.badges || []
+              data.earnedBadgesCount = badgesData.badges.filter((b: any) => b.isEarned).length
+            }
+          } catch (badgesError) {
+            console.error("Failed to fetch badges:", badgesError)
+            data.badges = []
+            data.earnedBadgesCount = 0
+          }
+          
+          // Fetch certificates data
+          try {
+            const certificatesResponse = await fetch(`/api/certificates?userId=${currentUser.id || currentUser._id}`)
+            if (certificatesResponse.ok) {
+              const certificatesData = await certificatesResponse.json()
+              data.certificates = certificatesData.certificates || []
+              // Update stats with real certificate count
+              data.stats.certificates = certificatesData.certificates.length
+            }
+          } catch (certificatesError) {
+            console.error("Failed to fetch certificates:", certificatesError)
+            data.certificates = []
+          }
+          
           setDashboardData(data)
         } catch (apiError) {
           console.error("API call failed, using fallback data:", apiError)
@@ -135,6 +163,9 @@ export default function Ultimate2025Dashboard() {
       { id: 2, title: "Math Basics", difficulty: "Easy", time: "15 min", enrolled: 0, completion: 0 },
       { id: 3, title: "Science Introduction", difficulty: "Medium", time: "20 min", enrolled: 0, completion: 0 },
     ],
+    badges: [], // Empty badges array for fallback
+    earnedBadgesCount: 0, // No badges earned in fallback
+    certificates: [], // Empty certificates array for fallback
     activities: [
       {
         id: 1,

@@ -27,11 +27,12 @@ export default function BadgesPage() {
   }, [router])
 
   useEffect(() => {
-    if (user?._id) {
+    if (user?.id || user?._id) {
       const fetchBadges = async () => {
         try {
           setLoading(true)
-          const response = await fetch(`/api/badges?userId=${user._id}`)
+          const userId = user.id || user._id
+          const response = await fetch(`/api/badges?userId=${userId}`)
           if (!response.ok) {
             throw new Error('Failed to fetch your badge collection.')
           }

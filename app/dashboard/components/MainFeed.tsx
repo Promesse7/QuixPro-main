@@ -6,6 +6,7 @@ import { FeedCard } from "./FeedCard"
 import { ActivityCard } from "./ActivityCard"
 import { QuizCard } from "./QuizCard"
 import { GroupPreview } from "./GroupPreview"
+import { Badges } from "@/components/dashboard/Badges"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
@@ -44,6 +45,14 @@ export function MainFeed({ dashboardData }: MainFeedProps) {
 
             {/* Your Feed Tab */}
             <TabsContent value="feed" className="space-y-4 mt-6">
+              {/* Badges Component */}
+              {dashboardData?.badges && (
+                <Badges 
+                  badges={dashboardData.badges} 
+                  earnedCount={dashboardData.earnedBadgesCount || 0}
+                />
+              )}
+
               {/* Quiz Activity Cards */}
               {dashboardData?.recommendedQuizzes?.slice(0, 2).map((quiz: any) => (
                 <QuizCard key={quiz.id} quiz={quiz} />

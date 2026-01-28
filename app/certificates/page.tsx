@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -23,23 +24,26 @@ interface Certificate {
 // Removed mock data; fetch from API
 
 export default function CertificatesPage() {
+  const router = useRouter()
   const [user, setUser] = useState<any | null>(null)
   const [certificates, setCertificates] = useState<Certificate[]>([])
   const [refreshing, setRefreshing] = useState(false)
+  
   useEffect(() => {
     const currentUser = getCurrentUser()
     if (!currentUser) {
       router.push('/auth')
     }
     setUser(currentUser)
-  }, [])
+  }, [router])
   
   const fetchCertificates = async () => {
     try {
       if (!user) return
       setRefreshing(true)
       const baseUrl = getBaseUrl();
-      const res = await fetch(`${baseUrl}/api/certificates?userId=${user.id}`)
+      const userId = user.id || user._id
+      const res = await fetch(`${baseUrl}/api/certificates?userId=${userId}`)
       if (!res.ok) throw new Error("Failed to fetch certificates")
       const data = await res.json()
       setCertificates(
@@ -68,17 +72,14 @@ export default function CertificatesPage() {
   }
 
   useEffect(() => {
-    const currentUser = getCurrentUser()
-    setUser(currentUser)
-
-    if (currentUser?.role === "student") {
+    if (user?.role === "student") {
       fetchCertificates()
       
       // Refresh certificates every 30 seconds to catch new ones
       const interval = setInterval(fetchCertificates, 30000)
       return () => clearInterval(interval)
     }
-  }, [])
+  }, [user])
 
   const getCertificateTypeColor = (type: Certificate["type"]) => {
     switch (type) {

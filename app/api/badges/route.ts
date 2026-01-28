@@ -76,19 +76,23 @@ export async function POST(request: NextRequest) {
 
       switch (criteria.type) {
         case "xp":
-          isEligible = (user.gamification?.totalXP || 0) >= criteria.threshold;
+          isEligible = (user.stats?.totalPoints || 0) >= criteria.threshold;
           break;
         case "quizzes_completed":
-          isEligible = (user.analytics?.totalQuizzesTaken || 0) >= criteria.threshold;
+          isEligible = (user.stats?.completedQuizzes || 0) >= criteria.threshold;
           break;
         case "perfect_scores": {
-          const progressCol = db.collection("user_progress");
-          const perfectScores = await progressCol.countDocuments({ userId: user._id, "quizAttempts.score": 100 });
+          const attemptsCol = db.collection("quiz_attempts");
+          const perfectScores = await attemptsCol.countDocuments({ 
+            userId: user._id.toString(), 
+            percentage: 100,
+            status: "completed"
+          });
           isEligible = perfectScores >= criteria.threshold;
           break;
         }
         case "streak":
-          isEligible = (user.gamification?.streak || 0) >= criteria.threshold;
+          isEligible = (user.stats?.streak || 0) >= criteria.threshold;
           break;
         case "account_created":
           isEligible = true;
@@ -118,11 +122,21 @@ export async function POST(request: NextRequest) {
     }
 
     if (newlyEarned.length > 0) {
+      // Get current user data
+      const currentUser = await usersCol.findOne({ _id: user._id });
+      
+      // Initialize gamification if it doesn't exist
+      const gamification = currentUser.gamification || { badges: [], totalXP: 0 };
+      
+      // Add new badges to the array
+      gamification.badges.push(...newlyEarned);
+      gamification.totalXP += totalXPAdded;
+
+      // Update the user document
       await usersCol.updateOne(
         { _id: user._id },
         {
-          $push: { "gamification.badges": { $each: newlyEarned } },
-          $inc: { "gamification.totalXP": totalXPAdded },
+          $set: { gamification: gamification }
         }
       );
     }
