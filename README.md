@@ -1,30 +1,140 @@
-# Student quiz platform
 
-*Automatically synced with your [v0.app](https://v0.app) deployments*
+# Quix — Social Learning & Quiz Platform
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/promesse-rukundos-projects/v0-student-quiz-platform)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/projects/FXdTilEcO7P)
+Quix is a modern **student-centered learning platform** designed to make curriculum-based learning engaging, social, and adaptive.  
+It blends structured quizzes, real-time feedback, and community interaction into a single educational experience.
 
-## Overview
+---
 
-This repository will stay in sync with your deployed chats on [v0.app](https://v0.app).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.app](https://v0.app).
+## 🚀 What Quix Is
 
-## Deployment
+Quix is not just a quiz app.
 
-Your project is live at:
+It is a **social learning ecosystem** where students:
+- Practice curriculum-aligned quizzes
+- Learn at adaptive difficulty levels
+- Track progress and achievements
+- Interact with peers and study groups
+- Explore educational stories and insights
 
-**[https://vercel.com/promesse-rukundos-projects/v0-student-quiz-platform](https://vercel.com/promesse-rukundos-projects/v0-student-quiz-platform)**
+The long-term goal is to evolve Quix into a **full educational social network**.
 
-## Build your app
+---
 
-Continue building your app on:
+## 🎯 Core Features
 
-**[https://v0.app/chat/projects/FXdTilEcO7P](https://v0.app/chat/projects/FXdTilEcO7P)**
+### 📘 Curriculum-Based Quizzes
+- Structured by **Level → Course → Unit**
+- Supports multiple education levels (Primary, Secondary, Higher)
+- Difficulty modes:
+  - Easy
+  - Moderate
+  - Hard
+  - Expert
 
-## How It Works
+### ⚡ Real-Time Answer Checking
+- Instant feedback during quizzes
+- Score calculation and performance tracking
 
-1. Create and modify your project using [v0.app](https://v0.app)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+### 🏆 Progress & Motivation
+- Streak tracking
+- Certificates for completed courses
+- Planned XP and badge system
+
+### 🌍 Social Learning (In Progress)
+- Peer discovery and connections
+- Group creation for collaboration
+- Shared quiz activities
+- Insights feed for questions and discussions
+
+### 🤖 AI-Powered Expansion (Planned)
+- AI Quiz & Course Editor
+- PDF → quiz generation
+- Smart quiz and peer recommendations
+
+---
+
+## 🧱 Tech Stack
+
+- **Frontend:** Next.js, React, Tailwind CSS, shadcn/ui
+- **Backend:** Node.js, MongoDB
+- **Auth:** NextAuth
+- **Deployment:** Vercel
+- **Design Approach:** Modern, minimal, app-like UI
+
+---
+
+## 📂 Project Structure (High Level)
+
+```
+
+/app        → Next.js app router
+/components → Reusable UI components
+/lib        → Utilities and helpers
+/models     → Database models
+/api        → Backend routes
+/public     → Static assets
+
+````
+
+---
+
+## 🛠️ Development Status
+
+### ✅ Completed
+- Core quiz engine
+- Curriculum data mapping
+- User authentication & roles
+- Dashboard structure
+- Difficulty-based quizzes
+
+### 🚧 In Progress
+- Social features (peers, groups)
+- Insights feed
+- Shareable quiz results
+- UI/UX refinement
+
+### 🧠 Planned
+- AI Quiz Editor
+- Recommendation system
+- Badges, XP, avatar levels
+- Public profiles & certificates
+
+---
+
+## 🌱 Vision
+
+Quix aims to:
+- Make learning engaging, not repetitive
+- Encourage collaboration, not isolation
+- Blend education with modern social interaction
+- Empower students through technology
+
+This project is built with scalability and impact in mind.
+
+---
+
+## 📌 Getting Started
+
+```bash
+git clone https://github.com/your-username/quix.git
+cd quix
+npm install
+npm run dev
+````
+
+Configure environment variables in `.env.local` before running.
+
+---
+
+## 📜 License
+
+This project is currently under active development.
+License details will be added later.
+
+---
+
+**Built with purpose. Designed for learners. Powered by innovation.**
+
+```
+
