@@ -22,6 +22,9 @@ interface Course {
   _id: string
   name: string
   levelId: string
+  displayName?: string
+  subject?: string
+  gradeLevel?: string
 }
 
 interface Unit {
@@ -57,7 +60,7 @@ export default function QuizSelectionPage() {
   const [selectedUnit, setSelectedUnit] = useState<string>("")
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("")
   const [isLoadingResume, setIsLoadingResume] = useState(true)
-  
+
   const [loading, setLoading] = useState({
     levels: true,
     courses: false,
@@ -138,7 +141,7 @@ export default function QuizSelectionPage() {
   // Filter quizzes based on selected criteria
   const filterQuizzes = () => {
     let filtered = [...allQuizzes]
-    
+
     if (selectedLevel) {
       filtered = filtered.filter(quiz => quiz.level === selectedLevel)
     }
@@ -147,14 +150,14 @@ export default function QuizSelectionPage() {
     }
     if (selectedUnit) {
       // Note: This would need unit data in quiz object, for now filter by description containing unit name
-      filtered = filtered.filter(quiz => 
+      filtered = filtered.filter(quiz =>
         quiz.description.toLowerCase().includes(selectedUnit.toLowerCase())
       )
     }
     if (selectedDifficulty) {
       filtered = filtered.filter(quiz => quiz.difficulty === selectedDifficulty)
     }
-    
+
     setQuizzes(filtered)
   }
 
@@ -184,10 +187,21 @@ export default function QuizSelectionPage() {
     try {
       setLoading(prev => ({ ...prev, courses: true }))
       const baseUrl = getBaseUrl();
-      const res = await fetch(`${baseUrl}/api/courses?level=${level}`)
-      if (res.ok) {
-        const data = await res.json()
-        setCourses(data.courses || [])
+
+      // Find the level document first to get its ID
+      const levelsRes = await fetch(`${baseUrl}/api/levels`)
+      if (levelsRes.ok) {
+        const levelsData = await levelsRes.json()
+        const selectedLevelDoc = levelsData.levels.find((l: any) => l.name === level)
+
+        if (selectedLevelDoc) {
+          // Use levelId instead of level name
+          const res = await fetch(`${baseUrl}/api/courses?levelId=${selectedLevelDoc._id}`)
+          if (res.ok) {
+            const data = await res.json()
+            setCourses(data.courses || [])
+          }
+        }
       }
     } catch (e) {
       console.error("Failed to load courses", e)
@@ -200,10 +214,20 @@ export default function QuizSelectionPage() {
     try {
       setLoading(prev => ({ ...prev, units: true }))
       const baseUrl = getBaseUrl();
-      const res = await fetch(`${baseUrl}/api/units?course=${course}&level=${level}`)
-      if (res.ok) {
-        const data = await res.json()
-        setUnits(data.units || [])
+
+      // Find course document to get its ID
+      const coursesRes = await fetch(`${baseUrl}/api/courses`)
+      if (coursesRes.ok) {
+        const coursesData = await coursesRes.json()
+        const selectedCourseDoc = coursesData.courses.find((c: any) => c.name === course)
+
+        if (selectedCourseDoc) {
+          const res = await fetch(`${baseUrl}/api/units?courseId=${selectedCourseDoc._id}&level=${level}`)
+          if (res.ok) {
+            const data = await res.json()
+            setUnits(data.units || [])
+          }
+        }
       }
     } catch (e) {
       console.error("Failed to load units", e)
@@ -216,9 +240,26 @@ export default function QuizSelectionPage() {
     try {
       setLoading(prev => ({ ...prev, quizzes: true }))
       const baseUrl = getBaseUrl();
-      let url = `${baseUrl}/api/quiz?level=${level}&course=${course}&unit=${unit}`
-      if (difficulty) url += `&difficulty=${difficulty}`
-      
+
+      // Build query with proper IDs
+      let url = `${baseUrl}/api/quiz?level=${level}&course=${course}`
+
+      // Find unit document to get its ID
+      if (unit) {
+        const unitsRes = await fetch(`${baseUrl}/api/units?course=${course}&level=${level}`)
+        if (unitsRes.ok) {
+          const unitsData = await unitsRes.json()
+          const selectedUnitDoc = unitsData.units.find((u: any) => u.name === unit)
+          if (selectedUnitDoc) {
+            url += `&unitId=${selectedUnitDoc._id}`
+          }
+        }
+      }
+
+      if (difficulty && difficulty !== "any") {
+        url += `&difficulty=${difficulty}`
+      }
+
       const res = await fetch(url)
       if (res.ok) {
         const data = await res.json()
@@ -252,21 +293,29 @@ export default function QuizSelectionPage() {
   const handleUnitChange = (unit: string) => {
     setSelectedUnit(unit)
     setSelectedDifficulty("")
+    // Fetch quizzes when unit is selected
+    if (unit && selectedLevel && selectedCourse) {
+      fetchQuizzes(selectedLevel, selectedCourse, unit)
+    }
   }
 
   const handleDifficultyChange = (difficulty: string) => {
     // Interpret "any" as no filter
     const finalDifficulty = difficulty === "any" ? "" : difficulty
     setSelectedDifficulty(finalDifficulty)
+    // Fetch quizzes when difficulty changes
+    if (selectedUnit && selectedLevel && selectedCourse) {
+      fetchQuizzes(selectedLevel, selectedCourse, selectedUnit, finalDifficulty)
+    }
   }
-  
+
 
   // Safely render units only when they exist
   const renderUnits = () => {
     if (!units || units.length === 0) {
       return <p className="text-sm text-muted-foreground mt-2">No units available for this course</p>
     }
-    
+
     return (
       <SelectContent>
         {units.map((unit) => (
@@ -377,29 +426,29 @@ export default function QuizSelectionPage() {
               </CardContent>
             </Card>
 
-           {/* Difficulty Filter */}
-<Card className="glass-effect border-border/50">
-  <CardHeader>
-    <CardTitle className="flex items-center space-x-2">
-      <Brain className="h-5 w-5" />
-      <span>Difficulty</span>
-    </CardTitle>
-    <CardDescription>Filter by difficulty</CardDescription>
-  </CardHeader>
-  <CardContent>
-    <Select value={selectedDifficulty} onValueChange={handleDifficultyChange} disabled={!selectedUnit || isLoadingResume}>
-      <SelectTrigger className="glass-effect">
-        <SelectValue placeholder={isLoadingResume ? "Loading..." : "Any difficulty"} />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="any">Any difficulty</SelectItem> {/* ✅ FIXED */}
-        <SelectItem value="easy">Easy</SelectItem>
-        <SelectItem value="medium">Medium</SelectItem>
-        <SelectItem value="hard">Hard</SelectItem>
-      </SelectContent>
-    </Select>
-  </CardContent>
-</Card>
+            {/* Difficulty Filter */}
+            <Card className="glass-effect border-border/50">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Brain className="h-5 w-5" />
+                  <span>Difficulty</span>
+                </CardTitle>
+                <CardDescription>Filter by difficulty</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Select value={selectedDifficulty} onValueChange={handleDifficultyChange} disabled={!selectedUnit || isLoadingResume}>
+                  <SelectTrigger className="glass-effect">
+                    <SelectValue placeholder={isLoadingResume ? "Loading..." : "Any difficulty"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="any">Any difficulty</SelectItem> {/* ✅ FIXED */}
+                    <SelectItem value="easy">Easy</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="hard">Hard</SelectItem>
+                  </SelectContent>
+                </Select>
+              </CardContent>
+            </Card>
 
           </div>
 
@@ -421,7 +470,7 @@ export default function QuizSelectionPage() {
                         <Badge variant="secondary">{quiz.subject}</Badge>
                         <Badge variant="outline">{quiz.level}</Badge>
                       </div>
-                      
+
                       <div className="flex items-center justify-between text-sm text-muted-foreground">
                         <div className="flex items-center space-x-1">
                           <Clock className="h-4 w-4" />
@@ -434,11 +483,11 @@ export default function QuizSelectionPage() {
                       </div>
 
                       <div className="flex items-center justify-between">
-                        <Badge 
+                        <Badge
                           className={
                             quiz.difficulty === "easy" ? "bg-green-500/20 text-green-400 border-green-500/30" :
-                            quiz.difficulty === "medium" ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" :
-                            "bg-red-500/20 text-red-400 border-red-500/30"
+                              quiz.difficulty === "medium" ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" :
+                                "bg-red-500/20 text-red-400 border-red-500/30"
                           }
                         >
                           {quiz.difficulty}
