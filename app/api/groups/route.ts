@@ -58,12 +58,27 @@ export async function POST(request: NextRequest) {
 
     // --- SYNC WITH FIREBASE ---
     try {
-      const memberIds = newGroup.members.map(id => id.toString());
-      await firebaseAdmin.syncGroupMembers(groupId.toString(), memberIds);
+      const firebaseGroupData = {
+        name: newGroup.name,
+        description: newGroup.description,
+        createdBy: currentUser.email || currentUser._id.toString(), // Ensure createdBy is not undefined
+        members: newGroup.members.map(id => id.toString()),
+        admins: newGroup.admins.map(id => id.toString()),
+        isPrivate: newGroup.isPrivate,
+        createdAt: newGroup.createdAt.toISOString(),
+        updatedAt: newGroup.updatedAt.toISOString()
+      };
+
+      // Create group in Firebase Realtime Database
+      const firebaseDb = firebaseAdmin.database();
+      await firebaseDb.ref(`groups/${groupId.toString()}`).set(firebaseGroupData);
+
+      // Add group to user's groups list
+      await firebaseDb.ref(`users/${currentUser.email}/groups/${groupId.toString()}`).set(true);
+
     } catch (firebaseError) {
-      // For now, we log the error but don't fail the request.
-      // In a production scenario, you might want a more robust retry or rollback mechanism.
       console.error("Firebase sync failed after group creation:", firebaseError);
+      // Don't fail the request, but log the error
     }
     // --- END SYNC ---
 
@@ -76,7 +91,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error("Failed to create group:", error);
     if (error.code === 11000) {
-        return NextResponse.json({ error: "A group with this name already exists." }, { status: 409 });
+      return NextResponse.json({ error: "A group with this name already exists." }, { status: 409 });
     }
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

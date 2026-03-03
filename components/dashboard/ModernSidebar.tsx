@@ -230,7 +230,7 @@ export function ModernSidebar({
   return (
     <motion.div
       className={cn(
-        "flex flex-col h-full bg-card/80 backdrop-blur-xl border-r border-border/50 relative z-40",
+        "flex flex-col h-full bg-card/80 backdrop-blur-xl border-r border-border/50 relative z-40 overflow-hidden",
         isCollapsed ? "w-20" : "w-72"
       )}
       animate={{ width: isCollapsed ? 80 : 288 }}
@@ -281,7 +281,7 @@ export function ModernSidebar({
       </div>
 
       {/* Navigation */}
-      <ScrollArea className="flex-1 px-3 py-4">
+      <ScrollArea className="flex-1 h-[calc(100vh-8rem)] px-3 py-4">
         <div className="space-y-6">
           {/* Main Navigation */}
           <div>

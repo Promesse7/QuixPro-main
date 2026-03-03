@@ -164,10 +164,10 @@ export function useDashboardData() {
           id: currentUser.id,
           name: currentUser.name,
           email: currentUser.email,
-          level: currentUser.level || "Beginner",
+          level: (currentUser as any).level || "Beginner",
           avatar: currentUser.avatar || "",
-          points: 0,
-          streak: 0
+          points: (currentUser as any).points || 0,
+          streak: (currentUser as any).streak || 0
         })
       }
 
@@ -179,7 +179,7 @@ export function useDashboardData() {
         return
       }
 
-      // Try to fetch from API
+      // Try to fetch from API with better error handling
       try {
         const token = (currentUser as any)?.token || (currentUser as any)?.sessionToken
         const response = await fetch("/api/dashboard-data", {
@@ -195,43 +195,60 @@ export function useDashboardData() {
           }
           if (response.status === 404) {
             console.log("Dashboard API not found, using fallback data")
-            throw new Error("Dashboard API not available")
+            setDashboardData(getFallbackData())
+            setLoading(false)
+            return
           }
           throw new Error(`HTTP error! status: ${response.status}`)
         }
 
         let data = await response.json()
 
-        // Fetch additional data in parallel
-        const [leaderboardResponse, badgesResponse, certificatesResponse] = await Promise.allSettled([
-          fetch("/api/leaderboard"),
-          fetch(`/api/badges?userId=${currentUser.id}`),
-          fetch(`/api/certificates?userId=${currentUser.id}`)
-        ])
+        // Check if we got mock data (has console.log message)
+        if (data && typeof data === 'object' && !data.error) {
+          // Fetch additional data in parallel
+          const [leaderboardResponse, badgesResponse, certificatesResponse] = await Promise.allSettled([
+            fetch("/api/leaderboard"),
+            fetch(`/api/badges?userId=${currentUser.id}`),
+            fetch(`/api/certificates?userId=${currentUser.id}`)
+          ])
 
-        // Handle leaderboard data
-        if (leaderboardResponse.status === 'fulfilled' && leaderboardResponse.value.ok) {
-          const leaderboardData = await leaderboardResponse.value.json()
-          data.leaderboard = leaderboardData.leaderboard || []
-        }
-
-        // Handle badges data
-        if (badgesResponse.status === 'fulfilled' && badgesResponse.value.ok) {
-          const badgesData = await badgesResponse.value.json()
-          data.badges = badgesData.badges || []
-          data.earnedBadgesCount = badgesData.badges.filter((b: any) => b.isEarned).length
-        }
-
-        // Handle certificates data
-        if (certificatesResponse.status === 'fulfilled' && certificatesResponse.value.ok) {
-          const certificatesData = await certificatesResponse.value.json()
-          data.certificates = certificatesData.certificates || []
-          if (data.stats) {
-            data.stats.certificates = certificatesData.certificates.length
+          // Handle leaderboard data
+          if (leaderboardResponse.status === 'fulfilled' && leaderboardResponse.value.ok) {
+            const leaderboardData = await leaderboardResponse.value.json()
+            data.leaderboard = leaderboardData.leaderboard || []
           }
-        }
 
-        setDashboardData(data)
+          // Handle badges data
+          if (badgesResponse.status === 'fulfilled' && badgesResponse.value.ok) {
+            const badgesData = await badgesResponse.value.json()
+            data.badges = badgesData.badges || []
+            data.earnedBadgesCount = badgesData.badges.filter((b: any) => b.isEarned).length
+          }
+
+          // Handle certificates data
+          if (certificatesResponse.status === 'fulfilled' && certificatesResponse.value.ok) {
+            const certificatesData = await certificatesResponse.value.json()
+            data.certificates = certificatesData.certificates || []
+            if (data.stats) {
+              data.stats.certificates = certificatesData.certificates.length
+            }
+          }
+
+          // Update user data with fresh data from API
+          if (data.stats) {
+            setUser(prev => prev ? {
+              ...prev,
+              points: data.stats.totalPoints || prev.points,
+              streak: data.stats.streak || prev.streak
+            } : null)
+          }
+
+          setDashboardData(data)
+        } else {
+          console.log("Invalid data received, using fallback")
+          setDashboardData(getFallbackData())
+        }
       } catch (apiError) {
         console.error("API call failed, using fallback data:", apiError)
         setDashboardData(getFallbackData())

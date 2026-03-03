@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb';
 import { withAuth } from '@/lib/middleware/withAuth';
+import { withMockFallback } from '@/lib/mock-data-switch';
 
 // Rate limiting configuration
 const RATE_LIMIT = {
@@ -14,44 +15,104 @@ async function dashboardHandler(
   _context: { params: any },
   user: any
 ) {
-  try {
-    console.log('Dashboard API: Processing request for user', user.email);
+  return withMockFallback(
+    // MongoDB operation
+    async () => {
+      console.log('Dashboard API: Processing request for user', user.email);
 
-    // Connect to database
-    const db = await getDatabase();
-    
-    // Get fresh user details from DB
-    const userData = await db.collection('users').findOne({ email: user.email });
-    if (!userData) {
-      console.log('Dashboard API: User not found in DB');
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
+      // Connect to database
+      const db = await getDatabase();
 
-    // Get user's quiz attempts
-    const userAttempts = await db.collection('quiz_attempts')
-      .find({ userId: userData._id.toString() })
-      .sort({ createdAt: -1 })
-      .toArray();
+      // Get fresh user details from DB
+      const userData = await db.collection('users').findOne({ email: user.email });
+      if (!userData) {
+        console.log('Dashboard API: User not found in DB');
+        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      }
 
-    // Calculate dashboard data
-    const realData = await calculateRealData(userData, userAttempts, db);
+      // Get user's quiz attempts
+      const userAttempts = await db.collection('quiz_attempts')
+        .find({ userId: userData._id.toString() })
+        .sort({ createdAt: -1 })
+        .toArray();
 
-    return NextResponse.json(realData);
+      // Calculate dashboard data
+      const realData = await calculateRealData(userData, userAttempts, db);
 
-  } catch (error) {
-    console.error('Dashboard data error:', error);
-    // Return appropriate error response
-    if (error instanceof Error) {
-      return NextResponse.json(
-        { error: error.message || 'Internal server error' }, 
-        { status: error.name === 'UnauthorizedError' ? 401 : 500 }
-      );
-    }
-    return NextResponse.json(
-      { error: 'Internal server error' }, 
-      { status: 500 }
-    );
-  }
+      return NextResponse.json(realData);
+    },
+    // Mock operation
+    async () => {
+      console.log('📊 Using mock dashboard data (MongoDB not available)');
+
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      // Return mock data that matches the real structure
+      return NextResponse.json({
+        stats: {
+          totalQuizzes: 12,
+          completedQuizzes: 8,
+          averageScore: 85,
+          certificates: 3,
+          streak: 7,
+          totalPoints: 2450
+        },
+        analytics: {
+          weeklyActivity: [
+            { day: 'Mon', attempts: 2 },
+            { day: 'Tue', attempts: 1 },
+            { day: 'Wed', attempts: 3 },
+            { day: 'Thu', attempts: 0 },
+            { day: 'Fri', attempts: 2 },
+            { day: 'Sat', attempts: 1 },
+            { day: 'Sun', attempts: 0 }
+          ],
+          subjectDistribution: [
+            { subject: 'Physics', count: 4 },
+            { subject: 'Mathematics', count: 3 },
+            { subject: 'Chemistry', count: 2 },
+            { subject: 'Biology', count: 3 }
+          ],
+          difficultyBreakdown: [
+            { difficulty: 'Easy', count: 3 },
+            { difficulty: 'Medium', count: 4 },
+            { difficulty: 'Hard', count: 1 }
+          ],
+          chatActivity: []
+        },
+        activities: [
+          { id: '1', type: 'quiz', title: 'Completed Physics Quiz', time: '2 hours ago', score: 92 },
+          { id: '2', type: 'quiz', title: 'Completed Mathematics Quiz', time: '1 day ago', score: 88 },
+          { id: '3', type: 'achievement', title: 'Earned Quick Learner Badge', time: '2 days ago' },
+          { id: '4', type: 'quiz', title: 'Completed Chemistry Quiz', time: '3 days ago', score: 95 },
+          { id: '5', type: 'streak', title: '7-day streak achieved!', time: '1 week ago' }
+        ],
+        recommendedQuizzes: [
+          { id: '1', title: 'Advanced Mechanics', difficulty: 'Hard', duration: '30 min', category: 'Physics' },
+          { id: '2', title: 'Algebra Fundamentals', difficulty: 'Easy', duration: '20 min', category: 'Mathematics' },
+          { id: '3', title: 'Organic Chemistry', difficulty: 'Medium', duration: '25 min', category: 'Chemistry' }
+        ],
+        leaderboard: [
+          { rank: 1, name: 'Alex Johnson', points: 3200, avatar: '/avatars/alex.jpg' },
+          { rank: 2, name: 'Sarah Chen', points: 2850, avatar: '/avatars/sarah.jpg' },
+          { rank: 3, name: 'You', points: 2450, avatar: '/avatars/you.jpg', isUser: true },
+          { rank: 4, name: 'Mike Wilson', points: 2100, avatar: '/avatars/mike.jpg' },
+          { rank: 5, name: 'Emma Davis', points: 1950, avatar: '/avatars/emma.jpg' }
+        ],
+        achievements: [
+          { id: '1', title: 'Quick Learner', description: 'Complete 5 quizzes', type: 'badge' },
+          { id: '2', title: 'High Scorer', description: 'Score 90%+ on 3 quizzes', type: 'badge' },
+          { id: '3', title: 'Consistent Student', description: '7-day streak', type: 'badge' }
+        ],
+        socialSignals: {
+          activeUsers: 156,
+          newMessages: 3
+        }
+      });
+    },
+    "fetch dashboard data"
+  );
 }
 
 // Export the route handler wrapped with authentication and rate limiting

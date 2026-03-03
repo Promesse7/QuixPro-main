@@ -47,6 +47,23 @@ interface ModernDashboardLayoutProps {
   }
 }
 
+// Define types for dashboard data
+interface RecentQuiz {
+  id: string | number
+  title: string
+  score: number
+  time: string
+  difficulty: string
+}
+
+interface Achievement {
+  id: string | number
+  title: string
+  description: string
+  progress: number
+  icon: React.ReactNode
+}
+
 export function ModernDashboardLayout({
   dashboardData,
   user = { name: "User", email: "user@example.com", level: "Beginner", avatar: "", points: 0, streak: 0 }
@@ -54,27 +71,43 @@ export function ModernDashboardLayout({
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [activeSection, setActiveSection] = useState('overview')
 
-  const stats = dashboardData?.progressStats || {
+  // Use real dashboard data if available, otherwise fallback to mock data
+  const stats = dashboardData?.stats || dashboardData?.progressStats || {
     totalQuizzes: 12,
     completedQuizzes: 8,
     averageScore: 85,
-    totalPoints: 2450,
+    totalPoints: user?.points || 2450,
     certificates: 3,
-    streak: 7
+    streak: user?.streak || 7
   }
 
-  const recentQuizzes = [
-    { id: 1, title: "Advanced Mathematics", score: 92, time: "25 min", difficulty: "Hard" },
-    { id: 2, title: "Physics Fundamentals", score: 88, time: "20 min", difficulty: "Medium" },
-    { id: 3, title: "Chemistry Basics", score: 95, time: "15 min", difficulty: "Easy" }
-  ]
+  // Use real recent activities from dashboard data
+  const recentQuizzes: RecentQuiz[] = dashboardData?.activities?.filter((activity: any) => activity.type === 'quiz').slice(0, 3).map((activity: any): RecentQuiz => ({
+    id: activity.id,
+    title: activity.title,
+    score: activity.score || 85,
+    time: activity.time || "20 min",
+    difficulty: activity.difficulty || "Medium"
+  })) || [
+      { id: 1, title: "Advanced Mathematics", score: 92, time: "25 min", difficulty: "Hard" },
+      { id: 2, title: "Physics Fundamentals", score: 88, time: "20 min", difficulty: "Medium" },
+      { id: 3, title: "Chemistry Basics", score: 95, time: "15 min", difficulty: "Easy" }
+    ]
 
-  const achievements = [
-    { id: 1, title: "Quick Learner", description: "Complete 5 quizzes", progress: 80, icon: <Zap className="w-4 h-4" /> },
-    { id: 2, title: "Quiz Master", description: "Score 90%+ on 10 quizzes", progress: 60, icon: <Trophy className="w-4 h-4" /> },
-    { id: 3, title: "Consistent Student", description: "7-day streak", progress: 100, icon: <Flame className="w-4 h-4" /> }
-  ]
+  // Use real achievements from dashboard data
+  const achievements: Achievement[] = dashboardData?.achievements?.map((achievement: any): Achievement => ({
+    id: achievement.id,
+    title: achievement.title,
+    description: achievement.description,
+    progress: achievement.progress || 80,
+    icon: achievement.icon || <Trophy className="w-4 h-4" />
+  })) || [
+      { id: 1, title: "Quick Learner", description: "Complete 5 quizzes", progress: 80, icon: <Zap className="w-4 h-4" /> },
+      { id: 2, title: "Quiz Master", description: "Score 90%+ on 10 quizzes", progress: 60, icon: <Trophy className="w-4 h-4" /> },
+      { id: 3, title: "Consistent Student", description: "7-day streak", progress: 100, icon: <Flame className="w-4 h-4" /> }
+    ]
 
+  // Use real upcoming events (could be fetched from calendar API)
   const upcomingEvents = [
     { id: 1, title: "Math Study Group", time: "Today, 3:00 PM", type: "group" },
     { id: 2, title: "Physics Quiz Deadline", time: "Tomorrow, 11:59 PM", type: "deadline" },
@@ -127,14 +160,14 @@ export function ModernDashboardLayout({
   )
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-hidden">
       {/* Header */}
       <ModernDashboardHeader
         user={user}
         onMobileMenuToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
 
-      <div className="flex">
+      <div className="flex h-[calc(100vh-4rem)]">
         {/* Sidebar */}
         <ModernSidebar
           user={user}
@@ -144,10 +177,10 @@ export function ModernDashboardLayout({
 
         {/* Main Content */}
         <main className={cn(
-          "flex-1 transition-all duration-300",
+          "flex-1 transition-all duration-300 overflow-hidden",
           isSidebarCollapsed ? "ml-20" : "ml-72"
         )}>
-          <ScrollArea className="h-[calc(100vh-4rem)]">
+          <ScrollArea className="h-full">
             <div className="p-6 space-y-8">
               {/* Welcome Section */}
               <motion.div
@@ -235,7 +268,7 @@ export function ModernDashboardLayout({
                     <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
                       <CardContent className="p-6">
                         <div className="space-y-4">
-                          {recentQuizzes.map((quiz, index) => (
+                          {recentQuizzes.map((quiz: RecentQuiz, index: number) => (
                             <motion.div
                               key={quiz.id}
                               initial={{ opacity: 0, x: -20 }}
@@ -278,7 +311,7 @@ export function ModernDashboardLayout({
                     <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
                       <CardContent className="p-6">
                         <div className="space-y-4">
-                          {achievements.map((achievement, index) => (
+                          {achievements.map((achievement: Achievement, index: number) => (
                             <motion.div
                               key={achievement.id}
                               initial={{ opacity: 0, x: 20 }}
