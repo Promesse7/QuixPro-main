@@ -1,4 +1,4 @@
-import { auth } from './firebaseClient';
+import { auth as firebaseAuth } from './firebaseClient';
 import { firebaseAdmin } from './services/firebase';
 import { UserRole } from '@/models/User';
 
@@ -18,8 +18,13 @@ export async function createFirebaseUser({
   level,
 }: CreateFirebaseUserParams) {
   try {
+    ensureFirebaseInitialized();
+    if (!firebaseAdmin.auth) {
+      throw new Error('Firebase Admin not initialized');
+    }
+
     // Create user in Firebase Auth
-    const { uid } = await auth.createUser({
+    const userRecord = await firebaseAdmin.auth.createUser({
       email,
       password,
       displayName: name,
@@ -27,11 +32,11 @@ export async function createFirebaseUser({
     });
 
     // Set custom claims for role-based access control
-    await auth.setCustomUserClaims(uid, { role });
+    await firebaseAdmin.auth.setCustomUserClaims(userRecord.uid, { role });
 
     return {
       success: true,
-      firebaseUid: uid,
+      firebaseUid: userRecord.uid,
       email,
       name,
       role,
@@ -45,7 +50,11 @@ export async function createFirebaseUser({
 
 export async function verifyIdToken(token: string) {
   try {
-    return await firebaseAdmin.verifyIdToken(token);
+    ensureFirebaseInitialized();
+    if (!firebaseAdmin.auth) {
+      throw new Error('Firebase Admin not initialized');
+    }
+    return await firebaseAdmin.auth.verifyIdToken(token);
   } catch (error) {
     console.error('Error verifying ID token:', error);
     throw error;
@@ -55,11 +64,16 @@ export async function verifyIdToken(token: string) {
 // New function to get Firebase token for MongoDB user
 export async function getFirebaseTokenForUser(email: string, password: string) {
   try {
-    // Sign in with Firebase to get token
-    const userRecord = await auth.getUserByEmail(email);
+    ensureFirebaseInitialized();
+    if (!firebaseAdmin.auth) {
+      throw new Error('Firebase Admin not initialized');
+    }
 
-    // Create custom token for the user
-    const customToken = await auth.createCustomToken(userRecord.uid, {
+    // Get existing Firebase user
+    const userRecord = await firebaseAdmin.auth.getUserByEmail(email);
+
+    // Create custom token for user
+    const customToken = await firebaseAdmin.auth.createCustomToken(userRecord.uid, {
       email: email,
       role: userRecord.customClaims?.role || 'student'
     });
@@ -74,14 +88,19 @@ export async function getFirebaseTokenForUser(email: string, password: string) {
 // Function to sync MongoDB user with Firebase
 export async function syncUserWithFirebase(mongoUser: any) {
   try {
+    ensureFirebaseInitialized();
+    if (!firebaseAdmin.auth) {
+      throw new Error('Firebase Admin not initialized');
+    }
+
     let firebaseUser;
 
     try {
       // Try to get existing Firebase user
-      firebaseUser = await auth.getUserByEmail(mongoUser.email);
+      firebaseUser = await firebaseAdmin.auth.getUserByEmail(mongoUser.email);
     } catch (error) {
       // User doesn't exist in Firebase, create them
-      firebaseUser = await auth.createUser({
+      firebaseUser = await firebaseAdmin.auth.createUser({
         email: mongoUser.email,
         uid: mongoUser._id.toString(), // Use MongoDB ID as Firebase UID
         displayName: mongoUser.name,
@@ -91,7 +110,7 @@ export async function syncUserWithFirebase(mongoUser: any) {
     }
 
     // Set custom claims
-    await auth.setCustomUserClaims(firebaseUser.uid, {
+    await firebaseAdmin.auth.setCustomUserClaims(firebaseUser.uid, {
       email: mongoUser.email,
       role: mongoUser.role || 'student',
       level: mongoUser.level || 'Beginner',
@@ -102,5 +121,12 @@ export async function syncUserWithFirebase(mongoUser: any) {
   } catch (error: any) {
     console.error('Error syncing user with Firebase:', error);
     throw new Error(`Failed to sync user with Firebase: ${error.message}`);
+  }
+}
+
+// Helper function to ensure Firebase is initialized
+function ensureFirebaseInitialized() {
+  if (!firebaseAdmin) {
+    throw new Error('Firebase Admin SDK not initialized. Check environment variables.');
   }
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/mongodb";
 import { getCurrentUser } from "@/lib/auth";
-import { Group } from "@/models/index";
+import { Group, GroupRole } from "@/models/index";
 import { ObjectId } from "mongodb";
 import { firebaseAdmin } from "@/lib/services/firebase"; // Import the firebase admin service
 
@@ -22,11 +22,10 @@ export async function GET(request: NextRequest) {
   }
 }
 
-
 export async function POST(request: NextRequest) {
   try {
     const currentUser = getCurrentUser();
-    if (!currentUser || !currentUser._id) {
+    if (!currentUser || !currentUser.id) {
       return NextResponse.json({ error: "Unauthorized. Please log in to create a group." }, { status: 401 });
     }
 
@@ -40,17 +39,38 @@ export async function POST(request: NextRequest) {
     const db = await getDatabase();
     const groupsCollection = db.collection<Group>("groups");
 
-    const creatorId = new ObjectId(currentUser._id);
+    const creatorId = new ObjectId(currentUser.id);
 
     const newGroup: Omit<Group, '_id'> = {
       name,
       description: description || "",
-      creatorId,
-      members: [creatorId], // Creator is the first member
-      admins: [creatorId], // Creator is the first admin
-      isPrivate,
+      createdBy: currentUser.email || currentUser.id, // Use email or ID from auth lib
       createdAt: new Date(),
       updatedAt: new Date(),
+      isPublic: !isPrivate, // Use isPublic instead of isPrivate
+      members: [{
+        userId: currentUser.id,
+        role: 'admin' as GroupRole,
+        joinedAt: new Date()
+      }],
+      settings: {
+        allowMemberInvites: true,
+        allowMessageDeletion: true,
+        allowMessageEditing: true,
+        allowFileSharing: true,
+        allowMentions: true,
+        readReceipts: true,
+        notifications: {
+          enabled: true,
+          mentionsOnly: false
+        },
+        moderation: {
+          adminOnlyMessages: false,
+          memberApproval: false,
+          contentFilter: false
+        },
+        messageEditWindow: 5
+      }
     };
 
     const result = await groupsCollection.insertOne(newGroup as Group);
@@ -61,24 +81,26 @@ export async function POST(request: NextRequest) {
       const firebaseGroupData = {
         name: newGroup.name,
         description: newGroup.description,
-        createdBy: currentUser.email || currentUser._id.toString(), // Ensure createdBy is not undefined
-        members: newGroup.members.map(id => id.toString()),
-        admins: newGroup.admins.map(id => id.toString()),
-        isPrivate: newGroup.isPrivate,
+        createdBy: currentUser.email || currentUser.id, // Ensure createdBy is not undefined
+        members: newGroup.members.map((member: any) => member.userId),
+        admins: [currentUser.email || currentUser.id],
+        isPrivate: isPrivate,
         createdAt: newGroup.createdAt.toISOString(),
         updatedAt: newGroup.updatedAt.toISOString()
       };
 
       // Create group in Firebase Realtime Database
-      const firebaseDb = firebaseAdmin.database();
-      await firebaseDb.ref(`groups/${groupId.toString()}`).set(firebaseGroupData);
+      if (firebaseAdmin.database) {
+        const firebaseDb = firebaseAdmin.database;
+        await firebaseDb.ref(`groups/${groupId.toString()}`).set(firebaseGroupData);
 
-      // Add group to user's groups list
-      await firebaseDb.ref(`users/${currentUser.email}/groups/${groupId.toString()}`).set(true);
+        // Add group to user's groups list
+        await firebaseDb.ref(`users/${currentUser.email}/groups/${groupId.toString()}`).set(true);
+      }
 
     } catch (firebaseError) {
       console.error("Firebase sync failed after group creation:", firebaseError);
-      // Don't fail the request, but log the error
+      // Don't fail request, but log error
     }
     // --- END SYNC ---
 

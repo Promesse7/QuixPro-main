@@ -1,5 +1,7 @@
 import { ObjectId } from "mongodb";
 
+export type UserRole = "student" | "teacher" | "admin";
+
 export interface User {
   _id?: ObjectId;
   firebaseUid: string; // Firebase Auth UID (primary key for auth)
@@ -7,7 +9,7 @@ export interface User {
   name: string;
   email: string;
   image?: string;
-  role: "student" | "teacher" | "admin";
+  role: UserRole;
   level?: string;
   school?: string;
   authProvider: "firebase" | "legacy"; // Track migration status
@@ -32,7 +34,7 @@ export interface User {
       earnedAt: Date;
     }>;
   };
-  
+
   preferences?: {
     dailyGoal: number;
     theme: "light" | "dark";

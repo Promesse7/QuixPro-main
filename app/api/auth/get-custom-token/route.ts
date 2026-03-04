@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { getDatabase } from "@/lib/mongodb"
-import { auth } from "@/lib/services/firebase"
+import { firebaseAdmin } from "@/lib/services/firebase"
+import { getCurrentUser } from "@/lib/auth"
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,54 +14,52 @@ export async function POST(request: NextRequest) {
     const { email } = await request.json()
     const userEmail = email || session.user.email
 
-    const db = await getDatabase()
-    
-    // Get user from MongoDB
-    const mongoUser = await db.collection("users").findOne({ email: userEmail })
-    
-    if (!mongoUser) {
+    // Get current user from auth lib (which uses localStorage)
+    const currentUser = getCurrentUser()
+
+    if (!currentUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
     // Get or create Firebase user
     let firebaseUser
     try {
-      firebaseUser = await auth.getUserByEmail(userEmail)
+      firebaseUser = await firebaseAdmin.auth.getUserByEmail(userEmail)
     } catch (error) {
       // Create Firebase user if doesn't exist
-      firebaseUser = await auth.createUser({
+      firebaseUser = await firebaseAdmin.auth.createUser({
         email: userEmail,
-        uid: mongoUser._id.toString(),
-        displayName: mongoUser.name,
+        uid: currentUser.id, // Use user ID from auth lib
+        displayName: currentUser.name,
         emailVerified: true,
         password: Math.random().toString(36).slice(-8), // Random password
       })
     }
 
     // Set custom claims
-    await auth.setCustomUserClaims(firebaseUser.uid, {
+    await firebaseAdmin.auth.setCustomUserClaims(firebaseUser.uid, {
       email: userEmail,
-      role: mongoUser.role || 'student',
-      level: mongoUser.level || 'Beginner',
-      mongoId: mongoUser._id.toString()
+      role: currentUser.role || 'student',
+      level: currentUser.level || 'Beginner',
+      mongoId: currentUser.id
     })
 
     // Create custom token
-    const customToken = await auth.createCustomToken(firebaseUser.uid, {
+    const customToken = await firebaseAdmin.auth.createCustomToken(firebaseUser.uid, {
       email: userEmail,
-      role: mongoUser.role || 'student'
+      role: currentUser.role || 'student'
     })
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       token: customToken,
       uid: firebaseUser.uid,
       email: userEmail
     })
   } catch (error: any) {
     console.error("Error getting custom token:", error)
-    return NextResponse.json({ 
-      error: "Failed to get custom token", 
-      details: error.message 
+    return NextResponse.json({
+      error: "Failed to get custom token",
+      details: error.message
     }, { status: 500 })
   }
 }

@@ -32,6 +32,10 @@ function ensureFirebaseInitialized() {
 }
 
 export const firebaseAdmin = {
+  auth,
+  database: realtimeDb,
+  firestore,
+
   async createCustomToken(uid: string, additionalClaims = {}) {
     ensureFirebaseInitialized()
     if (!auth) throw new Error("Firebase not initialized")
