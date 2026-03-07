@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb';
 import { withAuth } from '@/lib/middleware/withAuth';
-import { withMockFallback } from '@/lib/mock-data-switch';
 
 // Rate limiting configuration
 const RATE_LIMIT = {
@@ -15,107 +14,43 @@ async function dashboardHandler(
   _context: { params: any },
   user: any
 ) {
-  return withMockFallback(
-    // MongoDB operation
-    async () => {
-      console.log('Dashboard API: Processing request for user', user.email);
+  try {
+    console.log('Dashboard API: Processing request for user', user.email);
 
-      // Connect to database
-      const db = await getDatabase();
+    // Connect to database
+    const db = await getDatabase();
 
-      // Get fresh user details from DB
-      const userData = await db.collection('users').findOne({ email: user.email });
-      if (!userData) {
-        console.log('Dashboard API: User not found in DB');
-        return NextResponse.json({ error: 'User not found' }, { status: 404 });
-      }
-
-      // Get user's quiz attempts
-      const userAttempts = await db.collection('quiz_attempts')
-        .find({ userId: userData._id.toString() })
-        .sort({ createdAt: -1 })
-        .toArray();
-
-      // Calculate dashboard data
-      const realData = await calculateRealData(userData, userAttempts, db);
-
-      return NextResponse.json(realData);
-    },
-    // Mock operation
-    async () => {
-      console.log('📊 Using mock dashboard data (MongoDB not available)');
-
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      // Return mock data that matches the real structure
+    // Get fresh user details from DB
+    const userData = await db.collection('users').findOne({ email: user.email });
+    if (!userData) {
+      console.log('Dashboard API: User not found in DB');
       return NextResponse.json({
-        stats: {
-          totalQuizzes: 12,
-          completedQuizzes: 8,
-          averageScore: 85,
-          certificates: 3,
-          streak: 7,
-          totalPoints: 2450
-        },
-        analytics: {
-          weeklyActivity: [
-            { day: 'Mon', attempts: 2 },
-            { day: 'Tue', attempts: 1 },
-            { day: 'Wed', attempts: 3 },
-            { day: 'Thu', attempts: 0 },
-            { day: 'Fri', attempts: 2 },
-            { day: 'Sat', attempts: 1 },
-            { day: 'Sun', attempts: 0 }
-          ],
-          subjectDistribution: [
-            { subject: 'Physics', count: 4 },
-            { subject: 'Mathematics', count: 3 },
-            { subject: 'Chemistry', count: 2 },
-            { subject: 'Biology', count: 3 }
-          ],
-          difficultyBreakdown: [
-            { difficulty: 'Easy', count: 3 },
-            { difficulty: 'Medium', count: 4 },
-            { difficulty: 'Hard', count: 1 }
-          ],
-          chatActivity: []
-        },
-        activities: [
-          { id: '1', type: 'quiz', title: 'Completed Physics Quiz', time: '2 hours ago', score: 92 },
-          { id: '2', type: 'quiz', title: 'Completed Mathematics Quiz', time: '1 day ago', score: 88 },
-          { id: '3', type: 'achievement', title: 'Earned Quick Learner Badge', time: '2 days ago' },
-          { id: '4', type: 'quiz', title: 'Completed Chemistry Quiz', time: '3 days ago', score: 95 },
-          { id: '5', type: 'streak', title: '7-day streak achieved!', time: '1 week ago' }
-        ],
-        recommendedQuizzes: [
-          { id: '1', title: 'Advanced Mechanics', difficulty: 'Hard', duration: '30 min', category: 'Physics' },
-          { id: '2', title: 'Algebra Fundamentals', difficulty: 'Easy', duration: '20 min', category: 'Mathematics' },
-          { id: '3', title: 'Organic Chemistry', difficulty: 'Medium', duration: '25 min', category: 'Chemistry' }
-        ],
-        leaderboard: [
-          { rank: 1, name: 'Alex Johnson', points: 3200, avatar: '/avatars/alex.jpg' },
-          { rank: 2, name: 'Sarah Chen', points: 2850, avatar: '/avatars/sarah.jpg' },
-          { rank: 3, name: 'You', points: 2450, avatar: '/avatars/you.jpg', isUser: true },
-          { rank: 4, name: 'Mike Wilson', points: 2100, avatar: '/avatars/mike.jpg' },
-          { rank: 5, name: 'Emma Davis', points: 1950, avatar: '/avatars/emma.jpg' }
-        ],
-        achievements: [
-          { id: '1', title: 'Quick Learner', description: 'Complete 5 quizzes', type: 'badge' },
-          { id: '2', title: 'High Scorer', description: 'Score 90%+ on 3 quizzes', type: 'badge' },
-          { id: '3', title: 'Consistent Student', description: '7-day streak', type: 'badge' }
-        ],
-        socialSignals: {
-          activeUsers: 156,
-          newMessages: 3
-        }
-      });
-    },
-    "fetch dashboard data"
-  );
+        error: 'User not found',
+        message: 'Please complete your profile setup to access dashboard data.',
+        action: 'CREATE_PROFILE'
+      }, { status: 404 });
+    }
+
+    // Get user's quiz attempts
+    const userAttempts = await db.collection('quiz_attempts')
+      .find({ userId: userData._id.toString() })
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    // Calculate dashboard data
+    const realData = await calculateRealData(userData, userAttempts, db);
+
+    return NextResponse.json(realData);
+  } catch (error) {
+    console.error('Dashboard API error:', error);
+    return NextResponse.json({
+      error: 'Internal Server Error',
+      message: 'Unable to fetch dashboard data. Please try again later.'
+    }, { status: 500 });
+  }
 }
 
-// Export the route handler wrapped with authentication and rate limiting
+// Export route handler wrapped with authentication and rate limiting
 export const GET = withAuth(dashboardHandler, {
   roles: ['student', 'teacher', 'admin'],
   rateLimit: RATE_LIMIT
@@ -149,7 +84,7 @@ async function calculateRealData(user: any, userAttempts: any[], db: any) {
   }
 
   // Calculate subject distribution with fallback
-  let subjectDistribution = getFallbackSubjectDistribution();
+  let subjectDistribution: { subject: string; count: number; message?: string }[] = getFallbackSubjectDistribution();
   try {
     const subjectCounts: Record<string, number> = {};
     for (const attempt of userAttempts) {
@@ -190,7 +125,7 @@ async function calculateRealData(user: any, userAttempts: any[], db: any) {
   }
 
   // Get activities with fallback
-  let activities = getFallbackActivities();
+  let activities: { id: string; type: string; title: string; time: string; action?: string; actionText?: string; score?: number }[] = getFallbackActivities();
   try {
     if (userAttempts.length > 0) {
       activities = userAttempts
@@ -283,39 +218,28 @@ async function getActiveUserCount(db: any): Promise<number> {
   }
 }
 
-// Fallback data functions
-function getFallbackData() {
-  return {
-    stats: { totalQuizzes: 0, averageScore: 0, streak: 0, totalPoints: 0 },
-    analytics: {
-      weeklyActivity: getFallbackWeeklyActivity(),
-      subjectDistribution: getFallbackSubjectDistribution(),
-      difficultyBreakdown: getFallbackDifficultyBreakdown(),
-      chatActivity: []
-    },
-    activities: getFallbackActivities(),
-    recommendedQuizzes: getFallbackRecommendedQuizzes(),
-    leaderboard: getFallbackLeaderboard(),
-    achievements: [],
-    socialSignals: { activeUsers: 0, newMessages: 0 }
-  };
-}
-
+// Fallback data functions - now encouraging users to create data
 function getFallbackWeeklyActivity() {
-  return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => ({ day, attempts: 0 }));
+  return [
+    { day: 'Mon', attempts: 0 },
+    { day: 'Tue', attempts: 0 },
+    { day: 'Wed', attempts: 0 },
+    { day: 'Thu', attempts: 0 },
+    { day: 'Fri', attempts: 0 },
+    { day: 'Sat', attempts: 0 },
+    { day: 'Sun', attempts: 0 }
+  ];
 }
 
 function getFallbackSubjectDistribution() {
   return [
-    { subject: 'Mathematics', count: 0 },
-    { subject: 'Science', count: 0 },
-    { subject: 'English', count: 0 }
+    { subject: 'No quizzes yet', count: 0, message: 'Start taking quizzes to see your subject distribution' }
   ];
 }
 
 function getFallbackDifficultyBreakdown() {
   return [
-    { difficulty: 'Easy', count: 0 },
+    { difficulty: 'Easy', count: 0, message: 'Complete your first quiz to see difficulty breakdown' },
     { difficulty: 'Medium', count: 0 },
     { difficulty: 'Hard', count: 0 }
   ];
@@ -323,21 +247,40 @@ function getFallbackDifficultyBreakdown() {
 
 function getFallbackActivities() {
   return [
-    { id: '1', type: 'welcome', title: 'Welcome to Quix! Start your first quiz to see your progress.', time: 'Just now' }
+    {
+      id: '1',
+      type: 'welcome',
+      title: '👋 Welcome to Quix! Start your first quiz to see your progress.',
+      time: 'Just now',
+      action: 'START_QUIZ',
+      actionText: 'Take Your First Quiz'
+    }
   ];
 }
 
 function getFallbackRecommendedQuizzes() {
   return [
-    { id: '1', title: 'Getting Started Quiz', difficulty: 'Easy', duration: '10 min', category: 'General' },
-    { id: '2', title: 'Math Basics', difficulty: 'Easy', duration: '15 min', category: 'Mathematics' },
-    { id: '3', title: 'Science Introduction', difficulty: 'Medium', duration: '20 min', category: 'Science' }
+    {
+      id: 'getting-started',
+      title: '🎯 Getting Started Quiz',
+      difficulty: 'Easy',
+      duration: '10 min',
+      category: 'General',
+      action: 'START_QUIZ',
+      actionText: 'Start Learning'
+    }
   ];
 }
 
 function getFallbackLeaderboard() {
   return [
-    { rank: 1, name: 'You', points: 0, avatar: '/avatars/you.jpg' }
+    {
+      rank: 1,
+      name: 'You',
+      points: 0,
+      avatar: '/avatars/you.jpg',
+      message: 'Complete quizzes to earn points and climb the leaderboard!'
+    }
   ];
 }
 

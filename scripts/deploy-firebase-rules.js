@@ -6,19 +6,26 @@ const path = require('path');
 const rulesPath = path.join(__dirname, '../firebase-rules.json');
 const rules = JSON.parse(fs.readFileSync(rulesPath, 'utf8'));
 
-// Deploy Firebase rules
-console.log('Deploying Firebase security rules...');
+// Write rules to a temporary file for deployment
+const tempRulesPath = path.join(__dirname, '../firebase-rules.temp.json');
+fs.writeFileSync(tempRulesPath, JSON.stringify(rules, null, 2));
 
-exec(`firebase deploy --only firestore:rules`, (error, stdout, stderr) => {
+// Deploy Firebase Realtime Database rules
+console.log('Deploying Firebase Realtime Database rules...');
+
+exec(`firebase deploy --only database:rules`, (error, stdout, stderr) => {
   if (error) {
     console.error('Error deploying Firebase rules:', error);
     return;
   }
-  
+
   console.log('Firebase rules deployed successfully!');
   console.log(stdout);
-  
+
   if (stderr) {
     console.log('Warnings:', stderr);
   }
+
+  // Clean up temporary file
+  fs.unlinkSync(tempRulesPath);
 });

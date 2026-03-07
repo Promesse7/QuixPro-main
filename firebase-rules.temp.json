@@ -7,7 +7,6 @@
         ".validate": "newData.hasChildren(['name','email'])"
       }
     },
-
     "messages": {
       "$conversationId": {
         ".read": "auth != null",
@@ -19,7 +18,6 @@
         }
       }
     },
-
     "conversations": {
       ".read": "auth != null",
       ".write": "auth != null",
@@ -35,7 +33,6 @@
         }
       }
     },
-
     "typing": {
       "$conversationId": {
         ".read": "auth != null",
@@ -45,7 +42,6 @@
         }
       }
     },
-
     "presence": {
       "$uid": {
         ".read": "$uid === auth.uid || auth.token.email === $uid",
@@ -53,14 +49,12 @@
         ".validate": "newData.hasChildren(['status','lastSeen'])"
       }
     },
-
     "status": {
       "$userId": {
         ".read": "auth != null",
         ".write": "auth != null"
       }
     },
-
     "chats": {
       "$chatId": {
         ".read": "auth != null",
@@ -73,14 +67,12 @@
         }
       }
     },
-
     "user_conversations": {
       "$userId": {
         ".read": "auth != null",
         ".write": "auth != null"
       }
     },
-
     "groups": {
       "$groupId": {
         ".read": "auth != null",
@@ -92,14 +84,12 @@
             ".write": "auth != null"
           }
         },
-
         "admins": {
           "$userId": {
             ".read": "auth != null",
             ".write": "auth != null"
           }
         },
-
         "messages": {
           ".read": "auth != null",
           ".write": "auth != null",
@@ -107,7 +97,6 @@
             ".validate": "newData.hasChildren(['senderId','content','timestamp']) && newData.child('senderId').val() === auth.token.email || newData.child('senderId').val() === auth.uid"
           }
         },
-
         "typing": {
           "$userId": {
             ".write": "auth != null"
@@ -115,15 +104,15 @@
         }
       }
     },
-
     "userGroups": {
       "$userId": {
         ".read": "auth != null",
         ".write": "auth != null",
-        ".indexOn": ["updatedAt"]
+        ".indexOn": [
+          "updatedAt"
+        ]
       }
     },
-
     ".read": false,
     ".write": false
   }

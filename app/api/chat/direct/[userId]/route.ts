@@ -1,18 +1,29 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { getDatabase } from "@/lib/mongodb"
+import { getCurrentUser } from "@/lib/auth"
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { userId: string } }
 ) {
   try {
+    // Try multiple authentication methods
     const session = await getServerSession()
-    if (!session?.user?.email) {
+    const currentUser = getCurrentUser()
+
+    let currentUserId: string | null = null
+
+    if (session?.user?.email) {
+      currentUserId = session.user.email
+    } else if (currentUser?.email) {
+      currentUserId = currentUser.email
+    }
+
+    if (!currentUserId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const currentUserId = session.user.email
     const targetUserId = params.userId
 
     if (!targetUserId) {
@@ -20,7 +31,7 @@ export async function GET(
     }
 
     const db = await getDatabase()
-    
+
     // Find or create direct conversation between users
     const conversation = await db.collection("conversations").findOne({
       type: "direct",
@@ -41,7 +52,7 @@ export async function GET(
       }
 
       const result = await db.collection("conversations").insertOne(newConversation)
-      
+
       return NextResponse.json({
         ...newConversation,
         _id: result.insertedId.toString()
@@ -70,7 +81,7 @@ export async function POST(
     const body = await request.json()
 
     const db = await getDatabase()
-    
+
     // Find existing conversation
     const conversation = await db.collection("conversations").findOne({
       type: "direct",
@@ -98,8 +109,8 @@ export async function POST(
     // Update conversation last message
     await db.collection("conversations").updateOne(
       { _id: conversation._id },
-      { 
-        $set: { 
+      {
+        $set: {
           lastMessage: message,
           updatedAt: new Date()
         }
